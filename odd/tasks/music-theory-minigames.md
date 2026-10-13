@@ -137,7 +137,7 @@ bounded writer. Trigger evidence records why delegation was or was not used.
 | --- | --- | --- | --- | --- | --- |
 | T1 | Scaffold Vite+Solid+TS+Vitest, app shell, progress store, unlock rule | writer | 2+ non-trivial files | `npm test`, `npm run build` | **done** `af6f827` |
 | T2 | Theory core A: pitch/spelling, scales, generic+specific intervals | writer | 3 non-trivial files, pure-logic TDD | `npm test` | **done** |
-| T3 | Theory core B: chords, keys/signatures, roman numerals | writer | 3 non-trivial files, pure-logic TDD | `npm test` | pending |
+| T3 | Theory core B: chords, keys/signatures, roman numerals | writer | 3 non-trivial files, pure-logic TDD | `npm test` | **done** |
 | T4 | Audio synth + VexFlow Staff component | writer | 2+ non-trivial files | `npm test`, `npm run build` | pending |
 | T5 | GameShell round loop + prompt renderers + answer controls | writer | 2+ non-trivial files | `npm test`, `npm run build` | pending |
 | T6 | Games for The Basics (10, 11, 12, 13, 14, 20) | writer | 6 lesson modules | `npm test`, `npm run build` | pending |
@@ -187,7 +187,8 @@ inside that same commit. The Engram mirror carries the hash immediately.
 | Task | Evidence | Commit |
 | --- | --- | --- |
 | T1 | `npm test` → 12 passed (2 files); `npm run typecheck` → exit 0; `npm run build` → 33 modules, 174 ms. Parent spot check re-ran `npm test` → 12 passed. RED observed first (5 failures on unlock rule + corrupt JSON). | `af6f827` |
-| T2 | `npm test` → 67 passed (6 files); `npm run typecheck` → exit 0; `npm run build` → 33 modules, 209 ms. Parent spot check re-ran `npm test` → 67 passed. RED observed first (4 suites failed on unresolved imports); a real octave-arithmetic bug in `semitoneIndex` surfaced during GREEN and was fixed. Tier assessment: **medium**, `slice_budget_reached`, 9 paths / 1160 lines → writer self-verification, no separate verifier required. | _backfill at T3_ |
+| T2 | `npm test` → 67 passed (6 files); `npm run typecheck` → exit 0; `npm run build` → 33 modules, 209 ms. Parent spot check re-ran `npm test` → 67 passed. RED observed first (4 suites failed on unresolved imports); a real octave-arithmetic bug in `semitoneIndex` surfaced during GREEN and was fixed. Tier: **medium**, `slice_budget_reached`, 9 paths / 1160 lines → writer self-verification. | `d8ef5ad` |
+| T3 | `npm test` → 130 passed (9 files); `npm run typecheck` → exit 0; `npm run build` → 33 modules, 154 ms. Parent spot check re-ran `npm test` → 130 passed. RED observed first (4 failures on unresolved imports). **Spec correction:** the plan's hard-coded diatonic rows for harmonic minor (degree 3) and melodic minor (degrees 3, 5, 7) were wrong; a follow-up fix replaced the rows with `buildScale`-derived stacking, so triad/seventh agreement is now structural and the textbook table is the test oracle. Agreement asserted for 4 scale types × 7 roots. Tier: **medium**, `slice_budget_reached`, 7 paths / 1104 lines → writer self-verification. | _backfill at T4_ |
 
 T1 deviations accepted: HashRouter (deep links work on static hosts without rewrites);
 locked `/lesson/:id` renders a "Lesson locked" screen rather than redirecting; no
@@ -198,5 +199,4 @@ deterministic RED — only store, unlock rule and catalog seed were test-driven.
 
 ## Next step
 
-T3: theory core B (chords, keys/key signatures, roman numerals) under strict
-test-first.
+T4: audio synth (Web Audio) + VexFlow-backed Staff component.
