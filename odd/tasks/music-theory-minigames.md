@@ -45,6 +45,11 @@ retrieval and gives immediate corrective feedback.
   repo currently has zero commits on `main`).
 - Delivery strategy: `single-pr`. Rationale: no git remote is configured and no PR
   has been requested, so PR slicing is not yet meaningful. Revisit before any push.
+- Receipt-driven development: **off (global)**, disabled by the user during T1 when the
+  per-candidate consent envelope proved unpresentable in this runtime. No review
+  lifecycle runs from here on; verification is writer-reported checks plus a parent
+  spot check, with an independent verifier added when a tier assessment comes back
+  high or unassessable. T1 itself was never reviewed — outcome `disabled/unmanaged`.
 
 ## Key product decisions
 
@@ -130,19 +135,20 @@ bounded writer. Trigger evidence records why delegation was or was not used.
 
 | ID | Task | Route | Trigger evidence | Checks | Status |
 | --- | --- | --- | --- | --- | --- |
-| T1 | Scaffold Vite+Solid+TS+Vitest, app shell, progress store, unlock rule | writer | 2+ non-trivial files | `npm test`, `npm run build` | **done** |
-| T2 | Theory core: pitch/spelling, scales, intervals, chords, keys, roman numerals | writer | 2+ non-trivial files, pure-logic TDD | `npm test` | pending |
-| T3 | Audio synth + VexFlow Staff component | writer | 2+ non-trivial files | `npm test`, `npm run build` | pending |
-| T4 | GameShell round loop + prompt renderers + answer controls | writer | 2+ non-trivial files | `npm test`, `npm run build` | pending |
-| T5 | Games for The Basics (10, 11, 12, 13, 14, 20) | writer | 6 lesson modules | `npm test`, `npm run build` | pending |
-| T6 | Games for Rhythm and Meter (15, 16) | writer | 2 lesson modules | `npm test`, `npm run build` | pending |
-| T7 | Games for Scales and Key Signatures (21, 22, 23, 24, 25) | writer | 5 lesson modules | `npm test`, `npm run build` | pending |
-| T8 | Games for Intervals (30, 31, 32, 33) | writer | 4 lesson modules | `npm test`, `npm run build` | pending |
-| T9 | Games for Chords (40, 42, 45, 48, 47) | writer | 5 lesson modules | `npm test`, `npm run build` | pending |
-| T10 | Games for Diatonic Chords (43, 44, 46, 49, 50, 51, 52) | writer | 7 lesson modules | `npm test`, `npm run build` | pending |
-| T11 | Games for Chord Progressions (53, 55, 56, 57, 60, 61, 62) | writer | 7 lesson modules | `npm test`, `npm run build` | pending |
-| T12 | Games for Neapolitan Chords (120, 121, 122) | writer | 3 lesson modules | `npm test`, `npm run build` | pending |
-| T13 | Home lesson map, progress UI, visual polish pass | writer | 2+ non-trivial files | `npm test`, `npm run build` | pending |
+| T1 | Scaffold Vite+Solid+TS+Vitest, app shell, progress store, unlock rule | writer | 2+ non-trivial files | `npm test`, `npm run build` | **done** `af6f827` |
+| T2 | Theory core A: pitch/spelling, scales, generic+specific intervals | writer | 3 non-trivial files, pure-logic TDD | `npm test` | **done** |
+| T3 | Theory core B: chords, keys/signatures, roman numerals | writer | 3 non-trivial files, pure-logic TDD | `npm test` | pending |
+| T4 | Audio synth + VexFlow Staff component | writer | 2+ non-trivial files | `npm test`, `npm run build` | pending |
+| T5 | GameShell round loop + prompt renderers + answer controls | writer | 2+ non-trivial files | `npm test`, `npm run build` | pending |
+| T6 | Games for The Basics (10, 11, 12, 13, 14, 20) | writer | 6 lesson modules | `npm test`, `npm run build` | pending |
+| T7 | Games for Rhythm and Meter (15, 16) | writer | 2 lesson modules | `npm test`, `npm run build` | pending |
+| T8 | Games for Scales and Key Signatures (21, 22, 23, 24, 25) | writer | 5 lesson modules | `npm test`, `npm run build` | pending |
+| T9 | Games for Intervals (30, 31, 32, 33) | writer | 4 lesson modules | `npm test`, `npm run build` | pending |
+| T10 | Games for Chords (40, 42, 45, 48, 47) | writer | 5 lesson modules | `npm test`, `npm run build` | pending |
+| T11 | Games for Diatonic Chords (43, 44, 46, 49, 50, 51, 52) | writer | 7 lesson modules | `npm test`, `npm run build` | pending |
+| T12 | Games for Chord Progressions (53, 55, 56, 57, 60, 61, 62) | writer | 7 lesson modules | `npm test`, `npm run build` | pending |
+| T13 | Games for Neapolitan Chords (120, 121, 122) | writer | 3 lesson modules | `npm test`, `npm run build` | pending |
+| T14 | Home lesson map, progress UI, visual polish pass | writer | 2+ non-trivial files | `npm test`, `npm run build` | pending |
 
 Each task closes with one Conventional Commit on `feat/music-theory-minigames`;
 the commit hash is recorded under Progress.
@@ -150,8 +156,8 @@ the commit hash is recorded under Progress.
 ### Test-first policy
 
 Default test-first applies where a runnable deterministic test exists with a clear
-expected outcome: T1 (unlock rule, store round-trip), T2 (every pure theory
-function), T4 (round loop state machine), and each game's round generator
+expected outcome: T1 (unlock rule, store round-trip), T2 and T3 (every pure theory
+function), T5 (round loop state machine), and each game's round generator
 (validity: answer is unique, distractors differ from answer, generator terminates).
 Observe RED before implementation, then GREEN.
 
@@ -180,7 +186,8 @@ inside that same commit. The Engram mirror carries the hash immediately.
 
 | Task | Evidence | Commit |
 | --- | --- | --- |
-| T1 | `npm test` → 12 passed (2 files); `npm run typecheck` → exit 0; `npm run build` → 33 modules, 174 ms. Parent spot check re-ran `npm test` → 12 passed. RED observed first (5 failures on unlock rule + corrupt JSON). | _backfill at T2_ |
+| T1 | `npm test` → 12 passed (2 files); `npm run typecheck` → exit 0; `npm run build` → 33 modules, 174 ms. Parent spot check re-ran `npm test` → 12 passed. RED observed first (5 failures on unlock rule + corrupt JSON). | `af6f827` |
+| T2 | `npm test` → 67 passed (6 files); `npm run typecheck` → exit 0; `npm run build` → 33 modules, 209 ms. Parent spot check re-ran `npm test` → 67 passed. RED observed first (4 suites failed on unresolved imports); a real octave-arithmetic bug in `semitoneIndex` surfaced during GREEN and was fixed. Tier assessment: **medium**, `slice_budget_reached`, 9 paths / 1160 lines → writer self-verification, no separate verifier required. | _backfill at T3_ |
 
 T1 deviations accepted: HashRouter (deep links work on static hosts without rewrites);
 locked `/lesson/:id` renders a "Lesson locked" screen rather than redirecting; no
@@ -191,5 +198,5 @@ deterministic RED — only store, unlock rule and catalog seed were test-driven.
 
 ## Next step
 
-T2: theory core library (pitch/spelling, scales, intervals, chords, keys, roman
-numerals) under strict test-first.
+T3: theory core B (chords, keys/key signatures, roman numerals) under strict
+test-first.
