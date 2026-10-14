@@ -142,7 +142,7 @@ bounded writer. Trigger evidence records why delegation was or was not used.
 | T4 | Audio synth (Web Audio) | writer | 2 non-trivial files, pure-logic TDD | `npm test` | **done** |
 | T4b | VexFlow Staff component | writer | 2 non-trivial files, DOM render tests viable | `npm test`, `npm run build` | **done** |
 | T5 | Round model + pure round machine (types, validate, transitions) | writer | 3 pure-logic files, test-first | `npm test` | **done** |
-| T5b | GameShell + `text` prompt + `choices` answer + GamePage wiring | writer | 4 non-trivial files, UI | `npm test`, `npm run build` | pending |
+| T5b | GameShell + `text` prompt + `choices` answer + GamePage wiring | writer | 4 non-trivial files, UI | `npm test`, `npm run build` | **done** |
 | T5c | Piano keyboard + remaining prompt renderers and answer controls | writer | 2+ non-trivial files | `npm test`, `npm run build` | pending |
 | T6 | Games for The Basics (10, 11, 12, 13, 14, 20) | writer | 6 lesson modules | `npm test`, `npm run build` | pending |
 | T7 | Games for Rhythm and Meter (15, 16) | writer | 2 lesson modules | `npm test`, `npm run build` | pending |
@@ -201,7 +201,8 @@ inside that same commit. The Engram mirror carries the hash immediately.
 | T3 | `npm test` → 130 passed (9 files); `npm run typecheck` → exit 0; `npm run build` → 33 modules, 154 ms. Parent spot check re-ran `npm test` → 130 passed. RED observed first (4 failures on unresolved imports). **Spec correction:** the plan's hard-coded diatonic rows for harmonic minor (degree 3) and melodic minor (degrees 3, 5, 7) were wrong; a follow-up fix replaced the rows with `buildScale`-derived stacking, so triad/seventh agreement is now structural and the textbook table is the test oracle. Agreement asserted for 4 scale types × 7 roots. Tier: **medium**, `slice_budget_reached`, 7 paths / 1104 lines → writer self-verification. | `daaf39e` |
 | T4 | `npm test` → 156 passed (11 files); `npm run typecheck` → exit 0; `npm run build` → 33 modules, 206 ms. Parent spot check re-ran `npm test` → 156 passed. RED observed first (2 suites failed on unresolved imports). Tier: **medium**, `slice_budget_reached`, 5 paths / 501 lines → writer self-verification. | `98a090d` |
 | T4b | `npm test` → 179 passed (13 files); `npm run typecheck` → exit 0; `npm run build` → 33 modules, 184 ms. Parent spot check re-ran `npm test` → 179 passed. RED observed first (Staff DOM suite: 4/7 failed on `addAccidental is not a function`, default size, and clef geometry; spec suite re-run against a throwing stub: 14/16 failed). DOM render tests **are** viable under happy-dom, so no render exception was needed. Two load-bearing API fixes forced by RED: VexFlow 5 removed `StaveNote.addAccidental` in favour of `addModifier(new Accidental(code), i)`, and Solid's `mergeProps` resolves last-source-first so defaults must precede props. Tier: **medium**, `slice_budget_reached`, 5 paths / 509 lines → writer self-verification. | `b9fbd6a` |
-| T5 | `npm test` → 209 passed (15 files); `npm run typecheck` → exit 0; `npm run build` → 33 modules, 208 ms. Parent spot check re-ran `npm test` → 209 passed. RED observed first (both new suites failed on unresolved imports, matching the T2/T3 pattern). Counter integrity is structural: `correctCount` has a single mutation site guarded by a correctness ternary, `advance` throws after a wrong answer, and `submit`/`retry`/`advance` are phase-guarded so double counting cannot happen. Tier: **medium**, `slice_budget_reached`, 6 paths / 646 lines → writer self-verification. | _backfill at T5b_ |
+| T5 | `npm test` → 209 passed (15 files); `npm run typecheck` → exit 0; `npm run build` → 33 modules, 208 ms. Parent spot check re-ran `npm test` → 209 passed. RED observed first (both new suites failed on unresolved imports, matching the T2/T3 pattern). Counter integrity is structural: `correctCount` has a single mutation site guarded by a correctness ternary, `advance` throws after a wrong answer, and `submit`/`retry`/`advance` are phase-guarded so double counting cannot happen. Tier: **medium**, `slice_budget_reached`, 6 paths / 646 lines → writer self-verification. | `092b8fd` |
+| T5b | `npm test` → 227 passed (20 files); `npm run typecheck` → exit 0; `npm run build` → 40 modules, 216 ms. Parent spot check re-ran `npm test` → 227 passed. RED observed first (5 new suites failed on unresolved imports). `recordCorrect` has exactly one call site, guarded by the `submit` transition's `wasCorrect`, so persistence tracks machine-reported correctness rather than UI state. Tier: **medium**, `slice_budget_reached`, 11 paths / 685 lines → writer self-verification. | _backfill at T5c_ |
 
 T1 deviations accepted: HashRouter (deep links work on static hosts without rewrites);
 locked `/lesson/:id` renders a "Lesson locked" screen rather than redirecting; no
@@ -212,5 +213,6 @@ deterministic RED — only store, unlock rule and catalog seed were test-driven.
 
 ## Next step
 
-T5b: `GameShell` driving `roundMachine`, the `text` prompt and `choices` answer
-control, plus wiring into `GamePage` with a marked demo round set.
+T5c: the piano keyboard component plus the remaining renderers — `staff`, `audio`
+and `keyboard` prompts, `textInput`, `notePick` and `sequence` answers — registering
+them into the two registries that currently throw for unimplemented kinds.
