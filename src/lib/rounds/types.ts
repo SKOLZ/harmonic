@@ -43,6 +43,22 @@ export type AnswerSpec =
   | { kind: "notePick"; correctNotes: string[] }
   | { kind: "sequence"; correctOrder: string[] };
 
+/**
+ * What the learner submits for a round. `kind` must match the round's
+ * `AnswerSpec.kind`; the machine judges by value, not by control identity.
+ *
+ * - `choices`: the index of the option the learner picked.
+ * - `textInput`: the text exactly as typed; judged after trimming and
+ *   case-folding against every `accepted` spelling.
+ * - `notePick`: the selected pitch names as an *unordered set*.
+ * - `sequence`: the arranged items as an *ordered* list.
+ */
+export type AnswerSubmission =
+  | { kind: "choices"; selectedIndex: number }
+  | { kind: "textInput"; text: string }
+  | { kind: "notePick"; notes: string[] }
+  | { kind: "sequence"; order: string[] };
+
 /** One answered question: prompt + answer contract + the rule shown in feedback. */
 export interface Round {
   id: string;

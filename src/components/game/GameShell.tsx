@@ -45,7 +45,13 @@ export default function GameShell(props: GameShellProps) {
   function handleSelect(index: number) {
     const current = state();
     if (current.phase !== "answering") return;
-    const next = submit(current, index, props.rounds[current.roundIndex]);
+    // GameShell currently renders only the choices answer control; other kinds
+    // arrive with their own controls (T5e) and their own submission builders.
+    const next = submit(
+      current,
+      { kind: "choices", selectedIndex: index },
+      props.rounds[current.roundIndex],
+    );
     setState(next);
     // Product rule: progress records exactly when submit reports correct —
     // nowhere else. Wrong answers never touch the persistent counter.
@@ -69,6 +75,12 @@ export default function GameShell(props: GameShellProps) {
 
   const round = () => props.rounds[state().roundIndex];
   const isLastRound = () => state().roundIndex + 1 >= props.rounds.length;
+  // ChoicesAnswer highlights by index; other submission kinds pass null here.
+  // Narrowing needs a local binding because each state() call is a fresh value.
+  const selectedChoiceIndex = () => {
+    const submission = state().submission;
+    return submission?.kind === "choices" ? submission.selectedIndex : null;
+  };
 
   return (
     <section class="game-shell">
@@ -104,7 +116,7 @@ export default function GameShell(props: GameShellProps) {
             component={getAnswerComponent(round().answer.kind)}
             answer={round().answer}
             disabled={state().phase === "revealed"}
-            selectedIndex={state().selected}
+            selectedIndex={selectedChoiceIndex()}
             onSelect={handleSelect}
           />
           <Show when={state().phase === "revealed" && state().feedback}>

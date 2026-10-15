@@ -1,5 +1,5 @@
 import { UNLOCK_THRESHOLD } from "../../lib/progress/store";
-import type { Round } from "../../lib/rounds/types";
+import type { AnswerSpec, AnswerSubmission, Round } from "../../lib/rounds/types";
 
 export type Phase = "answering" | "revealed" | "complete";
 
@@ -13,24 +13,68 @@ export interface MachineState {
   roundIndex: number;
   phase: Phase;
   correctCount: number;
-  selected: number | null;
+  /** The learner's submitted answer for the current round, kept verbatim for the UI. */
+  submission: AnswerSubmission | null;
   wasCorrect: boolean;
   feedback: Feedback | null;
 }
 
-/** Canonical display string for the correct answer, used in feedback. */
+/** Canonical display string for the correct answer, used in feedback. Never blank on a validated round. */
 export function expectedAnswerLabel(round: Round): string {
   switch (round.answer.kind) {
     case "choices": {
       const label = round.answer.options[round.answer.correctIndex];
-      return label ?? "";
+      // validateRound keeps correctIndex in range but does not reject blank
+      // option text; feedback must still name something, so fall back to position.
+      return label?.trim() ? label : `option ${round.answer.correctIndex + 1}`;
     }
     case "textInput":
+      // validateRound guarantees a non-empty canonical `expected`.
       return round.answer.expected;
-    case "notePick":
-      return round.answer.correctNotes.join(" + ");
-    case "sequence":
-      return round.answer.correctOrder.join(" → ");
+    case "notePick": {
+      const label = round.answer.correctNotes.join(" + ");
+      // validateRound does not reject blank members; never blank the feedback.
+      return label.trim() ? label : "(no notes)";
+    }
+    case "sequence": {
+      const label = round.answer.correctOrder.join(" → ");
+      // validateRound does not reject blank members; never blank the feedback.
+      return label.trim() ? label : "(empty sequence)";
+    }
+  }
+}
+
+/**
+ * Judge a submission against the round's answer spec, by value.
+ * `submit` guarantees `submission.kind === answer.kind` before calling, so the
+ * kind-equality guards below only exist to narrow both unions for TypeScript.
+ */
+function isCorrectAnswer(submission: AnswerSubmission, answer: AnswerSpec): boolean {
+  switch (submission.kind) {
+    case "choices":
+      return answer.kind === "choices" && submission.selectedIndex === answer.correctIndex;
+    case "textInput": {
+      if (answer.kind !== "textInput") return false;
+      const text = submission.text.trim().toLowerCase();
+      return answer.accepted.some((candidate) => candidate.trim().toLowerCase() === text);
+    }
+    case "notePick": {
+      if (answer.kind !== "notePick") return false;
+      // Unordered set equality: same length, same members, order irrelevant.
+      const expected = [...answer.correctNotes].sort();
+      const actual = [...submission.notes].sort();
+      return (
+        expected.length === actual.length && expected.every((value, index) => value === actual[index])
+      );
+    }
+    case "sequence": {
+      if (answer.kind !== "sequence") return false;
+      // Ordered equality: position matters.
+      return (
+        submission.order.length === answer.correctOrder.length &&
+        submission.order.every((value, index) => value === answer.correctOrder[index])
+      );
+    }
   }
 }
 
@@ -43,7 +87,7 @@ export function start(rounds: readonly Round[]): MachineState {
     roundIndex: 0,
     phase: "answering",
     correctCount: 0,
-    selected: null,
+    submission: null,
     wasCorrect: false,
     feedback: null,
   };
@@ -52,29 +96,27 @@ export function start(rounds: readonly Round[]): MachineState {
 /**
  * Submit an answer for the current round. Only legal while `answering` (a revealed
  * round cannot be re-submitted, so a correct round can never be counted twice).
- *
- * Index-based submission currently judges `choices` rounds. The other answer kinds
- * (textInput / notePick / sequence) have no meaningful index; they will extend this
- * machine in the T5c answer-control task rather than silently judging here.
+ * The submission's kind must match the round's answer kind; correctness is then
+ * judged by value for all four kinds (see isCorrectAnswer).
  */
 export function submit(
   state: MachineState,
-  selectedIndex: number | null,
+  submission: AnswerSubmission,
   round: Round,
 ): MachineState {
   if (state.phase !== "answering") {
     throw new Error(`submit: cannot submit while phase is "${state.phase}"`);
   }
-  if (round.answer.kind !== "choices") {
+  if (submission.kind !== round.answer.kind) {
     throw new Error(
-      `submit: answer kind "${round.answer.kind}" does not submit by index; extend the machine for this kind`,
+      `submit: submission kind "${submission.kind}" does not match round answer kind "${round.answer.kind}"`,
     );
   }
-  const correct = selectedIndex !== null && selectedIndex === round.answer.correctIndex;
+  const correct = isCorrectAnswer(submission, round.answer);
   return {
     ...state,
     phase: "revealed",
-    selected: selectedIndex,
+    submission,
     wasCorrect: correct,
     // Product rule: only a correct answer advances the counter; wrong answers
     // leave correctCount untouched so guessing can never unlock the chain.
@@ -98,7 +140,7 @@ export function retry(state: MachineState): MachineState {
   return {
     ...state,
     phase: "answering",
-    selected: null,
+    submission: null,
     wasCorrect: false,
     feedback: null,
   };
@@ -118,13 +160,13 @@ export function advance(state: MachineState, totalRounds: number): MachineState 
     throw new Error("advance: cannot advance after a wrong answer; retry instead");
   }
   if (state.roundIndex + 1 >= totalRounds) {
-    return { ...state, phase: "complete", selected: null };
+    return { ...state, phase: "complete", submission: null };
   }
   return {
     ...state,
     roundIndex: state.roundIndex + 1,
     phase: "answering",
-    selected: null,
+    submission: null,
     wasCorrect: false,
     feedback: null,
   };
