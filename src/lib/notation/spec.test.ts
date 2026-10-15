@@ -101,6 +101,7 @@ describe("buildNotationSpec", () => {
       keys: ["c/4", "eb/4", "f#/4"],
       accidentals: [null, "b", "#"],
       duration: "q",
+      simultaneous: false,
     });
   });
 
@@ -109,6 +110,25 @@ describe("buildNotationSpec", () => {
     expect(spec.clef).toBe("treble");
     expect(spec.duration).toBe("q");
     expect(spec.keySignature).toBeNull();
+  });
+
+  it("defaults to sequential engraving when simultaneous is absent", () => {
+    expect(buildNotationSpec({ notes: [parseNote("C4")] }).simultaneous).toBe(false);
+    expect(
+      buildNotationSpec({ notes: [parseNote("C4")], simultaneous: false }).simultaneous,
+    ).toBe(false);
+  });
+
+  it("threads a simultaneous prompt through to the spec", () => {
+    const spec = buildNotationSpec({
+      notes: [parseNote("C4"), parseNote("Eb4"), parseNote("G4")],
+      simultaneous: true,
+    });
+    expect(spec.simultaneous).toBe(true);
+    // The keys and per-tone accidentals still describe every chord member;
+    // simultaneity only changes how the renderer groups them.
+    expect(spec.keys).toEqual(["c/4", "eb/4", "g/4"]);
+    expect(spec.accidentals).toEqual([null, "b", null]);
   });
 
   it("throws on an empty note list", () => {

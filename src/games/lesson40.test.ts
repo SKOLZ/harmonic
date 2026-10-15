@@ -212,6 +212,31 @@ describe("lesson 40 question pool", () => {
     }
   });
 
+  it("marks every staff prompt simultaneous so its tones engrave as one chord", () => {
+    for (const { id, prompt } of staffRounds()) {
+      expect(prompt.simultaneous, `staff round ${id}`).toBe(true);
+    }
+  });
+
+  it("engraves every staff prompt as one stacked chord, not one note per tone", () => {
+    for (const { id, prompt } of staffRounds()) {
+      const host = document.createElement("div");
+      document.body.appendChild(host);
+      const dispose = render(() => StaffPrompt({ prompt }), host);
+      cleanups.push(() => {
+        dispose();
+        host.remove();
+      });
+      // VexFlow 5 wraps each StaveNote in <g class="vf-stavenote">: a triad
+      // stacked on one chord head is ONE group, three sequential quarters
+      // would be three.
+      const staveNotes = [...host.querySelectorAll("g")].filter(
+        (group) => group.getAttribute("class") === "vf-stavenote",
+      );
+      expect(staveNotes, `staff round ${id}`).toHaveLength(1);
+    }
+  });
+
   it("renders every keyboard prompt with exactly its three chord tones lit", () => {
     for (const { id, prompt } of keyboardRounds()) {
       const host = document.createElement("div");

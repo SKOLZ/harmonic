@@ -76,6 +76,11 @@ export default function StaffPrompt(props: StaffPromptProps) {
         // VexFlow duration code from the spec; undefined keeps Staff's default
         // quarter note, so text-only rhythm rounds engrave exactly as before.
         duration={spec().duration}
+        // Same pattern as KeyboardPrompt's optional `octave`: absent/false keeps
+        // sequential engraving (a measure or melodic line, one note per slot);
+        // true makes Staff stack every tone into a single chord head. Flagged
+        // only by the chord lessons, so lesson 12's staff prompts never change.
+        simultaneous={spec().simultaneous}
       />
     </div>
   );

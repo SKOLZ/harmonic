@@ -30,6 +30,26 @@ function pathGeometry(host: HTMLElement): (string | null)[] {
   return [...host.querySelectorAll("path")].map((path) => path.getAttribute("d"));
 }
 
+/**
+ * VexFlow 5 wraps each StaveNote in `<g class="vf-stavenote">` and each key's
+ * notehead in `<g class="vf-notehead">`, so the group counts are exactly the
+ * number of engraved StaveNote objects — one per sequential slot, but one for a
+ * whole chord — independent of path/text glyph bookkeeping.
+ */
+function svgGroups(host: HTMLElement, className: string): Element[] {
+  return [...host.querySelectorAll("g")].filter(
+    (group) => group.getAttribute("class") === className,
+  );
+}
+
+function staveNoteGroups(host: HTMLElement): Element[] {
+  return svgGroups(host, "vf-stavenote");
+}
+
+function noteheadGroups(host: HTMLElement): Element[] {
+  return svgGroups(host, "vf-notehead");
+}
+
 describe("Staff", () => {
   it("renders a VexFlow SVG staff into the document", () => {
     const host = mount(() => (
@@ -116,5 +136,53 @@ describe("Staff", () => {
     const naturalHost = mount(() => <Staff notes={[parseNote("C4")]} />);
     const sharpHost = mount(() => <Staff notes={[parseNote("C#4")]} />);
     expect(pathGeometry(sharpHost)).not.toEqual(pathGeometry(naturalHost));
+  });
+
+  it("engraves a simultaneous spec as one stacked chord, not one note per slot", () => {
+    const triad = [parseNote("C4"), parseNote("E4"), parseNote("G4")];
+    const sequentialHost = mount(() => <Staff notes={triad} />);
+    const chordHost = mount(() => <Staff notes={triad} simultaneous />);
+
+    const sequential = staveNoteGroups(sequentialHost);
+    const simultaneous = staveNoteGroups(chordHost);
+    // Three sequential quarter notes: three StaveNote objects, three groups.
+    expect(sequential).toHaveLength(3);
+    // One chord: a single StaveNote carrying every key, so one group.
+    expect(simultaneous).toHaveLength(1);
+    expect(simultaneous.length).toBeLessThan(sequential.length);
+  });
+
+  it("still engraves a sequential staff as one note per slot", () => {
+    // Lesson 12's measure shape: the flag must never make a melodic line stack.
+    const notes = [
+      parseNote("C5"),
+      parseNote("D5"),
+      parseNote("E5"),
+      parseNote("F5"),
+    ];
+    const omittedHost = mount(() => <Staff notes={notes} />);
+    const falseHost = mount(() => <Staff notes={notes} simultaneous={false} />);
+    expect(staveNoteGroups(omittedHost)).toHaveLength(4);
+    expect(staveNoteGroups(falseHost)).toHaveLength(4);
+    expect(staveNoteGroups(omittedHost)).toHaveLength(
+      staveNoteGroups(falseHost).length,
+    );
+  });
+
+  it("attaches each accidental to its own tone inside a stacked chord", () => {
+    const chordHost = mount(() => (
+      <Staff
+        notes={[parseNote("C4"), parseNote("Eb4"), parseNote("G4")]}
+        simultaneous
+      />
+    ));
+    const heads = noteheadGroups(chordHost);
+    expect(heads).toHaveLength(3);
+    // The accidental glyph is drawn inside its tone's own notehead group
+    // (NoteHead.draw -> StaveNote.drawModifiers matches modifier index), so
+    // only the middle head — the flat — carries one.
+    const glyphs = (head: Element) => head.querySelectorAll("text").length;
+    expect(glyphs(heads[1])).toBeGreaterThan(glyphs(heads[0]));
+    expect(glyphs(heads[1])).toBeGreaterThan(glyphs(heads[2]));
   });
 });

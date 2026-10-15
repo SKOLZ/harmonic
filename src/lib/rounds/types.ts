@@ -16,6 +16,12 @@ export const ANSWER_KINDS = ["choices", "textInput", "notePick", "sequence"] as 
  *   `q` quarter, `8` eighth, `16` sixteenth (`32`, `64` also valid), `d` marks
  *   a dot after the code (`qd`), and a trailing `r` draws a rest instead of a
  *   note (`qr` quarter rest, `8r` eighth rest). Omitted means `q`.
+ *   `simultaneous` resolves the one shape the `notes` array cannot: the same
+ *   three pitch names are a measure (three sequential quarters) or a chord (one
+ *   stacked sonority), and nothing in the data says which. Absent or `false`
+ *   means sequential — a measure or melodic line, one glyph slot per entry;
+ *   `true` means the notes are one chord and engrave as a single stacked
+ *   StaveNote. Chord lessons must set it, melodic ones must not.
  * - `audio`: something to hear — the `play` verb says whether the pitches form a
  *   single note, a chord, a scale, or an interval, so the synth knows how to group them.
  * - `keyboard`: a piano visual with certain keys highlighted (pitch names like "F#4");
@@ -23,7 +29,7 @@ export const ANSWER_KINDS = ["choices", "textInput", "notePick", "sequence"] as 
  */
 export type PromptSpec =
   | { kind: "text"; text: string }
-  | { kind: "staff"; clef: "treble" | "bass"; notes: string[]; keySignature?: string; duration?: string }
+  | { kind: "staff"; clef: "treble" | "bass"; notes: string[]; keySignature?: string; duration?: string; simultaneous?: boolean }
   | { kind: "audio"; play: "note" | "chord" | "scale" | "interval"; notes: string[] }
   | { kind: "keyboard"; highlight: string[]; octave?: number };
 

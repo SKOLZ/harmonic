@@ -121,7 +121,7 @@ const positionRound = (
   clef: "treble" | "bass",
 ): Round => ({
   id,
-  prompt: { kind: "staff", clef, notes: invertedNotes(root, quality, inversions), duration: "q" },
+  prompt: { kind: "staff", clef, notes: invertedNotes(root, quality, inversions), duration: "q", simultaneous: true },
   answer: choices([...POSITION_OPTIONS], inversions % 3),
   rule: bassRule(root, quality, inversions),
 });
@@ -135,7 +135,7 @@ const toneRound = (
   clef: "treble" | "bass",
 ): Round => ({
   id,
-  prompt: { kind: "staff", clef, notes: invertedNotes(root, quality, inversions), duration: "q" },
+  prompt: { kind: "staff", clef, notes: invertedNotes(root, quality, inversions), duration: "q", simultaneous: true },
   answer: choices([...TONE_OPTIONS], inversions % 3),
   rule: bassRule(root, quality, inversions),
 });

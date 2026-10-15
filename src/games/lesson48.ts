@@ -146,7 +146,7 @@ const REQUIRED_KINDS = ["staff", "text"] as const;
 /** A staff round: name the additional seventh chord written on the page. */
 const staffRound = (rootSlug: string, root: string, quality: AdditionalSeventh): Round => ({
   id: `l48-staff-${rootSlug}-${QUALITY_SLUG[quality]}`,
-  prompt: { kind: "staff", clef: "treble", notes: seventhChord(root, quality), duration: "q" },
+  prompt: { kind: "staff", clef: "treble", notes: seventhChord(root, quality), duration: "q", simultaneous: true },
   answer: choices(qualityOptions(root), qualityIndex(quality)),
   rule: chordRule(root, quality),
 });

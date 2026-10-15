@@ -22,6 +22,12 @@ export interface StaffProps {
   keySignature?: Note;
   /** VexFlow duration code, e.g. `q`. */
   duration?: string;
+  /**
+   * Engrave `notes` as ONE stacked chord instead of one note per slot.
+   * Absent/false keeps today's sequential behaviour (a measure or melodic
+   * line); true means the notes are simultaneous and share a chord head.
+   */
+  simultaneous?: boolean;
   width?: number;
   height?: number;
   /** Called with the container div once it is created (sizing, measurement). */
@@ -54,6 +60,7 @@ export default function Staff(props: StaffProps) {
       clef: resolved.clef,
       keySignature: resolved.keySignature,
       duration: resolved.duration,
+      simultaneous: resolved.simultaneous,
     });
     drawStaff(container, spec, resolved.width, resolved.height);
   });
@@ -89,21 +96,22 @@ function drawStaff(
   }
   stave.setContext(context).draw();
 
-  const staveNotes = spec.keys.map((key, index) => {
-    const staveNote = new StaveNote({
-      keys: [key],
-      duration: spec.duration,
-      clef: spec.clef,
-    });
-    // Naturals carry no accidental glyph; only altered notes get one.
-    const accidental = spec.accidentals[index];
-    if (accidental !== null) {
-      // VexFlow 5: accidentals are modifiers (addAccidental no longer exists).
-      staveNote.addModifier(new Accidental(accidental), 0);
-    }
-    return staveNote;
-  });
+  // A sequential spec engraves one StaveNote per slot; a simultaneous spec
+  // engraves a single StaveNote whose keys hold every tone, so a triad is one
+  // stacked chord head instead of three consecutive quarters. VexFlow 5 indexes
+  // modifiers by tone within the chord: `addModifier(modifier, i)` sets the
+  // modifier's index, `Accidental.format` reads `note.getKeyProps()[i]` to place
+  // the glyph on that tone's stave line, and `StaveNote.drawModifiers` draws it
+  // only while its own notehead is being drawn — so every altered tone in a
+  // stack needs its own Accidental at its own index.
+  const staveNotes = spec.simultaneous
+    ? [buildStaveNote(spec, spec.keys, spec.accidentals)]
+    : spec.keys.map((key, index) =>
+        buildStaveNote(spec, [key], [spec.accidentals[index]]),
+      );
 
+  // The voice counts engraved StaveNote groups, not tones: a chord occupies one
+  // duration, a sequence occupies one slot each, and both fill a STRICT voice.
   const { numBeats, beatValue } = durationToVoiceTime(
     spec.duration,
     staveNotes.length,
@@ -114,4 +122,29 @@ function drawStaff(
     .joinVoices([voice])
     .format([voice], stave.getNoteEndX() - stave.getNoteStartX());
   voice.draw(context, stave);
+}
+
+/**
+ * One StaveNote from parallel `keys`/`accidentals` arrays: a single tone in
+ * sequence (its accidental at index 0) or the whole stack in a chord (each
+ * accidental at its tone's index). Naturals carry no accidental glyph; only
+ * altered tones get one — in VexFlow 5 accidentals are modifiers, so
+ * `addAccidental` no longer exists.
+ */
+function buildStaveNote(
+  spec: NotationSpec,
+  keys: string[],
+  accidentals: (string | null)[],
+): StaveNote {
+  const staveNote = new StaveNote({
+    keys,
+    duration: spec.duration,
+    clef: spec.clef,
+  });
+  accidentals.forEach((accidental, index) => {
+    if (accidental !== null) {
+      staveNote.addModifier(new Accidental(accidental), index);
+    }
+  });
+  return staveNote;
 }

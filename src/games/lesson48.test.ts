@@ -229,6 +229,12 @@ describe("lesson 48 question pool", () => {
     }
   });
 
+  it("marks every staff prompt simultaneous so its tones engrave as one chord", () => {
+    for (const { id, prompt } of staffRounds()) {
+      expect(prompt.simultaneous, `staff round ${id}`).toBe(true);
+    }
+  });
+
   it("renders every keyboard prompt with exactly its four chord tones lit", () => {
     for (const { id, prompt } of keyboardRounds()) {
       const host = document.createElement("div");

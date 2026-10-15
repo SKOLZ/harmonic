@@ -18,6 +18,13 @@ export interface NotationSpec {
   accidentals: (string | null)[];
   /** VexFlow duration code, e.g. `q`. */
   duration: string;
+  /**
+   * True when `keys` describe one stacked chord engraved as a single
+   * StaveNote; false when they are sequential slots (a measure or melodic
+   * line) engraved one StaveNote each. Normalised to a boolean so callers
+   * never branch on `undefined`.
+   */
+  simultaneous: boolean;
 }
 
 export interface NotationSpecInput {
@@ -25,6 +32,8 @@ export interface NotationSpecInput {
   clef?: Clef;
   keySignature?: Note;
   duration?: string;
+  /** Absent or false means sequential engraving; true means one chord. */
+  simultaneous?: boolean;
 }
 
 export const DEFAULT_CLEF: Clef = "treble";
@@ -106,6 +115,7 @@ export function buildNotationSpec(input: NotationSpecInput): NotationSpec {
     keys: toVexKeys(input.notes),
     accidentals: input.notes.map(noteToAccidental),
     duration,
+    simultaneous: input.simultaneous ?? false,
   };
 }
 

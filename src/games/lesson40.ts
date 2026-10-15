@@ -129,19 +129,19 @@ export const lesson40Pool: readonly Round[] = [
   // --- staff prompts: read the triad on the page, name its type -------------
   ...QUALITY_ORDER.map((quality): Round => ({
     id: `l40-staff-c-${quality}`,
-    prompt: { kind: "staff", clef: "treble", notes: triad("C4", quality), duration: "q" },
+    prompt: { kind: "staff", clef: "treble", notes: triad("C4", quality), duration: "q", simultaneous: true },
     answer: choices(qualityOptions("C4"), qualityIndex(quality)),
     rule: staffRule("C4", quality),
   })),
   ...QUALITY_ORDER.map((quality): Round => ({
     id: `l40-staff-eb-${quality}`,
-    prompt: { kind: "staff", clef: "treble", notes: triad("Eb4", quality), duration: "q" },
+    prompt: { kind: "staff", clef: "treble", notes: triad("Eb4", quality), duration: "q", simultaneous: true },
     answer: choices(qualityOptions("Eb4"), qualityIndex(quality)),
     rule: staffRule("Eb4", quality),
   })),
   ...QUALITY_ORDER.map((quality): Round => ({
     id: `l40-staff-b-${quality}`,
-    prompt: { kind: "staff", clef: "treble", notes: triad("B4", quality), duration: "q" },
+    prompt: { kind: "staff", clef: "treble", notes: triad("B4", quality), duration: "q", simultaneous: true },
     answer: choices(qualityOptions("B4"), qualityIndex(quality)),
     rule: staffRule("B4", quality),
   })),
