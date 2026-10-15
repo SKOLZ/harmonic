@@ -27,6 +27,8 @@ export const catalog: LessonEntry[] = [
   { id: 31, title: "Specific Intervals", section: "Intervals", order: 15 },
   { id: 32, title: "Writing Intervals", section: "Intervals", order: 16 },
   { id: 33, title: "Interval Inversion", section: "Intervals", order: 17 },
+  { id: 40, title: "Introduction to Chords", section: "Chords", order: 18 },
+  { id: 42, title: "Triad Inversion", section: "Chords", order: 19 },
 ];
 
 /**
