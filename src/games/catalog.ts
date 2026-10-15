@@ -29,6 +29,9 @@ export const catalog: LessonEntry[] = [
   { id: 33, title: "Interval Inversion", section: "Intervals", order: 17 },
   { id: 40, title: "Introduction to Chords", section: "Chords", order: 18 },
   { id: 42, title: "Triad Inversion", section: "Chords", order: 19 },
+  { id: 45, title: "Seventh Chords", section: "Chords", order: 20 },
+  { id: 48, title: "More Seventh Chords", section: "Chords", order: 21 },
+  { id: 47, title: "Seventh Chord Inversion", section: "Chords", order: 22 },
 ];
 
 /**
