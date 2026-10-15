@@ -9,12 +9,14 @@ import { lesson20 } from "./lesson20";
 import { lesson21 } from "./lesson21";
 import { lesson22 } from "./lesson22";
 import { lesson23 } from "./lesson23";
+import { lesson24 } from "./lesson24";
+import { lesson25 } from "./lesson25";
 import type { LessonModule } from "./types";
 
 /**
  * lesson id → lesson module. The catalog stays the single ordered source of
  * truth for chain order; this registry only says which lessons currently have
- * a playable generator. Lessons still being built (24, …) are absent and fail
+ * a playable generator. Lessons still being built (30, …) are absent and fail
  * loudly through `getLessonModule` rather than playing demo data.
  */
 const modules: ReadonlyMap<number, LessonModule> = new Map<number, LessonModule>([
@@ -29,6 +31,8 @@ const modules: ReadonlyMap<number, LessonModule> = new Map<number, LessonModule>
   [21, lesson21],
   [22, lesson22],
   [23, lesson23],
+  [24, lesson24],
+  [25, lesson25],
 ]);
 
 /** The lesson ids that currently have a module; drives the contract tests. */

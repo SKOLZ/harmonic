@@ -21,6 +21,8 @@ export const catalog: LessonEntry[] = [
   { id: 21, title: "The Major Scale", section: "Scales and Key Signatures", order: 9 },
   { id: 22, title: "The Minor Scales", section: "Scales and Key Signatures", order: 10 },
   { id: 23, title: "Scale Degrees", section: "Scales and Key Signatures", order: 11 },
+  { id: 24, title: "Key Signatures", section: "Scales and Key Signatures", order: 12 },
+  { id: 25, title: "Key Signature Calculation", section: "Scales and Key Signatures", order: 13 },
 ];
 
 /**
