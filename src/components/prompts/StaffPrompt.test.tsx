@@ -41,8 +41,46 @@ describe("StaffPrompt", () => {
     // The graphic carries a spoken description for screen readers.
     expect(wrapper!.getAttribute("role")).toBe("img");
     const label = wrapper!.getAttribute("aria-label") ?? "";
-    expect(label).toContain("C4");
-    expect(label).toContain("treble");
+    expect(label).toBe("Staff notation, treble clef, 3 notes");
+    // A "name this note" round has the pitches as its answer; the spoken
+    // description must be structural only and never leak them.
+    expect(label).not.toContain("C4");
+    expect(label).not.toContain("Eb4");
+    expect(label).not.toContain("G4");
+  });
+
+  it("includes the key signature in the structural description, still without pitches", () => {
+    const host = mount(() => (
+      <StaffPrompt
+        prompt={{
+          kind: "staff",
+          clef: "bass",
+          notes: ["A2", "C3"],
+          keySignature: "Eb",
+          duration: "hd",
+        }}
+      />
+    ));
+    const label =
+      host.querySelector(".prompt--staff")?.getAttribute("aria-label") ?? "";
+    expect(label).toBe("Staff notation, bass clef, key of Eb, 2 notes");
+    expect(label).not.toContain("A2");
+    expect(label).not.toContain("C3");
+    // Lessons 13/14 ask about duration; the spoken form must not carry it.
+    expect(label).not.toContain("hd");
+    expect(label).not.toContain("half");
+  });
+
+  it("announces a rest glyph as a rest without leaking which rest", () => {
+    const host = mount(() => (
+      <StaffPrompt prompt={{ kind: "staff", clef: "treble", notes: ["C5"], duration: "qr" }} />
+    ));
+    const label =
+      host.querySelector(".prompt--staff")?.getAttribute("aria-label") ?? "";
+    expect(label).toBe("Staff notation, treble clef, 1 rest");
+    expect(label).not.toContain("C5");
+    expect(label).not.toContain("quarter");
+    expect(label).not.toContain("qr");
   });
 
   it("applies the key signature from the spec", () => {

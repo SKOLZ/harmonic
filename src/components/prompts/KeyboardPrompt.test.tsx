@@ -31,9 +31,53 @@ describe("KeyboardPrompt", () => {
     expect(keyboard!.getAttribute("data-selectable")).toBe("false");
     const keys = [...host.querySelectorAll("button[data-note]")];
     expect(keys).toHaveLength(25);
-    // Display-only keys are labelled for screen readers even though they
-    // leave the tab order — nothing in a display prompt is interactive.
+    // The key buttons keep their own aria-labels in the DOM, but the prompt
+    // wrapper is the only thing exposed to assistive tech (see below).
     expect(keys[0].getAttribute("aria-label")).toBeTruthy();
+  });
+
+  it("describes the prompt structurally: range and count, not which keys", () => {
+    const host = mount(() => (
+      <KeyboardPrompt prompt={{ kind: "keyboard", highlight: ["F#4"] }} />
+    ));
+    const wrapper = host.querySelector(".prompt--keyboard");
+    expect(wrapper!.getAttribute("role")).toBe("img");
+    expect(wrapper!.getAttribute("aria-label")).toBe(
+      "Piano keyboard, C4 to C6, 1 key highlighted",
+    );
+  });
+
+  it("never announces the highlighted key names", () => {
+    const host = mount(() => (
+      <KeyboardPrompt prompt={{ kind: "keyboard", highlight: ["F#4", "G4"] }} />
+    ));
+    const label =
+      host.querySelector(".prompt--keyboard")?.getAttribute("aria-label") ?? "";
+    expect(label).toContain("2 keys highlighted");
+    expect(label).not.toContain("F#");
+    expect(label).not.toContain("F sharp");
+    expect(label).not.toContain("G4");
+    expect(label).not.toContain("G 4");
+  });
+
+  it("counts every octave a pitch-class highlight lights, not the array length", () => {
+    // "C" without an octave matches C4, C5 and C6 — three highlighted keys
+    // from a one-entry highlight array.
+    const host = mount(() => (
+      <KeyboardPrompt prompt={{ kind: "keyboard", highlight: ["C"] }} />
+    ));
+    expect(
+      host.querySelector(".prompt--keyboard")?.getAttribute("aria-label"),
+    ).toBe("Piano keyboard, C4 to C6, 3 keys highlighted");
+  });
+
+  it("reflects the shifted octave range and its highlight count in the label", () => {
+    const host = mount(() => (
+      <KeyboardPrompt prompt={{ kind: "keyboard", highlight: ["C3"], octave: 2 }} />
+    ));
+    expect(
+      host.querySelector(".prompt--keyboard")?.getAttribute("aria-label"),
+    ).toBe("Piano keyboard, C2 to C4, 1 key highlighted");
   });
 
   it("passes the highlight through so prompted keys are marked", () => {
