@@ -143,9 +143,11 @@ export function allMajorKeys(): MajorKeySignature[] {
 }
 
 /**
- * Lesson 25 (Key Signature Calculation): the memorised value that turns a
- * major key's accidental count into its relative minor's key signature.
- * The lesson's method is: memorise the count, add 7 to flip sharp/flat
- * spelling, subtract 3 to reach the relative minor.
+ * Lesson 25 (Key Signature Calculation): the offset that turns a major key's
+ * accidental count into its **parallel** minor's count — same letter, shared
+ * tonic: D major (2 sharps) → D minor (1 flat), i.e. 2 + (−3) = −1. This is
+ * NOT the relative minor: the relative minor shares the key signature
+ * (offset 0) — D major → B minor. The site's method is: memorise the count,
+ * add 7 to flip sharp/flat spelling, subtract 3 to reach the parallel minor.
  */
-export const relativeMinorOffsetFromMajor = -3;
+export const parallelMinorOffsetFromMajor = -3;

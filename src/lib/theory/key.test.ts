@@ -8,7 +8,7 @@ import {
   minorAccidentalCount,
   relativeMajor,
   relativeMinor,
-  relativeMinorOffsetFromMajor,
+  parallelMinorOffsetFromMajor,
   SHARP_ORDER,
 } from "./key";
 import { parseNote, scientificName, type Note } from "./pitch";
@@ -99,8 +99,8 @@ describe("relative keys", () => {
     expect(scientificName(relativeMajor(parseNote("Bb")))).toBe("Db");
   });
 
-  it("exposes the lesson-25 offset constant as -3", () => {
-    expect(relativeMinorOffsetFromMajor).toBe(-3);
+  it("exposes the lesson-25 offset to the parallel minor as -3", () => {
+    expect(parallelMinorOffsetFromMajor).toBe(-3);
   });
 });
 

@@ -49,7 +49,7 @@ describe("StaffPrompt", () => {
     expect(label).not.toContain("G4");
   });
 
-  it("includes the key signature in the structural description, still without pitches", () => {
+  it("announces the accidental count, never the key name, and still not the pitches", () => {
     const host = mount(() => (
       <StaffPrompt
         prompt={{
@@ -63,12 +63,41 @@ describe("StaffPrompt", () => {
     ));
     const label =
       host.querySelector(".prompt--staff")?.getAttribute("aria-label") ?? "";
-    expect(label).toBe("Staff notation, bass clef, key of Eb, 2 notes");
+    expect(label).toBe("Staff notation, bass clef, 3 accidentals, 2 notes");
+    // Key-identification rounds have the signature as their answer; naming the
+    // key would hand the learner the solution. Same non-leak contract T6c
+    // established for pitches — and only a negative assertion protects it.
+    expect(label).not.toContain("Eb");
+    expect(label).not.toContain("key");
+    expect(label).not.toContain("Bb");
+    expect(label).not.toContain("Ab");
     expect(label).not.toContain("A2");
     expect(label).not.toContain("C3");
     // Lessons 13/14 ask about duration; the spoken form must not carry it.
     expect(label).not.toContain("hd");
     expect(label).not.toContain("half");
+  });
+
+  it("omits the accidental clause when the key signature has no accidentals", () => {
+    const host = mount(() => (
+      <StaffPrompt
+        prompt={{ kind: "staff", clef: "treble", notes: ["C4"], keySignature: "C" }}
+      />
+    ));
+    const label =
+      host.querySelector(".prompt--staff")?.getAttribute("aria-label") ?? "";
+    expect(label).toBe("Staff notation, treble clef, 1 note");
+  });
+
+  it("uses the singular when the signature carries exactly one accidental", () => {
+    const host = mount(() => (
+      <StaffPrompt
+        prompt={{ kind: "staff", clef: "treble", notes: ["C4"], keySignature: "G" }}
+      />
+    ));
+    const label =
+      host.querySelector(".prompt--staff")?.getAttribute("aria-label") ?? "";
+    expect(label).toBe("Staff notation, treble clef, 1 accidental, 1 note");
   });
 
   it("announces a rest glyph as a rest without leaking which rest", () => {
