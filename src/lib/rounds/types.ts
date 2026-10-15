@@ -8,8 +8,10 @@ export const ANSWER_KINDS = ["choices", "textInput", "notePick", "sequence"] as 
  * What the learner is asked to look at or listen to.
  *
  * - `text`: a plain question string (e.g. "What is the relative minor of A major?").
- * - `staff`: rendered notation — a clef, an optional key signature, and VexFlow-style
- *   note names ("c/4") for the staff component to engrave.
+ * - `staff`: rendered notation — a clef, an optional key signature, and scientific
+ *   pitch names ("C4", "Eb4"). These are parsed through the theory layer the same
+ *   way every other note list in a round is; conversion to VexFlow keys happens
+ *   inside the staff renderer, not here.
  * - `audio`: something to hear — the `play` verb says whether the pitches form a
  *   single note, a chord, a scale, or an interval, so the synth knows how to group them.
  * - `keyboard`: a piano visual with certain keys highlighted (pitch names like "F#4");
