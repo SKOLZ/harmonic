@@ -11,7 +11,11 @@ export const ANSWER_KINDS = ["choices", "textInput", "notePick", "sequence"] as 
  * - `staff`: rendered notation — a clef, an optional key signature, and scientific
  *   pitch names ("C4", "Eb4"). These are parsed through the theory layer the same
  *   way every other note list in a round is; conversion to VexFlow keys happens
- *   inside the staff renderer, not here.
+ *   inside the staff renderer, not here. `duration` is an optional VexFlow 5
+ *   duration code applied to every note in the prompt: `w` whole, `h` half,
+ *   `q` quarter, `8` eighth, `16` sixteenth (`32`, `64` also valid), `d` marks
+ *   a dot after the code (`qd`), and a trailing `r` draws a rest instead of a
+ *   note (`qr` quarter rest, `8r` eighth rest). Omitted means `q`.
  * - `audio`: something to hear — the `play` verb says whether the pitches form a
  *   single note, a chord, a scale, or an interval, so the synth knows how to group them.
  * - `keyboard`: a piano visual with certain keys highlighted (pitch names like "F#4");
@@ -19,7 +23,7 @@ export const ANSWER_KINDS = ["choices", "textInput", "notePick", "sequence"] as 
  */
 export type PromptSpec =
   | { kind: "text"; text: string }
-  | { kind: "staff"; clef: "treble" | "bass"; notes: string[]; keySignature?: string }
+  | { kind: "staff"; clef: "treble" | "bass"; notes: string[]; keySignature?: string; duration?: string }
   | { kind: "audio"; play: "note" | "chord" | "scale" | "interval"; notes: string[] }
   | { kind: "keyboard"; highlight: string[]; octave?: number };
 

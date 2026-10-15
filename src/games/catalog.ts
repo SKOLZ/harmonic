@@ -17,3 +17,16 @@ export const catalog: LessonEntry[] = [
   { id: 14, title: "Dots and Ties", section: "The Basics", order: 5 },
   { id: 20, title: "Steps and Accidentals", section: "The Basics", order: 6 },
 ];
+
+/**
+ * Look up a single entry by lesson id. Lesson modules call this at load time,
+ * so a module wired to a lesson the catalog does not list fails at import —
+ * a wiring bug — rather than at play time.
+ */
+export function requireLessonEntry(id: number): LessonEntry {
+  const entry = catalog.find((item) => item.id === id);
+  if (entry === undefined) {
+    throw new Error(`requireLessonEntry: lesson ${id} is not in the catalog`);
+  }
+  return entry;
+}

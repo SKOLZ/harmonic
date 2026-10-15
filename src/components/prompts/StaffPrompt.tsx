@@ -50,6 +50,9 @@ export default function StaffPrompt(props: StaffPromptProps) {
         notes={notes()}
         clef={spec().clef}
         keySignature={keySignature()}
+        // VexFlow duration code from the spec; undefined keeps Staff's default
+        // quarter note, so text-only rhythm rounds engrave exactly as before.
+        duration={spec().duration}
       />
     </div>
   );

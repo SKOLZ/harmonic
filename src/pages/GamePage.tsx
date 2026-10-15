@@ -2,56 +2,9 @@ import { A, useNavigate, useParams } from "@solidjs/router";
 import { Show } from "solid-js";
 import GameShell from "../components/game/GameShell";
 import { catalog } from "../games/catalog";
+import { getLessonModule } from "../games/registry";
+import { createRng } from "../games/rng";
 import { progress, UNLOCK_THRESHOLD } from "../lib/progress";
-import type { Round } from "../lib/rounds/types";
-import { validateRounds } from "../lib/rounds/validate";
-
-/**
- * Demo round set standing in for the real per-lesson round generators (T6+).
- * Text prompts and choices answers only — the other prompt/answer kinds
- * register in T5c. Once lesson modules exist, each lesson passes its own
- * generated rounds here instead of this shared demo set.
- */
-const DEMO_ROUNDS: Round[] = [
-  {
-    id: "demo-staff-lines",
-    prompt: {
-      kind: "text",
-      text: "How many lines does a standard music staff have?",
-    },
-    answer: { kind: "choices", options: ["Four", "Five", "Six", "Seven"], correctIndex: 1 },
-    rule: "A staff is drawn with five lines and four spaces.",
-  },
-  {
-    id: "demo-accidental",
-    prompt: {
-      kind: "text",
-      text: "Which symbol raises a note by one semitone?",
-    },
-    answer: {
-      kind: "choices",
-      options: ["Flat", "Sharp", "Natural", "Double sharp"],
-      correctIndex: 1,
-    },
-    rule: "A sharp raises a pitch by one semitone; a flat lowers it.",
-  },
-  {
-    id: "demo-clef",
-    prompt: {
-      kind: "text",
-      text: "Which clef wraps around the G line?",
-    },
-    answer: {
-      kind: "choices",
-      options: ["Bass clef", "Alto clef", "Treble clef", "Tenor clef"],
-      correctIndex: 2,
-    },
-    rule: "The treble clef circles the G line, which is why it is also called the G clef.",
-  },
-];
-
-// Fail fast at module load if the demo data ever drifts from the Round contract.
-validateRounds(DEMO_ROUNDS);
 
 export default function GamePage() {
   const params = useParams();
@@ -75,7 +28,11 @@ export default function GamePage() {
       <Show when={lesson()} fallback={<h1>Lesson not found</h1>}>
         {(entry) => (
           <Show
-            when={unlocked()}
+            // Keyed on the lesson entry: switching lessons remounts this
+            // branch, so GameShell's machine restarts with the new rounds
+            // instead of carrying a stale round index across lessons.
+            keyed
+            when={unlocked() ? entry() : undefined}
             fallback={
               <section class="game-page__locked">
                 <h1>Lesson locked</h1>
@@ -86,12 +43,24 @@ export default function GamePage() {
               </section>
             }
           >
-            <GameShell
-              lessonId={String(entry().id)}
-              lessonTitle={entry().title}
-              rounds={DEMO_ROUNDS}
-              onExit={() => navigate("/")}
-            />
+            {(current) => {
+              // Generated exactly once per lesson visit: this keyed branch
+              // re-runs only when the entry changes, and the stable array
+              // reference keeps GameShell from ever re-deriving rounds while
+              // the learner plays. A fresh seed gives each visit a new draw
+              // from the module's question pool.
+              const rounds = getLessonModule(current.id).generateRounds(
+                createRng(Date.now() ^ current.id),
+              );
+              return (
+                <GameShell
+                  lessonId={String(current.id)}
+                  lessonTitle={current.title}
+                  rounds={rounds}
+                  onExit={() => navigate("/")}
+                />
+              );
+            }}
           </Show>
         )}
       </Show>
