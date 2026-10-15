@@ -156,7 +156,8 @@ bounded writer. Trigger evidence records why delegation was or was not used.
 | T8b | Games for Scales and Key Signatures — key signatures (24, 25) + fix `catalog.test.ts` chain-state assertions | writer | 2 lesson modules + 1 test-hygiene fix | `npm test`, `npm run build` | **done** |
 | T8c | Fix `StaffPrompt` leaking the key signature + rename misnamed `relativeMinorOffsetFromMajor` | writer | 2 small fixes, defects found in T8b | `npm test` | **done** |
 | T8b | Games for Scales and Key Signatures — key signatures (24, 25) | writer | 2 lesson modules | `npm test`, `npm run build` | pending |
-| T9 | Games for Intervals (30, 31, 32, 33) | writer | 4 lesson modules | `npm test`, `npm run build` | pending |
+| T9 | Games for Intervals (30, 31, 32, 33) | writer | 4 lesson modules | `npm test`, `npm run build` | **done** |
+| T9b | Fix `reduceNumber` simple/compound boundary (octave inverts to a 15th instead of a unison) | writer | 1 theory-core fix, defect found in T9 | `npm test` | pending |
 | T10 | Games for Chords (40, 42, 45, 48, 47) | writer | 5 lesson modules | `npm test`, `npm run build` | pending |
 | T11 | Games for Diatonic Chords (43, 44, 46, 49, 50, 51, 52) | writer | 7 lesson modules | `npm test`, `npm run build` | pending |
 | T12 | Games for Chord Progressions (53, 55, 56, 57, 60, 61, 62) | writer | 7 lesson modules | `npm test`, `npm run build` | pending |
@@ -227,7 +228,8 @@ inside that same commit. The Engram mirror carries the hash immediately.
 | T7 | `npm test` → 447 passed (41 files); `npm run typecheck` → exit 0; `npm run build` → 167 modules, 344 ms. Parent spot check re-ran `npm test` → 447 passed. RED observed first (2 suites, unresolved imports; baseline intact). **The writer corrected my brief on both lesson titles** — the chain-order table in this document already had them right ("Simple and Compound Meter", "Odd Meter"), but my dispatch prose invented "Beat and Time Signature" and "Meter: Duple, Triple, Quadruple", which match nothing on the site. More consequentially, the content I attributed to lesson 16 is actually **lesson 15's** entire slide set; live lesson 16 is Odd Meter (5/8, 7/8, 8/8, 10/8, 11/8 mixing simple and compound beats, and the 8/8-vs-4/4 distinction). Built from the scraped site text, not my brief. Two structural findings: registering a module is impossible without a catalog entry (`requireLessonEntry` throws at import and the registry contract tests assert registered ⊆ catalog), so `catalog.ts` grew — and the exact-array seed assertion in `catalog.test.ts` had to be corrected, since it encoded a fixed six-entry state that the catalog's own documented append path breaks. Tier: **medium**, `slice_budget_reached`, 7 paths / 763 lines → writer self-verification. | `be01830` |
 | T8 | `npm test` → 492 passed (44 files); `npm run typecheck` → exit 0; `npm run build` → 170 modules, 353 ms. Parent spot check re-ran `npm test` → 492 passed. RED observed first (3 unresolved-import suites plus the `catalog.test.ts` seed assertion). **The T2/T3 theory core proved its worth**: the writer hand-derived F major as two flats and `buildScale` caught it in a GREEN-phase failure (`- "Eb3", + "E3"`), cross-confirmed by the `key.test.ts` oracle expecting `["Bb"]`. Hand-derived scale spellings are not trustworthy even for common keys — which is precisely why T2/T3 built them from the step pattern instead of a lookup table. Tier: **medium**, `slice_budget_reached`, 9 paths / 1288 lines → writer self-verification. | `cc4209e` |
 | T8b | `npm test` → 527 passed (46 files); `npm run typecheck` → exit 0; `npm run build` → 383 ms. Parent spot check re-ran `npm test` → 527 passed. **The `catalog.test.ts` invariant fix is proven**: the writer ran the new suite against the then-current 11-entry catalog, appended 24/25, and re-ran the same file with **zero edits** — the recurring false RED is gone for the remaining six batches. Invariants now: unique ids, contiguous orders from 1, section-major consecutive runs, every registered id present in the catalog. **Lesson 25's content was nothing like my brief** — the site teaches a *numeric* method (seven memorised counts, ±7 for same-letter sharp/flat, −3 for parallel minor), not the leading-tone / fourth-below shortcut; every round is built from the site's method. Lesson 24's slide text also never mentions relative minors, so that clause of my reference was not site content. The writer worked around a *second* key-signature leak by drawing accidentals as written notes rather than using the `keySignature` field — see T8c. Tier: **medium**, `slice_budget_reached`, 7 paths / 931 lines → writer self-verification. | `bb763e2` |
-| T8c | `npm test` → 529 passed (46 files); `npm run typecheck` → exit 0; `npm run build` → 366 ms. Parent spot check re-ran `npm test` → 529 passed. RED observed first for both halves. `StaffPrompt` now announces accidental **count** (`Staff notation, bass clef, 3 accidentals, 2 notes`), omitted entirely at zero — extending the T6c non-leak contract to key signatures and making the `keySignature` field safe for key-identification lessons (the T8b accidental-as-notes workaround is no longer needed, but was left in place as instructed). Rename proven complete by a post-edit grep returning zero matches across `src/`. **The two `relativeMinorOffsetFromMajor` mentions the writer flagged in this document are accurate, not stale** — both name the constant as it *was*, in the task title and the defect description. Tier: **medium**, `under_budget`, 4 paths / 79 lines → writer self-verification. | _backfill at T9_ |
+| T8c | `npm test` → 529 passed (46 files); `npm run typecheck` → exit 0; `npm run build` → 366 ms. Parent spot check re-ran `npm test` → 529 passed. RED observed first for both halves. `StaffPrompt` now announces accidental **count** (`Staff notation, bass clef, 3 accidentals, 2 notes`), omitted entirely at zero — extending the T6c non-leak contract to key signatures and making the `keySignature` field safe for key-identification lessons (the T8b accidental-as-notes workaround is no longer needed, but was left in place as instructed). Rename proven complete by a post-edit grep returning zero matches across `src/`. **The two `relativeMinorOffsetFromMajor` mentions the writer flagged in this document are accurate, not stale** — both name the constant as it *was*, in the task title and the defect description. Tier: **medium**, `under_budget`, 4 paths / 79 lines → writer self-verification. | `9f68cde` |
+| T9 | `npm test` → 591 passed (50 files); `npm run typecheck` → exit 0; `npm run build` → 374 ms. Parent spot check re-ran `npm test` → 591 passed. RED observed first (4 unresolved-import suites, baseline intact). **The T8b invariant fix held** — four catalog entries appended with zero test edits. Core reused throughout; no interval arithmetic hand-derived. Content corrections: lesson 30 says *first/prime* through *eighth* and never uses the words unison or octave; lesson 33 never states `9 − n` in slide text, teaching inversion only by six worked examples. Extraction note: lesson payloads are **JS object literals**, not JSON, so they need a sandbox eval. **Two divergences surfaced** — `intervalName(8, 12)` is `"Perfect Octave"`, not `"Perfect 8th"` (caught a draft answer), and `invertInterval(8, "perfect")` returns **15**, where the site and textbook give a unison (see T9b). My brief's 11-staff/11-text wording made the writer skip `keyboard` prompts as non-compliant; the split is about the structural guarantee and keyboard rounds do not break it — future briefs will say so. Tier: **medium**, `slice_budget_reached`, 10 paths / 1540 lines → writer self-verification. | _backfill at T9b_ |
 | T6c | **Defect found in T6b:** `StaffPrompt`'s `aria-label` announces the underlying note pitch, so a "name this note" prompt literally reads the answer aloud to a screen-reader user. Pre-existing since T5e, and every new lesson module makes it worse — hence this task sits ahead of the remaining modules rather than in the T14 polish pass. | _pending_ | _pending_ |
 
 T1 deviations accepted: HashRouter (deep links work on static hosts without rewrites);
@@ -239,18 +241,17 @@ deterministic RED — only store, unlock rule and catalog seed were test-driven.
 
 ## Next step
 
-T9: Intervals — lessons 30 (Generic Intervals), 31 (Specific Intervals),
-32 (Writing Intervals) and 33 (Interval Inversion). Four modules, the batch
-size that worked for T6b.
+T9b: `reduceNumber` draws the simple/compound boundary one step too early.
 
-This leans on `src/lib/theory/interval.ts`, so the same warning as T8 applies:
-reuse the core's helpers rather than hand-deriving. Interval arithmetic is the
-classic place to make an off-by-one on unisons and octaves, and a wrong
-inversion rule compounds it — the core's tests are the oracle.
+Interval numbers run **1 through 8** before the pattern repeats — eight values,
+not seven — so the divisor should be 8, not 7. As written, an octave reduces to
+`base=1, octaves=1`, and `invertInterval` then returns a perfect 15th where both
+musictheory.net and the textbook give a unison. The writer correctly documented
+the divergence and pinned both behaviours rather than editing the core, which
+was outside their surface.
 
-Content to verify against the site, not from memory:
-- Generic intervals count letter names (C→E is a third).
-- Quality × number: major/minor for 2nds, 3rds, 6ths, 7ths; perfect for
-  unison, 4th, 5th, octave; augmented and diminished span both.
-- Inversion: number becomes 9 − n; quality flips across the major/minor and
-  perfect/augmented-diminished boundaries.
+The same divisor also feeds `reduceThroughOctave`, so the fix needs the full
+suite as its oracle — the semitone-classification paths may be relying on the
+current behaviour even where the inversion path is plainly wrong.
+
+Then T10: Chords (40, 42, 45, 48, 47).

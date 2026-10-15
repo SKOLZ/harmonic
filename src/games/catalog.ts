@@ -23,6 +23,10 @@ export const catalog: LessonEntry[] = [
   { id: 23, title: "Scale Degrees", section: "Scales and Key Signatures", order: 11 },
   { id: 24, title: "Key Signatures", section: "Scales and Key Signatures", order: 12 },
   { id: 25, title: "Key Signature Calculation", section: "Scales and Key Signatures", order: 13 },
+  { id: 30, title: "Generic Intervals", section: "Intervals", order: 14 },
+  { id: 31, title: "Specific Intervals", section: "Intervals", order: 15 },
+  { id: 32, title: "Writing Intervals", section: "Intervals", order: 16 },
+  { id: 33, title: "Interval Inversion", section: "Intervals", order: 17 },
 ];
 
 /**
