@@ -145,10 +145,24 @@ describe("invertInterval", () => {
     expect(invertInterval(2, "doublyAugmented")).toEqual({ number: 7, quality: "doublyDiminished" });
   });
 
+  it("inverts the octave to the unison and compound numbers to the simple inverse", () => {
+    expect(invertInterval(1, "perfect")).toEqual({ number: 8, quality: "perfect" });
+    expect(invertInterval(8, "perfect")).toEqual({ number: 1, quality: "perfect" });
+    expect(invertInterval(9, "major")).toEqual({ number: 7, quality: "minor" });
+    expect(invertInterval(15, "perfect")).toEqual({ number: 8, quality: "perfect" });
+    expect(invertInterval(16, "major")).toEqual({ number: 7, quality: "minor" });
+  });
+
   it("throws on unknown qualities or malformed numbers", () => {
     expect(() => invertInterval(5, "major" as never)).toThrow();
     expect(() => invertInterval(5, "weird" as never)).toThrow();
     expect(() => invertInterval(0, "perfect")).toThrow();
+    // Class validation runs against the simple number, so a major quality
+    // is still rejected for the (simple) octave.
+    expect(() => invertInterval(8, "major" as never)).toThrow();
+    expect(() => invertInterval(1, "major" as never)).toThrow();
+    // ...and for a compound number via its simple base (9th = class 2).
+    expect(() => invertInterval(9, "perfect" as never)).toThrow();
   });
 });
 

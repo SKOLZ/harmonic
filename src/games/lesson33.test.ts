@@ -56,11 +56,11 @@ function inversionName(a: Note, b: Note): string | null {
   const aUp: Note = { ...a, octave: a.octave + 1 };
   const invertedNumber = genericIntervalNumber(b, aUp);
   if (number === 8) {
-    // The core reduces the octave to a compound unison (base 1 + 1 octave)
-    // and inverts it to a 15th; the site's chart and the 9 − n rule say the
-    // octave inverts to the unison, which is what the inverted note pair
-    // actually spells. Pin both behaviours.
-    expect(invertInterval(number, quality)).toEqual({ number: 15, quality });
+    // The core inverts the octave to the unison: moving C up an octave
+    // lands on C′, the same pitch as the upper note, so 9 − 8 = 1 and
+    // perfect stays perfect — which is also what the inverted note pair
+    // spells. Pin both sides of that agreement.
+    expect(invertInterval(number, quality)).toEqual({ number: 1, quality });
     expect(invertedNumber).toBe(1);
   } else {
     expect(invertedNumber).toBe(invertInterval(number, quality).number);

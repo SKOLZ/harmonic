@@ -47,6 +47,13 @@ export function halfSteps(a: Note, b: Note): number {
 
 const PERFECT_SEMITONES: Readonly<Record<number, number>> = { 1: 0, 4: 5, 5: 7 };
 const MAJOR_SEMITONES: Readonly<Record<number, number>> = { 2: 2, 3: 4, 6: 9, 7: 11 };
+/**
+ * Simple numbers of the perfect *class*: unison, fourth, fifth, octave.
+ * The semitone tables above are keyed by the octave-folded base (where 8
+ * folds to 1), but quality-class validation also meets the unfolded
+ * octave, so class membership is asserted against this set instead.
+ */
+const PERFECT_CLASS_NUMBERS: ReadonlySet<number> = new Set([1, 4, 5, 8]);
 
 /**
  * Quality of the interval with the given generic number and half-step count.
@@ -138,8 +145,10 @@ const INVERTED_QUALITY: Readonly<Record<IntervalQuality, IntervalQuality>> = {
 };
 
 /**
- * Interval inversion: numbers sum to 9 (per octave span) and the quality
- * flips along perfect↔perfect, major↔minor, augmented↔diminished.
+ * Interval inversion: a simple interval and its inverse sum to 9, and the
+ * quality flips along perfect↔perfect, major↔minor, augmented↔diminished.
+ * Compound numbers invert to the simple inverse of their simple form —
+ * a 9th inverts to a 7th, a 15th (compound unison) to a plain octave.
  * Throws when the quality cannot apply to the number's interval class.
  */
 export function invertInterval(
@@ -148,9 +157,9 @@ export function invertInterval(
 ): { number: number; quality: IntervalQuality } {
   assertIntervalNumber(number);
   assertQualityIsKnown(quality);
-  const { base, octaves } = reduceNumber(number);
+  const base = simpleNumberForInversion(number);
   assertQualityFitsClass(base, quality);
-  return { number: 9 - base + 7 * octaves, quality: INVERTED_QUALITY[quality] };
+  return { number: 9 - base, quality: INVERTED_QUALITY[quality] };
 }
 
 const QUALITY_SEMITONE_OFFSET: Readonly<Record<IntervalQuality, number>> = {
@@ -221,6 +230,19 @@ function reduceNumber(number: number): { base: number; octaves: number } {
   return { base, octaves };
 }
 
+/**
+ * The simple number an inversion reduces to before applying `9 − n`.
+ *
+ * Numbers 1–8 are *all simple*: the octave (8) must stay 8 so it inverts
+ * to a unison, never fold into "unison + one octave" the way
+ * {@link reduceNumber} folds it for semitone arithmetic (where divisor 7
+ * is right — a 9th is C→D′ and reduces to a 2nd). Only genuinely compound
+ * numbers (≥ 9) reduce to their simple base first.
+ */
+function simpleNumberForInversion(number: number): number {
+  return number <= 8 ? number : reduceNumber(number).base;
+}
+
 /** Reduces number and half-steps together through whole octaves. */
 function reduceThroughOctave(
   number: number,
@@ -250,7 +272,7 @@ function assertQualityIsKnown(quality: IntervalQuality): void {
 
 /** Perfect-class numbers (1/4/5/8) reject major/minor; major-class reject perfect. */
 function assertQualityFitsClass(base: number, quality: IntervalQuality): void {
-  const perfectClass = PERFECT_SEMITONES[base] !== undefined;
+  const perfectClass = PERFECT_CLASS_NUMBERS.has(base);
   if (perfectClass && (quality === "major" || quality === "minor")) {
     throw new Error(`Quality "${quality}" cannot apply to interval number class ${base}`);
   }

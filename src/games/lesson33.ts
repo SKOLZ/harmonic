@@ -25,11 +25,12 @@ import type { LessonModule } from "./types";
  * the six examples and the pair relationships, closing with "Use this chart
  * to quickly invert intervals." The formula is consistent with every site
  * example (5↔4, 4↔5, 3↔6, 6↔3, 7↔2, 2↔7 all sum to 9) and is the standard
- * statement of that chart, so the rules may use it. One core nuance the
- * tests pin: `invertInterval` reduces the octave to a compound unison and
- * returns a 15th for it, while the site's 9 − n rule gives the unison that
- * the inverted note pair actually spells — the octave round follows the
- * site, and the test documents both. The other staff answers are
+ * statement of that chart, so the rules may use it. T9b fixed a core defect
+ * this lesson exposed: `invertInterval` used to reduce the octave to a compound
+ * unison and return a 15th, while the site's own definition of inversion —
+ * move the lowest note up an octave — makes a perfect octave land on the upper
+ * note itself and so invert to a perfect unison. The octave round follows the
+ * site, and the core now agrees with it. The other staff answers are
  * re-derived through `invertInterval` in the test oracle, never by hand.
  * The pool is 11 `staff` rounds + 11 `text` rounds = 22: any draw of 12
  * must include at least one of each kind — the mix is structural, not
