@@ -16,6 +16,8 @@ export const catalog: LessonEntry[] = [
   { id: 13, title: "Rest Duration", section: "The Basics", order: 4 },
   { id: 14, title: "Dots and Ties", section: "The Basics", order: 5 },
   { id: 20, title: "Steps and Accidentals", section: "The Basics", order: 6 },
+  { id: 15, title: "Simple and Compound Meter", section: "Rhythm and Meter", order: 7 },
+  { id: 16, title: "Odd Meter", section: "Rhythm and Meter", order: 8 },
 ];
 
 /**
