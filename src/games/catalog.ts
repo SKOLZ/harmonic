@@ -18,6 +18,9 @@ export const catalog: LessonEntry[] = [
   { id: 20, title: "Steps and Accidentals", section: "The Basics", order: 6 },
   { id: 15, title: "Simple and Compound Meter", section: "Rhythm and Meter", order: 7 },
   { id: 16, title: "Odd Meter", section: "Rhythm and Meter", order: 8 },
+  { id: 21, title: "The Major Scale", section: "Scales and Key Signatures", order: 9 },
+  { id: 22, title: "The Minor Scales", section: "Scales and Key Signatures", order: 10 },
+  { id: 23, title: "Scale Degrees", section: "Scales and Key Signatures", order: 11 },
 ];
 
 /**
