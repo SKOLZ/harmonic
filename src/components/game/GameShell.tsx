@@ -3,7 +3,7 @@ import { Dynamic } from "solid-js/web";
 import { getAnswerComponent } from "../answers/registry";
 import { getPromptComponent } from "../prompts/registry";
 import { progress, UNLOCK_THRESHOLD } from "../../lib/progress";
-import type { Round } from "../../lib/rounds/types";
+import type { AnswerSubmission, Round } from "../../lib/rounds/types";
 import {
   advance,
   isUnlocked,
@@ -26,6 +26,11 @@ export interface GameShellProps {
  * + rule) → Retry (wrong) or Next/Finish (correct). Drives the pure
  * roundMachine; persistence happens only through recordCorrect, called exactly
  * where a submit transition reports a correct answer.
+ *
+ * One submit path for every answer kind: the control is resolved from
+ * `answerRegistry` by `round.answer.kind` and emits an `AnswerSubmission`
+ * through `handleSubmit`, so the shell never builds a submission itself —
+ * the machine judges everything by value.
  */
 export default function GameShell(props: GameShellProps) {
   // Defaults first: mergeProps resolves the last source first, so props (second)
@@ -42,19 +47,17 @@ export default function GameShell(props: GameShellProps) {
     progress.completedRounds(lessonNumber()),
   );
 
-  function handleSelect(index: number) {
+  /**
+   * The single submit path shared by all four answer controls: the control
+   * emits an `AnswerSubmission`, `submit` judges it by value (and throws on a
+   * kind mismatch), and progress records only what the machine reports as
+   * correct — nowhere else.
+   */
+  function handleSubmit(submission: AnswerSubmission) {
     const current = state();
     if (current.phase !== "answering") return;
-    // GameShell currently renders only the choices answer control; other kinds
-    // arrive with their own controls (T5e) and their own submission builders.
-    const next = submit(
-      current,
-      { kind: "choices", selectedIndex: index },
-      props.rounds[current.roundIndex],
-    );
+    const next = submit(current, submission, props.rounds[current.roundIndex]);
     setState(next);
-    // Product rule: progress records exactly when submit reports correct —
-    // nowhere else. Wrong answers never touch the persistent counter.
     if (next.wasCorrect) {
       progress.recordCorrect(lessonNumber());
       setCompleted(progress.completedRounds(lessonNumber()));
@@ -75,12 +78,15 @@ export default function GameShell(props: GameShellProps) {
 
   const round = () => props.rounds[state().roundIndex];
   const isLastRound = () => state().roundIndex + 1 >= props.rounds.length;
-  // ChoicesAnswer highlights by index; other submission kinds pass null here.
-  // Narrowing needs a local binding because each state() call is a fresh value.
-  const selectedChoiceIndex = () => {
-    const submission = state().submission;
-    return submission?.kind === "choices" ? submission.selectedIndex : null;
-  };
+  /**
+   * Keyed identity of the round on screen. The keyed `Show` in the render
+   * disposes and remounts the prompt/answer/feedback branch only when this
+   * changes (a new round), so every control starts fresh — no draft, no
+   * placement, no typed text carried over — while reveals and retries keep
+   * the branch mounted and an in-progress draft alive. The round id rides
+   * along so a swapped `rounds` array with a stable index still remounts.
+   */
+  const roundKey = () => `${state().roundIndex}:${round().id}`;
 
   return (
     <section class="game-shell">
@@ -108,40 +114,47 @@ export default function GameShell(props: GameShellProps) {
         }
       >
         <div class="game-shell__round">
-          <Dynamic
-            component={getPromptComponent(round().prompt.kind)}
-            prompt={round().prompt}
-          />
-          <Dynamic
-            component={getAnswerComponent(round().answer.kind)}
-            answer={round().answer}
-            disabled={state().phase === "revealed"}
-            selectedIndex={selectedChoiceIndex()}
-            onSelect={handleSelect}
-          />
-          <Show when={state().phase === "revealed" && state().feedback}>
-            {(feedback) => (
-              <section class="game-shell__feedback" data-correct={String(feedback().correct)}>
-                <p class="game-shell__verdict">
-                  {feedback().correct ? "Correct!" : "Not quite."}
-                </p>
-                <p class="game-shell__expected">
-                  Correct answer: <strong>{feedback().expected}</strong>
-                </p>
-                <p class="game-shell__rule">{feedback().rule}</p>
-                <Show
-                  when={!state().wasCorrect}
-                  fallback={
-                    <button type="button" class="game-shell__next" onClick={handleAdvance}>
-                      {isLastRound() ? "Finish" : "Next"}
-                    </button>
-                  }
-                >
-                  <button type="button" class="game-shell__retry" onClick={handleRetry}>
-                    Retry
-                  </button>
+          <Show keyed when={roundKey()}>
+            {(_roundKey) => (
+              <>
+                <Dynamic
+                  component={getPromptComponent(round().prompt.kind)}
+                  prompt={round().prompt}
+                />
+                {/* Single submit path: registry-resolved control → one onSubmit → machine. */}
+                <Dynamic
+                  component={getAnswerComponent(round().answer.kind)}
+                  answer={round().answer}
+                  revealed={state().phase === "revealed"}
+                  submission={state().submission}
+                  onSubmit={handleSubmit}
+                />
+                <Show when={state().phase === "revealed" && state().feedback}>
+                  {(feedback) => (
+                    <section class="game-shell__feedback" data-correct={String(feedback().correct)}>
+                      <p class="game-shell__verdict">
+                        {feedback().correct ? "Correct!" : "Not quite."}
+                      </p>
+                      <p class="game-shell__expected">
+                        Correct answer: <strong>{feedback().expected}</strong>
+                      </p>
+                      <p class="game-shell__rule">{feedback().rule}</p>
+                      <Show
+                        when={!state().wasCorrect}
+                        fallback={
+                          <button type="button" class="game-shell__next" onClick={handleAdvance}>
+                            {isLastRound() ? "Finish" : "Next"}
+                          </button>
+                        }
+                      >
+                        <button type="button" class="game-shell__retry" onClick={handleRetry}>
+                          Retry
+                        </button>
+                      </Show>
+                    </section>
+                  )}
                 </Show>
-              </section>
+              </>
             )}
           </Show>
         </div>

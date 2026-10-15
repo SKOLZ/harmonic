@@ -1,28 +1,40 @@
-import { For, mergeProps } from "solid-js";
-import type { AnswerSpec } from "../../lib/rounds/types";
+import { For } from "solid-js";
+import type { AnswerSpec, AnswerSubmission } from "../../lib/rounds/types";
 
+/**
+ * Unified answer-control props, documented here and mirrored by every control
+ * in this folder (see `AnswerComponentProps` in `registry.ts`):
+ *
+ * - `answer` — the round's full `AnswerSpec`, narrowed by kind inside the control.
+ * - `onSubmit` — the one way out: the control emits an `AnswerSubmission` whose
+ *   kind matches `answer.kind`, and `GameShell` feeds it straight to the
+ *   machine's `submit`. Controls submit exactly what they display.
+ * - `revealed` — while true the control is locked (no emission, no editing).
+ * - `submission` — the machine's stored submission for this round, or null
+ *   before the learner has answered; the control reflects it when present.
+ */
 export interface ChoicesAnswerProps {
   answer: AnswerSpec;
-  /** Set once the round is revealed so the control locks. */
-  disabled?: boolean;
-  /** Currently selected option index, or null before any choice. */
-  selectedIndex?: number | null;
-  /** Reports the chosen option index. */
-  onSelect: (index: number) => void;
+  onSubmit: (submission: AnswerSubmission) => void;
+  revealed?: boolean;
+  submission?: AnswerSubmission | null;
 }
 
 /**
  * Multiple-choice control. Options are native `<button>` elements, so keyboard
- * activation (Enter/Space) and focus work without any wiring. The kind check is
- * defensive so a registry mistake fails loud instead of rendering empty.
+ * activation (Enter/Space) and focus work without any wiring, and `disabled`
+ * locks them structurally once the round is revealed. The selected option is
+ * derived from the stored submission, not from local state, so the control
+ * always shows what the machine judged. The kind check is defensive so a
+ * registry mistake fails loud instead of rendering empty.
  */
 export default function ChoicesAnswer(props: ChoicesAnswerProps) {
-  // Defaults first: mergeProps resolves the last source first, so props (second)
-  // must win over the defaults (first) when they are defined.
-  const resolved = mergeProps(
-    { disabled: false, selectedIndex: null as number | null },
-    props,
-  );
+  const locked = () => props.revealed === true;
+
+  const selectedIndex = () => {
+    const submission = props.submission;
+    return submission?.kind === "choices" ? submission.selectedIndex : null;
+  };
 
   const options = () => {
     const answer = props.answer;
@@ -42,9 +54,12 @@ export default function ChoicesAnswer(props: ChoicesAnswerProps) {
             <button
               type="button"
               class="choices__button"
-              disabled={resolved.disabled}
-              data-selected={String(resolved.selectedIndex === index())}
-              onClick={() => resolved.onSelect(index())}
+              disabled={locked()}
+              data-selected={String(selectedIndex() === index())}
+              onClick={() => {
+                if (locked()) return;
+                props.onSubmit({ kind: "choices", selectedIndex: index() });
+              }}
             >
               {option}
             </button>

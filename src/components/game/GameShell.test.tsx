@@ -43,6 +43,60 @@ function choiceRound(id: string, correctIndex = 1): Round {
   };
 }
 
+function textRound(id: string, expected = "B flat", accepted = ["B flat", "Bb"]): Round {
+  return {
+    id,
+    prompt: { kind: "text", text: `Question ${id}?` },
+    answer: { kind: "textInput", accepted, expected },
+    rule: `Rule for ${id}.`,
+  };
+}
+
+function notePickRound(id: string, correctNotes: string[]): Round {
+  return {
+    id,
+    prompt: { kind: "text", text: `Question ${id}?` },
+    answer: { kind: "notePick", correctNotes },
+    rule: `Rule for ${id}.`,
+  };
+}
+
+function sequenceRound(id: string, correctOrder: string[]): Round {
+  return {
+    id,
+    prompt: { kind: "text", text: `Question ${id}?` },
+    answer: { kind: "sequence", correctOrder },
+    rule: `Rule for ${id}.`,
+  };
+}
+
+function typeInto(host: HTMLElement, text: string): void {
+  const input = host.querySelector("input");
+  if (input === null) {
+    throw new Error("no text input rendered");
+  }
+  input.value = text;
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function keyButton(host: HTMLElement, noteName: string): HTMLButtonElement {
+  const button = host.querySelector(`button[data-note="${noteName}"]`);
+  if (button === null) {
+    throw new Error(`no keyboard key for ${noteName}`);
+  }
+  return button as HTMLButtonElement;
+}
+
+function availableButton(host: HTMLElement, label: string): HTMLButtonElement {
+  const found = [
+    ...host.querySelectorAll<HTMLButtonElement>(".sequence-answer__available button"),
+  ].find((button) => button.textContent?.trim() === label);
+  if (!found) {
+    throw new Error(`no available sequence item labelled ${JSON.stringify(label)}`);
+  }
+  return found;
+}
+
 function buttonByLabel(host: HTMLElement, label: string): HTMLButtonElement {
   const found = [...host.querySelectorAll("button")].find(
     (b) => b.textContent?.trim() === label,
@@ -203,5 +257,99 @@ describe("GameShell", () => {
     expect([...withoutExit.querySelectorAll("button")].some((b) => b.textContent === "Exit")).toBe(
       false,
     );
+  });
+});
+
+describe("GameShell: every answer kind flows through the same submit path", () => {
+  it("a textInput round reveals feedback and records progress exactly once", () => {
+    const rounds = [textRound("r1"), textRound("r2")];
+    const host = mount(() => (
+      <GameShell lessonId="10" lessonTitle="The Basics" rounds={rounds} />
+    ));
+    typeInto(host, "B flat");
+    buttonByLabel(host, "Submit").click();
+
+    expect(recordSpy).toHaveBeenCalledTimes(1);
+    expect(recordSpy).toHaveBeenCalledWith(10);
+    expect(host.textContent).toContain("Correct!");
+    expect(host.textContent).toContain("B flat");
+    expect(host.textContent).toContain("Rule for r1.");
+    expect((host.querySelector("input") as HTMLInputElement).disabled).toBe(true);
+    expect(buttonByLabel(host, "Next")).toBeTruthy();
+  });
+
+  it("a wrong textInput answer records nothing and Retry restores the typed draft", () => {
+    const rounds = [textRound("r1")];
+    const host = mount(() => (
+      <GameShell lessonId="10" lessonTitle="The Basics" rounds={rounds} />
+    ));
+    typeInto(host, "Naturals");
+    buttonByLabel(host, "Submit").click();
+
+    expect(recordSpy).not.toHaveBeenCalled();
+    expect(host.textContent).toContain("Not quite.");
+    expect(host.textContent).toContain("B flat");
+    expect(buttonByLabel(host, "Retry")).toBeTruthy();
+
+    buttonByLabel(host, "Retry").click();
+    expect(host.querySelector(".game-shell__feedback")).toBeNull();
+    const input = host.querySelector("input") as HTMLInputElement;
+    expect(input.disabled).toBe(false);
+    expect(input.value).toBe("Naturals");
+
+    typeInto(host, "B flat");
+    buttonByLabel(host, "Submit").click();
+    expect(recordSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("a notePick round submits the toggled keys and locks the keyboard on reveal", () => {
+    const rounds = [notePickRound("r1", ["C4", "E4"])];
+    const host = mount(() => (
+      <GameShell lessonId="10" lessonTitle="The Basics" rounds={rounds} />
+    ));
+    keyButton(host, "C4").click();
+    keyButton(host, "E4").click();
+    buttonByLabel(host, "Confirm").click();
+
+    expect(recordSpy).toHaveBeenCalledTimes(1);
+    expect(recordSpy).toHaveBeenCalledWith(10);
+    expect(host.textContent).toContain("Correct!");
+    expect(host.textContent).toContain("C4 + E4");
+    expect(host.textContent).toContain("Rule for r1.");
+    expect(host.querySelector(".keyboard")?.getAttribute("data-selectable")).toBe("false");
+    expect(buttonByLabel(host, "Finish")).toBeTruthy();
+  });
+
+  it("a sequence round submits the clicked order through the same submit path", () => {
+    const rounds = [sequenceRound("r1", ["C4", "D4", "E4"])];
+    const host = mount(() => (
+      <GameShell lessonId="10" lessonTitle="The Basics" rounds={rounds} />
+    ));
+    availableButton(host, "C4").click();
+    availableButton(host, "D4").click();
+    availableButton(host, "E4").click();
+    buttonByLabel(host, "Confirm").click();
+
+    expect(recordSpy).toHaveBeenCalledTimes(1);
+    expect(recordSpy).toHaveBeenCalledWith(10);
+    expect(host.textContent).toContain("Correct!");
+    expect(host.textContent).toContain("C4 → D4 → E4");
+    expect(host.textContent).toContain("Rule for r1.");
+  });
+
+  it("advancing to the next round starts with a fresh control, not the previous draft", () => {
+    const rounds = [textRound("r1"), textRound("r2")];
+    const host = mount(() => (
+      <GameShell lessonId="10" lessonTitle="The Basics" rounds={rounds} />
+    ));
+    typeInto(host, "B flat");
+    buttonByLabel(host, "Submit").click();
+    buttonByLabel(host, "Next").click();
+
+    expect(host.textContent).toContain("Question r2?");
+    const input = host.querySelector("input") as HTMLInputElement;
+    expect(input.value).toBe("");
+    expect(input.disabled).toBe(false);
+    expect(recordSpy).toHaveBeenCalledTimes(1);
   });
 });
