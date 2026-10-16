@@ -1,26 +1,17 @@
+import { buildTriad, chordInversion } from "./chord";
 import {
-  buildScale,
-  buildTriad,
-  chordInversion,
-  degreeNote,
   midiNumber,
   noteFromLetterAndAlteration,
   semitoneIndex,
   type Note,
-  type ScaleType,
-} from "../lib/theory";
+} from "./pitch";
+import { buildScale, degreeNote, type ScaleType } from "./scale";
 
 /**
  * Shared Neapolitan derivations for lessons 120–122 (musictheory.net section
- * "Neapolitan Chords").
- *
- * SCOPE NOTE (reported to the parent, not fixed here): these helpers are
- * core-warranted — every future Neapolitan lesson would re-derive exactly
- * this chain — but this writer's allowed edit surface is `src/games/**`
- * only, so they live beside the lesson modules. When `src/lib/theory` opens
- * for edits, move this file there (recommended home: `chord.ts` or a new
- * `neapolitan.ts` beside it); the lesson modules then change only their
- * import path.
+ * "Neapolitan Chords"). These helpers are core-warranted — every future
+ * Neapolitan lesson re-derives exactly this chain — so they live with the
+ * other pure theory modules; the lesson modules import them from here.
  *
  * The chain, all backed by core primitives so a wrong spelling or a
  * whole-step "lowering" fails at generation instead of shipping:

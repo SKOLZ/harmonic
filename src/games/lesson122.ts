@@ -12,7 +12,7 @@ import {
 } from "../lib/theory";
 import type { AnswerSpec, Round } from "../lib/rounds/types";
 import { requireLessonEntry } from "./catalog";
-import { ascendingVoicing, neapolitanSixth } from "./neapolitan";
+import { ascendingVoicing, neapolitanSixth } from "../lib/theory/neapolitan";
 import { sampleStratifiedRounds } from "./rng";
 import type { LessonModule } from "./types";
 

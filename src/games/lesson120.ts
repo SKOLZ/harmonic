@@ -1,7 +1,7 @@
 import { parseNote, scientificName, type Note, type ScaleType } from "../lib/theory";
 import type { AnswerSpec, Round } from "../lib/rounds/types";
 import { requireLessonEntry } from "./catalog";
-import { deriveNeapolitan } from "./neapolitan";
+import { deriveNeapolitan } from "../lib/theory/neapolitan";
 import { sampleStratifiedRounds } from "./rng";
 import type { LessonModule } from "./types";
 
