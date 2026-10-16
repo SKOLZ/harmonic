@@ -32,6 +32,10 @@ export const catalog: LessonEntry[] = [
   { id: 45, title: "Seventh Chords", section: "Chords", order: 20 },
   { id: 48, title: "More Seventh Chords", section: "Chords", order: 21 },
   { id: 47, title: "Seventh Chord Inversion", section: "Chords", order: 22 },
+  { id: 43, title: "Diatonic Triads", section: "Diatonic Chords", order: 23 },
+  { id: 44, title: "Roman Numeral Analysis: Triads", section: "Diatonic Chords", order: 24 },
+  { id: 46, title: "Diatonic Seventh Chords", section: "Diatonic Chords", order: 25 },
+  { id: 49, title: "Roman Numeral Analysis: Seventh Chords", section: "Diatonic Chords", order: 26 },
 ];
 
 /**

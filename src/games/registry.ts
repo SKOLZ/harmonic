@@ -17,15 +17,19 @@ import { lesson32 } from "./lesson32";
 import { lesson33 } from "./lesson33";
 import { lesson40 } from "./lesson40";
 import { lesson42 } from "./lesson42";
+import { lesson43 } from "./lesson43";
+import { lesson44 } from "./lesson44";
 import { lesson45 } from "./lesson45";
+import { lesson46 } from "./lesson46";
 import { lesson47 } from "./lesson47";
 import { lesson48 } from "./lesson48";
+import { lesson49 } from "./lesson49";
 import type { LessonModule } from "./types";
 
 /**
  * lesson id → lesson module. The catalog stays the single ordered source of
  * truth for chain order; this registry only says which lessons currently have
- * a playable generator. Lessons still being built (43, 44, …) are absent and
+ * a playable generator. Lessons still being built (50, 51, …) are absent and
  * fail loudly through `getLessonModule` rather than playing demo data.
  */
 const modules: ReadonlyMap<number, LessonModule> = new Map<number, LessonModule>([
@@ -48,9 +52,13 @@ const modules: ReadonlyMap<number, LessonModule> = new Map<number, LessonModule>
   [33, lesson33],
   [40, lesson40],
   [42, lesson42],
+  [43, lesson43],
+  [44, lesson44],
   [45, lesson45],
+  [46, lesson46],
   [48, lesson48],
   [47, lesson47],
+  [49, lesson49],
 ]);
 
 /** The lesson ids that currently have a module; drives the contract tests. */
