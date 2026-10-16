@@ -39,6 +39,10 @@ export const catalog: LessonEntry[] = [
   { id: 50, title: "Composing with Minor Scales", section: "Diatonic Chords", order: 27 },
   { id: 51, title: "Voicing Chords", section: "Diatonic Chords", order: 28 },
   { id: 52, title: "Analysis: O Canada", section: "Diatonic Chords", order: 29 },
+  { id: 53, title: "Nonharmonic Tones", section: "Chord Progressions", order: 30 },
+  { id: 55, title: "Phrases and Cadences", section: "Chord Progressions", order: 31 },
+  { id: 56, title: "Circle Progressions", section: "Chord Progressions", order: 32 },
+  { id: 57, title: "Common Chord Progressions", section: "Chord Progressions", order: 33 },
 ];
 
 /**
