@@ -13,8 +13,14 @@ describe("prompt registry", () => {
   });
 
   it("registers the staff, audio and keyboard renderers", () => {
-    expect(promptRegistry.staff).toBe(StaffPrompt);
-    expect(getPromptComponent("staff")).toBe(StaffPrompt);
+    // StaffPrompt must NOT be the registry's staff entry: it statically
+    // imports Staff, which statically imports VexFlow, and a static edge
+    // here would drag the notation engine into the main bundle. The entry
+    // is Solid's lazy wrapper (T15), resolved to StaffPrompt only when a
+    // staff prompt actually renders; the `.not.toBe` pins that deferral.
+    expect(promptRegistry.staff).not.toBe(StaffPrompt);
+    expect(promptRegistry.staff).toBeDefined();
+    expect(getPromptComponent("staff")).toBe(promptRegistry.staff);
     expect(promptRegistry.audio).toBe(AudioPrompt);
     expect(getPromptComponent("audio")).toBe(AudioPrompt);
     expect(promptRegistry.keyboard).toBe(KeyboardPrompt);

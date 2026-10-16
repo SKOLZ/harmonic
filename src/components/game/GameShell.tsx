@@ -1,4 +1,4 @@
-import { createSignal, mergeProps, Show } from "solid-js";
+import { createSignal, mergeProps, Show, Suspense } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import { getAnswerComponent } from "../answers/registry";
 import { getPromptComponent } from "../prompts/registry";
@@ -117,10 +117,15 @@ export default function GameShell(props: GameShellProps) {
           <Show keyed when={roundKey()}>
             {(_roundKey) => (
               <>
-                <Dynamic
-                  component={getPromptComponent(round().prompt.kind)}
-                  prompt={round().prompt}
-                />
+                {/* Scoped Suspense: only the prompt waits on the lazy staff
+                    chunk. Answer controls and feedback render immediately, so
+                    a text/choices round is never delayed by VexFlow loading. */}
+                <Suspense fallback={null}>
+                  <Dynamic
+                    component={getPromptComponent(round().prompt.kind)}
+                    prompt={round().prompt}
+                  />
+                </Suspense>
                 {/* Single submit path: registry-resolved control → one onSubmit → machine. */}
                 <Dynamic
                   component={getAnswerComponent(round().answer.kind)}
