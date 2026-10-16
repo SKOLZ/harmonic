@@ -43,6 +43,9 @@ export const catalog: LessonEntry[] = [
   { id: 55, title: "Phrases and Cadences", section: "Chord Progressions", order: 31 },
   { id: 56, title: "Circle Progressions", section: "Chord Progressions", order: 32 },
   { id: 57, title: "Common Chord Progressions", section: "Chord Progressions", order: 33 },
+  { id: 60, title: "Triads in First Inversion", section: "Chord Progressions", order: 34 },
+  { id: 61, title: "Triads in Second Inversion", section: "Chord Progressions", order: 35 },
+  { id: 62, title: "Analysis: Auld Lang Syne", section: "Chord Progressions", order: 36 },
 ];
 
 /**
