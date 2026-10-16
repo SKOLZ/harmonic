@@ -33,6 +33,18 @@ import type { LessonModule } from "./types";
  * answers reuse the theory core's `intervalName` strings. The pool is 11
  * `staff` rounds + 11 `text` rounds = 22: any draw of 12 must include at
  * least one of each kind — the mix is structural, not luck.
+ *
+ * Companion illustrations (T5b Intervals pass): exactly the five
+ * upward-building text rounds carry an `illustration`, and each engraves its
+ * question's ROOT alone — "What note is a minor third above C?" shows C,
+ * never Eb. That is the T5a archetype, five times over: the question names a
+ * concrete pitch, and the note the learner must build is not on the page.
+ * The three-step rounds are procedural, the two half-step rounds name no
+ * pitches, and the confusable-pair round — though it names C, F# and Gb —
+ * stays text-only because every engraving of those pitches draws the fourth
+ * and the fifth on the staff and the learner counts the answer off the
+ * picture. Every pool round is swept through the shared `assertNoAnswerLeak`
+ * helper in the suite.
  */
 const choices = (options: string[], correctIndex: number): AnswerSpec => ({
   kind: "choices",
@@ -159,30 +171,46 @@ export const lesson32Pool: readonly Round[] = [
     id: "l32-text-minor-third-above-c",
     prompt: { kind: "text", text: "What note is a minor third above C?" },
     answer: choices(["Eb", "E", "D#", "Db"], 0),
+    // The question's pitch is C; the answer is Eb. The illustration engraves
+    // C alone — the learner builds the third from the root, never reads the
+    // flat off the page.
+    illustration: { clef: "treble", notes: ["C4"] },
     rule: "A minor third above C is Eb: the generic third lands on E, and the minor third's 3 half steps flatten it.",
   },
   {
     id: "l32-text-major-sixth-above-fs",
     prompt: { kind: "text", text: "What note is a major sixth above F#?" },
     answer: choices(["D#", "Eb", "D", "E"], 0),
+    // Question's pitch F#; answer D#. Engrave F#, never D# — and note the
+    // enharmonic trap stays live: D# on the page would also dismiss Eb.
+    illustration: { clef: "treble", notes: ["F#4"] },
     rule: "A major sixth above F# is D#: the generic sixth lands on D, and 9 half steps above F# sharpen it — not Eb, which would make a fifth, not a sixth.",
   },
   {
     id: "l32-text-diminished-fifth-above-b",
     prompt: { kind: "text", text: "What note is a diminished fifth above B?" },
     answer: choices(["F", "E#", "F#", "E"], 0),
+    // Question's pitch B; answer F. Only B goes on the page — F natural is
+    // the very fact the learner has to discover (no accidental needed).
+    illustration: { clef: "treble", notes: ["B4"] },
     rule: "A diminished fifth above B is F: the generic fifth lands on F, and F natural is already only 6 half steps above B — no accidental is needed.",
   },
   {
     id: "l32-text-augmented-fourth-above-c",
     prompt: { kind: "text", text: "What note is an augmented fourth above C?" },
     answer: choices(["F#", "Gb", "F", "Ab"], 0),
+    // Question's pitch C; answer F#. C alone, never F# — showing both would
+    // also pre-empt the F#/Gb spelling choice this round exists to teach.
+    illustration: { clef: "treble", notes: ["C4"] },
     rule: "An augmented fourth above C is F#: the generic fourth lands on F, and one half step above the perfect fourth's 5 sharpens it — Gb sounds the same but would be a fifth.",
   },
   {
     id: "l32-text-diminished-fifth-above-c",
     prompt: { kind: "text", text: "What note is a diminished fifth above C?" },
     answer: choices(["Gb", "F#", "G", "Db"], 0),
+    // Question's pitch C; answer Gb. The mirror of the augmented-fourth
+    // round above: same root, and again only the root on the page.
+    illustration: { clef: "treble", notes: ["C4"] },
     rule: "A diminished fifth above C is Gb: the generic fifth lands on G, and one half step below the perfect fifth's 7 flattens it — F# sounds the same but would be a fourth.",
   },
   {
@@ -212,6 +240,10 @@ export const lesson32Pool: readonly Round[] = [
       ],
       0,
     ),
+    // Deliberately text-only, the section's one ambiguous case: the question
+    // names concrete pitches (C, F#, Gb), but every engraving of them draws
+    // the fourth and the fifth on the page and the learner counts the answer
+    // off the picture — the pilot's counting-leak class.
     rule: "Although both intervals sound the same and look identical on the keyboard, one is a fourth and the other is a fifth — the staff spelling, not the keyboard, tells them apart.",
   },
 ];

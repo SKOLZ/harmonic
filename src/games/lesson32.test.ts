@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import { validateRound } from "../lib/rounds/validate";
+import { assertNoAnswerLeak } from "../lib/rounds/noAnswerLeak";
 import type { PromptSpec, Round } from "../lib/rounds/types";
 import StaffPrompt from "../components/prompts/StaffPrompt";
 import {
@@ -187,5 +188,119 @@ describe("lesson 32 question pool", () => {
     expect(rules).toMatch(/accidental/);
     expect(rules).toMatch(/sound the same/);
     expect(rules).toMatch(/fourth and the other is a fifth|fourth, the other a fifth/);
+  });
+});
+
+describe("lesson 32 companion illustrations (T5b Intervals pass)", () => {
+  function illustratedRounds(): Round[] {
+    return lesson32Pool.filter((round) => round.illustration !== undefined);
+  }
+
+  it("illustrates exactly the five upward-building text rounds", () => {
+    // The Intervals decision, applied with the shared no-leak rule: these five
+    // are the section's only rounds whose question names a concrete pitch AND
+    // whose answer (the built note) is not on the page — the "fifth above C
+    // shows C, not C and G" archetype, five times over. Everything else here
+    // is procedural, is a half-step count with no pinned pitches, or would
+    // leak by being counted off the picture (the confusable pair).
+    const ids = illustratedRounds().map((round) => round.id).sort();
+    expect(ids).toEqual([
+      "l32-text-augmented-fourth-above-c",
+      "l32-text-diminished-fifth-above-b",
+      "l32-text-diminished-fifth-above-c",
+      "l32-text-major-sixth-above-fs",
+      "l32-text-minor-third-above-c",
+    ]);
+  });
+
+  it("attaches illustrations only to text-prompt rounds", () => {
+    for (const round of illustratedRounds()) {
+      expect(round.prompt.kind).toBe("text");
+    }
+  });
+
+  it("engraves the question's root alone — never the note the learner must build", () => {
+    expect(roundById("l32-text-minor-third-above-c").illustration).toEqual({
+      clef: "treble",
+      notes: ["C4"],
+    });
+    expect(roundById("l32-text-major-sixth-above-fs").illustration).toEqual({
+      clef: "treble",
+      notes: ["F#4"],
+    });
+    expect(roundById("l32-text-diminished-fifth-above-b").illustration).toEqual({
+      clef: "treble",
+      notes: ["B4"],
+    });
+    expect(roundById("l32-text-augmented-fourth-above-c").illustration).toEqual({
+      clef: "treble",
+      notes: ["C4"],
+    });
+    expect(roundById("l32-text-diminished-fifth-above-c").illustration).toEqual({
+      clef: "treble",
+      notes: ["C4"],
+    });
+  });
+
+  it("matches each illustrated root to the root its own writing drill already pins", () => {
+    // The five WRITTEN drills above are the same five rounds, already pinned
+    // to a root by the theory oracle. The illustration must be that root, so
+    // the two contracts cannot drift apart.
+    for (const { id, root } of WRITTEN) {
+      const illustration = roundById(id).illustration;
+      expect(illustration, `writing drill ${id}`).toBeDefined();
+      expect(illustration!.notes, `writing drill ${id}`).toEqual([`${root}4`]);
+    }
+  });
+
+  it("keeps the confusable-pair round text-only: engraving both pairs would draw the answer", () => {
+    // Genuinely the section's ambiguous case: the question names concrete
+    // pitches (C, F#, Gb), but every engraving of them puts the fourth and
+    // the fifth on the page, and the learner counts the answer off the
+    // picture — the pilot's counting-leak class. Text-only.
+    expect(roundById("l32-text-aug-vs-dim").illustration).toBeUndefined();
+    // The half-step rounds name no pitches at all (their answers are counts).
+    expect(roundById("l32-text-minor-third-half-steps").illustration).toBeUndefined();
+    expect(roundById("l32-text-diminished-fifth-half-steps").illustration).toBeUndefined();
+  });
+
+  it("never engraves the correct answer as an illustration note", () => {
+    for (const round of illustratedRounds()) {
+      const correct = answerOf(round.id);
+      for (const name of round.illustration!.notes) {
+        const { letter, accidental } = parseNote(name);
+        const spelled = `${letter}${accidental === 0 ? "" : accidental > 0 ? "#".repeat(accidental) : "b".repeat(-accidental)}`;
+        expect(spelled, `${round.id} engraves its answer`).not.toBe(correct);
+      }
+    }
+  });
+
+  it("passes the shared no-leak assertion for every pool round", () => {
+    // The T5a recommendation, shipped as one utility in src/lib/rounds and
+    // swept over the whole pool — illustrated or not — so a future edit that
+    // puts an answer on the page fails here instead of shipping.
+    for (const round of lesson32Pool) {
+      expect(() => assertNoAnswerLeak(round), round.id).not.toThrow();
+    }
+  });
+
+  it("engraves every illustration through the real Staff renderer", () => {
+    // Triangulation: the illustration slot speaks the staff-prompt shape, so
+    // each one has to survive the actual engraver, not just the type.
+    for (const round of illustratedRounds()) {
+      const host = document.createElement("div");
+      document.body.appendChild(host);
+      const dispose = render(
+        () => StaffPrompt({ prompt: { kind: "staff", ...round.illustration! } }),
+        host,
+      );
+      cleanups.push(() => {
+        dispose();
+        host.remove();
+      });
+      const svg = host.querySelector("svg");
+      expect(svg, `illustration ${round.id} did not engrave`).not.toBeNull();
+      expect(svg!.querySelectorAll("path").length).toBeGreaterThanOrEqual(5);
+    }
   });
 });

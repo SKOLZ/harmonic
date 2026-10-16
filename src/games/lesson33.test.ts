@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import { validateRound } from "../lib/rounds/validate";
+import { assertNoAnswerLeak } from "../lib/rounds/noAnswerLeak";
 import type { PromptSpec, Round } from "../lib/rounds/types";
 import StaffPrompt from "../components/prompts/StaffPrompt";
 import {
@@ -167,5 +168,54 @@ describe("lesson 33 question pool", () => {
     expect(rules).toMatch(/major.*minor|minor.*major/);
     expect(rules).toMatch(/augmented.*diminished|diminished.*augmented/);
     expect(rules).toMatch(/9 − [1-8]|[Nn]ine minus/);
+  });
+});
+
+describe("lesson 33 companion illustrations (T5b Intervals pass)", () => {
+  // The Intervals decision, applied with the no-leak rule. The six "what
+  // does X invert to?" rounds are the section's largest judgement call, and
+  // they are rejected at the subject gate: each names an interval CLASS
+  // ("a perfect fifth"), never pitches. To engrave one the writer would
+  // have to pick an instance — C–G, F#–B, C–E — and that instance is not in
+  // the question. The pilot stretched exactly once, for "the major scale",
+  // which is definite and has a single canonical engraving; "a perfect
+  // fifth" has none, so instantiating it would be inventing the question's
+  // own subject. Engraving the original interval would not leak the ANSWER
+  // (the inverted one is a different interval name the learner must know),
+  // so these rounds are safe-but-unpinned, not defective — flagged for the
+  // parent rather than guessed at. The other five rounds are the definition,
+  // the perfect-stays-perfect rule, two pair rules, and the 9-sum: conceptual.
+  const INVERSION = [
+    "l33-text-p5-inverts",
+    "l33-text-p4-inverts",
+    "l33-text-m3-inverts",
+    "l33-text-m3-minor-inverts",
+    "l33-text-m7-inverts",
+    "l33-text-a4-inverts",
+  ];
+
+  it("rejects an illustration for every inversion round: the subject is a class, not pitches", () => {
+    expect(INVERSION).toHaveLength(6);
+    for (const id of INVERSION) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the definition, the pair rules, and the 9-sum text-only", () => {
+    const conceptual = lesson33Pool
+      .filter((round) => round.prompt.kind === "text")
+      .map((round) => round.id)
+      .filter((id) => !INVERSION.includes(id));
+    expect(conceptual).toHaveLength(5);
+    for (const id of conceptual) {
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("passes the shared no-leak assertion for every pool round", () => {
+    for (const round of lesson33Pool) {
+      expect(() => assertNoAnswerLeak(round), round.id).not.toThrow();
+    }
   });
 });

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import { validateRound } from "../lib/rounds/validate";
+import { assertNoAnswerLeak } from "../lib/rounds/noAnswerLeak";
 import type { PromptSpec, Round } from "../lib/rounds/types";
 import StaffPrompt from "../components/prompts/StaffPrompt";
 import { genericIntervalNumber, parseNote } from "../lib/theory";
@@ -144,5 +145,49 @@ describe("lesson 30 question pool", () => {
     expect(rules).toMatch(/line or space/);
     expect(rules).toMatch(/both on a line or both on a space/);
     expect(rules).toMatch(/interval type increases/);
+  });
+});
+
+describe("lesson 30 companion illustrations (T5b Intervals pass)", () => {
+  // The Intervals decision, applied with the no-leak rule. Six text rounds
+  // here DO name concrete pitch pairs — the closest candidates in the whole
+  // section — and every one of them is rejected for the same reason: the
+  // question asks for the RELATIONSHIP between the two pitches (the generic
+  // interval number), and engraving the pair draws that relationship on the
+  // page, where the learner counts the answer off the picture. That is the
+  // pilot's counting-leak class. The pool already carries the staff round
+  // for each of these same pairs, so the text form is the point.
+  const PITCH_NAMING = [
+    "l30-text-c-cs-first",
+    "l30-text-seconds-examples",
+    "l30-text-fifths-examples",
+    "l30-text-sixths-examples",
+    "l30-text-sevenths-examples",
+    "l30-text-eighths-examples",
+  ];
+
+  it("rejects an illustration for every pitch-naming text round (counting leak)", () => {
+    expect(PITCH_NAMING).toHaveLength(6);
+    for (const id of PITCH_NAMING) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the five definitional rounds text-only: no pitches named at all", () => {
+    const definitional = lesson30Pool
+      .filter((round) => round.prompt.kind === "text")
+      .map((round) => round.id)
+      .filter((id) => !PITCH_NAMING.includes(id));
+    expect(definitional).toHaveLength(5);
+    for (const id of definitional) {
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("passes the shared no-leak assertion for every pool round", () => {
+    for (const round of lesson30Pool) {
+      expect(() => assertNoAnswerLeak(round), round.id).not.toThrow();
+    }
   });
 });

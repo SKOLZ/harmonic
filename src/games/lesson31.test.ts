@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import { validateRound } from "../lib/rounds/validate";
+import { assertNoAnswerLeak } from "../lib/rounds/noAnswerLeak";
 import type { PromptSpec, Round } from "../lib/rounds/types";
 import StaffPrompt from "../components/prompts/StaffPrompt";
 import { genericIntervalNumber, halfSteps, intervalName, parseNote } from "../lib/theory";
@@ -141,5 +142,52 @@ describe("lesson 31 question pool", () => {
     expect(rules).toMatch(/one more half step than a perfect/);
     expect(rules).toMatch(/seconds, thirds, sixths, and sevenths/i);
     expect(rules).toMatch(/firsts, fourths, fifths, and eighths/i);
+  });
+});
+
+describe("lesson 31 companion illustrations (T5b Intervals pass)", () => {
+  // The Intervals decision, applied with the no-leak rule. Every text round
+  // here asks about an interval CLASS, never about pinned pitches: "a major
+  // second", "a perfect fifth", "which numbers take major". Under the pilot
+  // rule a class has no question-side pitches to engrave — drawing the
+  // site's own example (C–D for the major second) would be the writer
+  // inventing pitches the question never names. The half-step rounds fail a
+  // second way too: their answers are keyboard quantities, and a staff
+  // picture shows letter distance — a DIFFERENT number that can mislead
+  // (for a major second the two counts even coincide, 2 positions = 2 half
+  // steps, which would hand over the answer by coincidence alone).
+  const HALF_STEP_COUNTS = [
+    "l31-text-major-second-half-steps",
+    "l31-text-major-third-half-steps",
+    "l31-text-perfect-fourth-half-steps",
+    "l31-text-perfect-fifth-half-steps",
+    "l31-text-major-sixth-half-steps",
+    "l31-text-major-seventh-half-steps",
+    "l31-text-perfect-eighth-half-steps",
+  ];
+
+  it("rejects an illustration for every half-step-count round: class subject, wrong channel", () => {
+    expect(HALF_STEP_COUNTS).toHaveLength(7);
+    for (const id of HALF_STEP_COUNTS) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the quality-family and comparison rounds text-only: no pitches named", () => {
+    const conceptual = lesson31Pool
+      .filter((round) => round.prompt.kind === "text")
+      .map((round) => round.id)
+      .filter((id) => !HALF_STEP_COUNTS.includes(id));
+    expect(conceptual).toHaveLength(4);
+    for (const id of conceptual) {
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("passes the shared no-leak assertion for every pool round", () => {
+    for (const round of lesson31Pool) {
+      expect(() => assertNoAnswerLeak(round), round.id).not.toThrow();
+    }
   });
 });
