@@ -209,7 +209,7 @@ describe("Home: lock state", () => {
 });
 
 describe("Home: per-lesson progress", () => {
-  it("shows each lesson's completed rounds against UNLOCK_THRESHOLD", async () => {
+  it("shows each lesson's current streak against UNLOCK_THRESHOLD", async () => {
     const seeded: Record<string, number> = {
       [catalog[0]!.id]: 4,
       [catalog[2]!.id]: UNLOCK_THRESHOLD,

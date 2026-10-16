@@ -3,6 +3,7 @@ import { render } from "solid-js/web";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { progress, PROGRESS_STORAGE_KEY, UNLOCK_THRESHOLD } from "../../lib/progress";
 import type { Round } from "../../lib/rounds/types";
+import { QUESTION_TIME_MS } from "./timer";
 import GameShell from "./GameShell";
 
 /**
@@ -22,14 +23,17 @@ function mount(ui: () => JSX.Element): HTMLDivElement {
 }
 
 let recordSpy: ReturnType<typeof vi.spyOn>;
+let resetSpy: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
   window.localStorage.clear();
   recordSpy = vi.spyOn(progress, "recordCorrect");
+  resetSpy = vi.spyOn(progress, "resetStreak");
 });
 
 afterEach(() => {
   recordSpy.mockRestore();
+  resetSpy.mockRestore();
   while (cleanups.length > 0) cleanups.pop()?.();
   document.body.replaceChildren();
 });
@@ -121,6 +125,10 @@ function optionByLabel(host: HTMLElement, label: string): HTMLButtonElement {
   return found;
 }
 
+function timerText(host: HTMLElement): string | undefined {
+  return host.querySelector(".game-shell__timer")?.textContent?.trim() ?? undefined;
+}
+
 describe("GameShell", () => {
   it("renders the lesson title, the first prompt, and the answer options", () => {
     const rounds = [choiceRound("r1"), choiceRound("r2")];
@@ -142,6 +150,7 @@ describe("GameShell", () => {
 
     expect(recordSpy).toHaveBeenCalledTimes(1);
     expect(recordSpy).toHaveBeenCalledWith(10);
+    expect(resetSpy).not.toHaveBeenCalled();
     expect(host.textContent).toContain("Correct!");
     expect(host.textContent).toContain("Rule for r1.");
     // Feedback names the correct answer.
@@ -151,30 +160,6 @@ describe("GameShell", () => {
       expect(button.disabled).toBe(true);
     }
     expect(buttonByLabel(host, "Next")).toBeTruthy();
-  });
-
-  it("a wrong answer reveals the correct answer and rule without recording; Retry returns to answering", () => {
-    const rounds = [choiceRound("r1", 1)];
-    const host = mount(() => (
-      <GameShell lessonId="10" lessonTitle="The Basics" rounds={rounds} />
-    ));
-    optionByLabel(host, "A").click();
-
-    expect(recordSpy).not.toHaveBeenCalled();
-    expect(host.textContent).toContain("Not quite.");
-    expect(host.textContent).toContain("Rule for r1.");
-    expect(host.textContent).toContain("B");
-    expect(buttonByLabel(host, "Retry")).toBeTruthy();
-
-    buttonByLabel(host, "Retry").click();
-    expect(host.querySelector(".game-shell__feedback")).toBeNull();
-    for (const button of optionButtons(host)) {
-      expect(button.disabled).toBe(false);
-    }
-
-    // Retry then answering correctly records exactly once overall.
-    optionByLabel(host, "B").click();
-    expect(recordSpy).toHaveBeenCalledTimes(1);
   });
 
   it("after a correct answer, Next advances to the next round", () => {
@@ -230,7 +215,7 @@ describe("GameShell", () => {
     expect(host.textContent).toMatch(/unlocked/i);
   });
 
-  it("shows persisted progress for the lesson on mount", () => {
+  it("shows the persisted streak for the lesson on mount", () => {
     window.localStorage.setItem(
       PROGRESS_STORAGE_KEY,
       JSON.stringify({ "10": 4, "11": 9 }),
@@ -278,7 +263,7 @@ describe("GameShell: every answer kind flows through the same submit path", () =
     expect(buttonByLabel(host, "Next")).toBeTruthy();
   });
 
-  it("a wrong textInput answer records nothing and Retry restores the typed draft", () => {
+  it("a wrong textInput answer fails the run; Start over restarts from scratch", () => {
     const rounds = [textRound("r1")];
     const host = mount(() => (
       <GameShell lessonId="10" lessonTitle="The Basics" rounds={rounds} />
@@ -287,15 +272,20 @@ describe("GameShell: every answer kind flows through the same submit path", () =
     buttonByLabel(host, "Submit").click();
 
     expect(recordSpy).not.toHaveBeenCalled();
+    expect(resetSpy).toHaveBeenCalledTimes(1);
     expect(host.textContent).toContain("Not quite.");
     expect(host.textContent).toContain("B flat");
-    expect(buttonByLabel(host, "Retry")).toBeTruthy();
-
-    buttonByLabel(host, "Retry").click();
-    expect(host.querySelector(".game-shell__feedback")).toBeNull();
+    expect(buttonByLabel(host, "Start over")).toBeTruthy();
+    // The locked control keeps the failed draft on screen; it is not editable.
     const input = host.querySelector("input") as HTMLInputElement;
-    expect(input.disabled).toBe(false);
+    expect(input.disabled).toBe(true);
     expect(input.value).toBe("Naturals");
+
+    buttonByLabel(host, "Start over").click();
+    expect(host.querySelector(".game-shell__feedback")).toBeNull();
+    const fresh = host.querySelector("input") as HTMLInputElement;
+    expect(fresh.disabled).toBe(false);
+    expect(fresh.value).toBe("");
 
     typeInto(host, "B flat");
     buttonByLabel(host, "Submit").click();
@@ -351,5 +341,190 @@ describe("GameShell: every answer kind flows through the same submit path", () =
     expect(input.value).toBe("");
     expect(input.disabled).toBe(false);
     expect(recordSpy).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("GameShell: one miss fails the whole run", () => {
+  it("a wrong answer wipes the streak and offers Start over, never Retry", () => {
+    const rounds = [choiceRound("r1", 1), choiceRound("r2"), choiceRound("r3")];
+    const host = mount(() => (
+      <GameShell lessonId="10" lessonTitle="The Basics" rounds={rounds} />
+    ));
+    optionByLabel(host, "A").click();
+
+    expect(recordSpy).not.toHaveBeenCalled();
+    expect(resetSpy).toHaveBeenCalledTimes(1);
+    expect(resetSpy).toHaveBeenCalledWith(10);
+    expect(host.textContent).toContain("Not quite.");
+    expect(host.textContent).toContain("Rule for r1.");
+    // Feedback still names the correct answer: the rule is the lesson.
+    expect(host.textContent).toContain("B");
+    expect(host.textContent).toContain(`0/${UNLOCK_THRESHOLD}`);
+    expect(buttonByLabel(host, "Start over")).toBeTruthy();
+    expect(
+      [...host.querySelectorAll("button")].some((b) => b.textContent?.trim() === "Retry"),
+    ).toBe(false);
+    // The failed round's controls are locked: a miss cannot be answered again.
+    for (const button of optionButtons(host)) {
+      expect(button.disabled).toBe(true);
+    }
+  });
+
+  it("a learner at 7/10 who misses is back at 0/10 with nothing left in the store", () => {
+    window.localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify({ "10": 7 }));
+    const rounds = [choiceRound("r1", 1)];
+    const host = mount(() => (
+      <GameShell lessonId="10" lessonTitle="The Basics" rounds={rounds} />
+    ));
+    expect(host.textContent).toContain(`7/${UNLOCK_THRESHOLD}`);
+
+    optionByLabel(host, "A").click();
+
+    expect(host.textContent).toContain(`0/${UNLOCK_THRESHOLD}`);
+    expect(progress.streak(10)).toBe(0);
+    expect(createProgressSnapshot()).toEqual({ "10": 0 });
+  });
+
+  it("Start over asks for a fresh randomized set and begins the new run at zero", () => {
+    const regenerate = vi.fn(() => [choiceRound("fresh1", 0), choiceRound("fresh2", 0)]);
+    const rounds = [choiceRound("r1", 1)];
+    const host = mount(() => (
+      <GameShell
+        lessonId="10"
+        lessonTitle="The Basics"
+        rounds={rounds}
+        regenerate={regenerate}
+      />
+    ));
+    optionByLabel(host, "A").click();
+    // The fresh set is drawn at restart, not at the miss itself.
+    expect(regenerate).not.toHaveBeenCalled();
+
+    buttonByLabel(host, "Start over").click();
+
+    expect(regenerate).toHaveBeenCalledTimes(1);
+    expect(host.textContent).toContain("Question fresh1?");
+    expect(host.textContent).not.toContain("Question r1?");
+    expect(host.textContent).toContain(`0/${UNLOCK_THRESHOLD}`);
+    expect(host.querySelector(".game-shell__feedback")).toBeNull();
+    expect(recordSpy).not.toHaveBeenCalled();
+    // Playable again: the fresh set drives the same submit path.
+    optionByLabel(host, "A").click();
+    expect(recordSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("without a regenerate callback the run restarts from the initial pool", () => {
+    const rounds = [choiceRound("r1", 1)];
+    const host = mount(() => (
+      <GameShell lessonId="10" lessonTitle="The Basics" rounds={rounds} />
+    ));
+    optionByLabel(host, "A").click();
+
+    buttonByLabel(host, "Start over").click();
+
+    expect(host.textContent).toContain("Question r1?");
+    expect(host.textContent).toContain(`0/${UNLOCK_THRESHOLD}`);
+    expect(host.querySelector(".game-shell__feedback")).toBeNull();
+    for (const button of optionButtons(host)) {
+      expect(button.disabled).toBe(false);
+    }
+  });
+
+  it("a partial streak cannot survive a miss on a later round", () => {
+    window.localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify({ "10": 7 }));
+    const rounds = [choiceRound("r1", 1), choiceRound("r2", 1)];
+    const host = mount(() => (
+      <GameShell lessonId="10" lessonTitle="The Basics" rounds={rounds} />
+    ));
+    optionByLabel(host, "B").click();
+    expect(host.textContent).toContain(`8/${UNLOCK_THRESHOLD}`);
+    buttonByLabel(host, "Next").click();
+
+    optionByLabel(host, "A").click();
+    expect(host.textContent).toContain(`0/${UNLOCK_THRESHOLD}`);
+    expect(progress.streak(10)).toBe(0);
+  });
+});
+
+function createProgressSnapshot(): Record<string, number> {
+  const raw = window.localStorage.getItem(PROGRESS_STORAGE_KEY);
+  return raw === null ? {} : (JSON.parse(raw) as Record<string, number>);
+}
+
+describe("GameShell: countdown timer", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("shows the full duration before the first tick and counts down while answering", () => {
+    const host = mount(() => (
+      <GameShell
+        lessonId="10"
+        lessonTitle="The Basics"
+        rounds={[choiceRound("r1"), choiceRound("r2")]}
+      />
+    ));
+    expect(timerText(host)).toBe(`${QUESTION_TIME_MS / 1000}s`);
+
+    vi.advanceTimersByTime(5000);
+    expect(timerText(host)).toBe(`${QUESTION_TIME_MS / 1000 - 5}s`);
+    expect(recordSpy).not.toHaveBeenCalled();
+    expect(resetSpy).not.toHaveBeenCalled();
+  });
+
+  it("an expired timer fails the run through the same failure path as a wrong answer", () => {
+    const host = mount(() => (
+      <GameShell lessonId="10" lessonTitle="The Basics" rounds={[choiceRound("r1", 1)]} />
+    ));
+    vi.advanceTimersByTime(QUESTION_TIME_MS);
+
+    expect(host.textContent).toContain("Time's up");
+    expect(host.textContent).toContain("Rule for r1.");
+    expect(host.textContent).toContain("B");
+    expect(recordSpy).not.toHaveBeenCalled();
+    expect(resetSpy).toHaveBeenCalledTimes(1);
+    expect(resetSpy).toHaveBeenCalledWith(10);
+    expect(host.textContent).toContain(`0/${UNLOCK_THRESHOLD}`);
+    expect(buttonByLabel(host, "Start over")).toBeTruthy();
+    expect(
+      [...host.querySelectorAll("button")].some((b) => b.textContent?.trim() === "Retry"),
+    ).toBe(false);
+    // The countdown belongs to the question; it stops with the run.
+    expect(host.querySelector(".game-shell__timer")).toBeNull();
+  });
+
+  it("a correct answer stops the countdown, and the old deadline cannot fail the round", () => {
+    const host = mount(() => (
+      <GameShell lessonId="10" lessonTitle="The Basics" rounds={[choiceRound("r1", 1)]} />
+    ));
+    optionByLabel(host, "B").click();
+    expect(host.querySelector(".game-shell__timer")).toBeNull();
+
+    vi.advanceTimersByTime(QUESTION_TIME_MS * 2);
+
+    expect(host.textContent).toContain("Correct!");
+    expect(resetSpy).not.toHaveBeenCalled();
+  });
+
+  it("restarting a run after Start over starts the countdown fresh", () => {
+    const regenerate = vi.fn(() => [choiceRound("fresh1", 0)]);
+    const host = mount(() => (
+      <GameShell
+        lessonId="10"
+        lessonTitle="The Basics"
+        rounds={[choiceRound("r1", 1)]}
+        regenerate={regenerate}
+      />
+    ));
+    vi.advanceTimersByTime(QUESTION_TIME_MS / 2);
+    optionByLabel(host, "A").click();
+
+    buttonByLabel(host, "Start over").click();
+    expect(timerText(host)).toBe(`${QUESTION_TIME_MS / 1000}s`);
+    expect(regenerate).toHaveBeenCalledTimes(1);
   });
 });

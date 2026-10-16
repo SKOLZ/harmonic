@@ -45,7 +45,7 @@ export default function GamePage() {
               <section class="game-page__locked">
                 <h1>Lesson locked</h1>
                 <p>
-                  Answer {UNLOCK_THRESHOLD} rounds correctly in the previous lesson to
+                  Answer {UNLOCK_THRESHOLD} rounds in a row in the previous lesson to
                   unlock this one.
                 </p>
               </section>
@@ -57,14 +57,25 @@ export default function GamePage() {
               // reference keeps GameShell from ever re-deriving rounds while
               // the learner plays. A fresh seed gives each visit a new draw
               // from the module's question pool.
-              const rounds = getLessonModule(current.id).generateRounds(
-                createRng(Date.now() ^ current.id),
-              );
+              //
+              // `regenerate` is the refill for a failed run: the shell calls it
+              // on Start over — never while answering — and each call mixes the
+              // clock into the seed so the fresh ten are a genuinely new draw,
+              // not the previous run's questions in a new order.
+              let attempt = 0;
+              const generate = () =>
+                getLessonModule(current.id).generateRounds(
+                  createRng(Date.now() ^ current.id ^ attempt),
+                );
               return (
                 <GameShell
                   lessonId={String(current.id)}
                   lessonTitle={current.title}
-                  rounds={rounds}
+                  rounds={generate()}
+                  regenerate={() => {
+                    attempt += 1;
+                    return generate();
+                  }}
                   onExit={() => navigate("/")}
                 />
               );

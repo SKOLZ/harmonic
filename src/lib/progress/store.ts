@@ -1,7 +1,14 @@
 import type { LessonEntry } from "../../games/catalog";
 
 export const UNLOCK_THRESHOLD = 10;
-export const PROGRESS_STORAGE_KEY = "piano-mt-learning-tool/progress/v1";
+/**
+ * v2 of the storage key: the counter's meaning changed from *cumulative*
+ * correct rounds to the *current unbroken streak*. A persisted v1 value is a
+ * cumulative count by construction — reading one as a streak would keep the
+ * old "grind past a lesson" unlocks alive — so v1 data is abandoned rather
+ * than reinterpreted, and every streak now starts at zero.
+ */
+export const PROGRESS_STORAGE_KEY = "piano-mt-learning-tool/progress/v2";
 
 export interface StorageLike {
   getItem(key: string): string | null;
@@ -11,8 +18,12 @@ export interface StorageLike {
 export type ProgressState = Readonly<Record<string, number>>;
 
 export interface ProgressStore {
-  completedRounds(lessonId: number): number;
+  /** The lesson's current unbroken streak of correct rounds. */
+  streak(lessonId: number): number;
+  /** Extend the streak by one: the round was answered correctly, in a row. */
   recordCorrect(lessonId: number): void;
+  /** A miss wipes the lesson's streak: nothing partial survives a failure. */
+  resetStreak(lessonId: number): void;
   isUnlocked(index: number, lessons: readonly LessonEntry[]): boolean;
 }
 
@@ -52,7 +63,7 @@ export function createProgressStore(storage: StorageLike): ProgressStore {
   }
 
   return {
-    completedRounds(lessonId) {
+    streak(lessonId) {
       return read()[String(lessonId)] ?? 0;
     },
 
@@ -63,10 +74,17 @@ export function createProgressStore(storage: StorageLike): ProgressStore {
       write(state);
     },
 
+    resetStreak(lessonId) {
+      const key = String(lessonId);
+      const state = { ...read() };
+      state[key] = 0;
+      write(state);
+    },
+
     isUnlocked(index, lessons) {
       if (index === 0) return true;
       if (index < 0 || index >= lessons.length) return false;
-      return this.completedRounds(lessons[index - 1].id) >= UNLOCK_THRESHOLD;
+      return this.streak(lessons[index - 1].id) >= UNLOCK_THRESHOLD;
     },
   };
 }

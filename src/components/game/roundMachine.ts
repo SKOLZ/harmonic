@@ -1,7 +1,14 @@
 import { UNLOCK_THRESHOLD } from "../../lib/progress/store";
 import type { AnswerSpec, AnswerSubmission, Round } from "../../lib/rounds/types";
 
-export type Phase = "answering" | "revealed" | "complete";
+export type Phase = "answering" | "revealed" | "failed" | "complete";
+
+/**
+ * Why a run ended. A miss is a miss: a wrong answer and an expired clock take
+ * the same `fail` path and differ only in this tag (and in whether the learner
+ * got a submission in before the end).
+ */
+export type MissReason = "wrong" | "timeout";
 
 export interface Feedback {
   expected: string;
@@ -12,11 +19,14 @@ export interface Feedback {
 export interface MachineState {
   roundIndex: number;
   phase: Phase;
+  /** The current run's unbroken streak of correct rounds; a miss resets it to 0. */
   correctCount: number;
   /** The learner's submitted answer for the current round, kept verbatim for the UI. */
   submission: AnswerSubmission | null;
   wasCorrect: boolean;
   feedback: Feedback | null;
+  /** Set exactly when `phase === "failed"`: the miss ended the run. */
+  miss: MissReason | null;
 }
 
 /** Canonical display string for the correct answer, used in feedback. Never blank on a validated round. */
@@ -90,14 +100,43 @@ export function start(rounds: readonly Round[]): MachineState {
     submission: null,
     wasCorrect: false,
     feedback: null,
+    miss: null,
   };
 }
 
 /**
- * Submit an answer for the current round. Only legal while `answering` (a revealed
- * round cannot be re-submitted, so a correct round can never be counted twice).
- * The submission's kind must match the round's answer kind; correctness is then
- * judged by value for all four kinds (see isCorrectAnswer).
+ * The one failure path. A wrong answer and a timed-out clock both land here:
+ * the run ends, the streak is wiped to zero, and the round's correct answer
+ * and rule are revealed so the miss still teaches. Restarting is the only way
+ * out (`start` on a fresh draw) — the failed round can never be re-answered.
+ */
+function fail(
+  state: MachineState,
+  round: Round,
+  reason: MissReason,
+  submission: AnswerSubmission | null,
+): MachineState {
+  return {
+    ...state,
+    phase: "failed",
+    submission,
+    wasCorrect: false,
+    correctCount: 0,
+    miss: reason,
+    feedback: {
+      expected: expectedAnswerLabel(round),
+      rule: round.rule,
+      correct: false,
+    },
+  };
+}
+
+/**
+ * Submit an answer for the current round. Only legal while `answering` (a
+ * revealed round cannot be re-submitted, so a correct round can never be
+ * counted twice). The submission's kind must match the round's answer kind;
+ * correctness is then judged by value for all four kinds (see isCorrectAnswer).
+ * A wrong submission fails the run through the shared `fail` path.
  */
 export function submit(
   state: MachineState,
@@ -112,43 +151,40 @@ export function submit(
       `submit: submission kind "${submission.kind}" does not match round answer kind "${round.answer.kind}"`,
     );
   }
-  const correct = isCorrectAnswer(submission, round.answer);
+  if (!isCorrectAnswer(submission, round.answer)) {
+    return fail(state, round, "wrong", submission);
+  }
   return {
     ...state,
     phase: "revealed",
     submission,
-    wasCorrect: correct,
-    // Product rule: only a correct answer advances the counter; wrong answers
-    // leave correctCount untouched so guessing can never unlock the chain.
-    correctCount: correct ? state.correctCount + 1 : state.correctCount,
+    wasCorrect: true,
+    // Product rule: only a correct answer extends the streak; the counter
+    // resets on every miss, so guessing can never unlock the chain.
+    correctCount: state.correctCount + 1,
     feedback: {
       expected: expectedAnswerLabel(round),
       rule: round.rule,
-      correct,
+      correct: true,
     },
   };
 }
 
-/** Return a wrongly-answered round to `answering`. Counter unchanged; unlimited retries. */
-export function retry(state: MachineState): MachineState {
-  if (state.phase !== "revealed") {
-    throw new Error(`retry: cannot retry while phase is "${state.phase}"`);
+/**
+ * The clock ran out on a round still in `answering`. Same failure path as a
+ * wrong answer — a miss is a miss — with no submission to keep.
+ */
+export function timeout(state: MachineState, round: Round): MachineState {
+  if (state.phase !== "answering") {
+    throw new Error(`timeout: cannot time out while phase is "${state.phase}"`);
   }
-  if (state.wasCorrect) {
-    throw new Error("retry: cannot retry after a correct answer; advance instead");
-  }
-  return {
-    ...state,
-    phase: "answering",
-    submission: null,
-    wasCorrect: false,
-    feedback: null,
-  };
+  return fail(state, round, "timeout", null);
 }
 
 /**
  * Move to the next round, or `complete` after the last. Legal only after a
- * correct answer in `revealed`; throws otherwise (wrong answers retry, not advance).
+ * correct answer in `revealed`; throws otherwise (a miss ends the run, so a
+ * failed phase can never advance).
  * `totalRounds` is passed explicitly because the mandated MachineState shape
  * carries no length field.
  */
@@ -157,7 +193,7 @@ export function advance(state: MachineState, totalRounds: number): MachineState 
     throw new Error(`advance: cannot advance while phase is "${state.phase}"`);
   }
   if (!state.wasCorrect) {
-    throw new Error("advance: cannot advance after a wrong answer; retry instead");
+    throw new Error("advance: cannot advance after a wrong answer; the run already failed");
   }
   if (state.roundIndex + 1 >= totalRounds) {
     return { ...state, phase: "complete", submission: null };
@@ -172,7 +208,7 @@ export function advance(state: MachineState, totalRounds: number): MachineState 
   };
 }
 
-/** Unlock gate: a lesson is unlocked once enough correct answers have accumulated. */
+/** Unlock gate: a lesson is unlocked once the run holds enough correct answers in a row. */
 export function isUnlocked(correctCount: number): boolean {
   return correctCount >= UNLOCK_THRESHOLD;
 }

@@ -1,31 +1,44 @@
-import { createSignal, mergeProps, Show, Suspense } from "solid-js";
+import { createEffect, createSignal, mergeProps, on, onCleanup, Show, Suspense } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import { getAnswerComponent } from "../answers/registry";
 import { getPromptComponent } from "../prompts/registry";
 import { progress, UNLOCK_THRESHOLD } from "../../lib/progress";
+import { drawRun } from "../../lib/rounds/draw";
 import type { AnswerSubmission, Round } from "../../lib/rounds/types";
 import {
   advance,
   isUnlocked,
-  retry,
   start,
   submit,
+  timeout,
   type MachineState,
 } from "./roundMachine";
+import { QUESTION_TIME_MS, TIMER_TICK_MS, remainingSeconds } from "./timer";
 
 export interface GameShellProps {
   /** Catalog lesson id as a route string; the progress store keys on Number(id). */
   lessonId: string;
   lessonTitle: string;
+  /** The lesson's generated pool (>= UNLOCK_THRESHOLD rounds); the shell draws the run from it. */
   rounds: Round[];
+  /**
+   * A fresh pool for the next run, produced by the lesson's generator. Called
+   * only when a failed run restarts, so answering — correctly or not — never
+   * re-generates questions; a miss and its restart are two distinct moments.
+   */
+  regenerate?: () => Round[];
   onExit?: () => void;
 }
 
 /**
  * The round loop: prompt → answer control → immediate feedback (correct answer
- * + rule) → Retry (wrong) or Next/Finish (correct). Drives the pure
- * roundMachine; persistence happens only through recordCorrect, called exactly
- * where a submit transition reports a correct answer.
+ * + rule) → Next/Finish (correct) or Start over (a miss). Drives the pure
+ * roundMachine; persistence happens only through recordCorrect on a correct
+ * answer and resetStreak on a miss.
+ *
+ * Streak rule: the run is a draw of UNLOCK_THRESHOLD rounds, one wrong answer
+ * or one expired countdown fails the whole run (streak wiped to zero), and the
+ * restart draws a fresh randomized set — a learner cannot grind past a lesson.
  *
  * One submit path for every answer kind: the control is resolved from
  * `answerRegistry` by `round.answer.kind` and emits an `AnswerSubmission`
@@ -42,10 +55,29 @@ export default function GameShell(props: GameShellProps) {
 
   const lessonNumber = () => Number(props.lessonId);
 
-  const [state, setState] = createSignal<MachineState>(start(props.rounds));
-  const [completed, setCompleted] = createSignal(
-    progress.completedRounds(lessonNumber()),
+  // Which rounds the learner plays: a draw of UNLOCK_THRESHOLD from the pool.
+  const [runRounds, setRunRounds] = createSignal<Round[]>(
+    drawRun(props.rounds, UNLOCK_THRESHOLD),
   );
+  // Run generation: bumping it remounts the round branch even when a restart
+  // re-draws the same pool with the same round ids, so no draft or placement
+  // ever survives into the fresh run.
+  const [runId, setRunId] = createSignal(0);
+
+  const [state, setState] = createSignal<MachineState>(start(runRounds()));
+  const [streak, setStreak] = createSignal(progress.streak(lessonNumber()));
+  const [remainingMs, setRemainingMs] = createSignal(QUESTION_TIME_MS);
+
+  /**
+   * The one failure path in the shell, mirroring the machine's shared `fail`:
+   * a wrong answer and an expired clock both land here and wipe the persisted
+   * streak, so nothing partial survives a miss. The fresh set is drawn later,
+   * when the learner starts over.
+   */
+  function endRun() {
+    progress.resetStreak(lessonNumber());
+    setStreak(progress.streak(lessonNumber()));
+  }
 
   /**
    * The single submit path shared by all four answer controls: the control
@@ -56,44 +88,96 @@ export default function GameShell(props: GameShellProps) {
   function handleSubmit(submission: AnswerSubmission) {
     const current = state();
     if (current.phase !== "answering") return;
-    const next = submit(current, submission, props.rounds[current.roundIndex]);
+    const next = submit(current, submission, runRounds()[current.roundIndex]);
     setState(next);
     if (next.wasCorrect) {
       progress.recordCorrect(lessonNumber());
-      setCompleted(progress.completedRounds(lessonNumber()));
+      setStreak(progress.streak(lessonNumber()));
+    } else {
+      endRun();
     }
   }
 
-  function handleRetry() {
-    setState(retry(state()));
+  /** The clock ran out: same failure path as a wrong answer, no submission kept. */
+  function handleTimeout() {
+    const current = state();
+    if (current.phase !== "answering") return;
+    setState(timeout(current, runRounds()[current.roundIndex]));
+    endRun();
   }
 
   function handleAdvance() {
-    setState(advance(state(), props.rounds.length));
+    setState(advance(state(), runRounds().length));
+  }
+
+  /** Restart after a miss: draw the fresh set, then begin the run at zero. */
+  function handleStartOver() {
+    const pool = props.regenerate ? props.regenerate() : props.rounds;
+    const fresh = drawRun(pool, UNLOCK_THRESHOLD);
+    setRunRounds(fresh);
+    setRunId((id) => id + 1);
+    setState(start(fresh));
   }
 
   function handleExit() {
     resolved.onExit?.();
   }
 
-  const round = () => props.rounds[state().roundIndex];
-  const isLastRound = () => state().roundIndex + 1 >= props.rounds.length;
+  // The countdown: one interval per answering phase, cancelled the moment the
+  // phase leaves `answering` (a reveal or a miss) and restarted per round.
+  let timerHandle: ReturnType<typeof setInterval> | undefined;
+  function stopTimer() {
+    if (timerHandle !== undefined) {
+      clearInterval(timerHandle);
+      timerHandle = undefined;
+    }
+  }
+
+  createEffect(
+    on(
+      () => `${runId()}:${state().roundIndex}:${state().phase}`,
+      () => {
+        stopTimer();
+        if (state().phase !== "answering") return;
+        setRemainingMs(QUESTION_TIME_MS);
+        const deadline = Date.now() + QUESTION_TIME_MS;
+        timerHandle = setInterval(() => {
+          const left = deadline - Date.now();
+          if (left <= 0) {
+            stopTimer();
+            setRemainingMs(0);
+            handleTimeout();
+            return;
+          }
+          setRemainingMs(left);
+        }, TIMER_TICK_MS);
+      },
+    ),
+  );
+  onCleanup(stopTimer);
+
+  const round = () => runRounds()[state().roundIndex];
+  const isLastRound = () => state().roundIndex + 1 >= runRounds().length;
+  /** Revealed or failed: the control is locked either way — a miss cannot be re-answered. */
+  const locked = () => state().phase === "revealed" || state().phase === "failed";
+  const feedbackShown = () =>
+    (state().phase === "revealed" || state().phase === "failed") && state().feedback !== null;
   /**
-   * Keyed identity of the round on screen. The keyed `Show` in the render
+   * Keyed identity of the run + round on screen. The keyed `Show` in the render
    * disposes and remounts the prompt/answer/feedback branch only when this
-   * changes (a new round), so every control starts fresh — no draft, no
-   * placement, no typed text carried over — while reveals and retries keep
-   * the branch mounted and an in-progress draft alive. The round id rides
-   * along so a swapped `rounds` array with a stable index still remounts.
+   * changes (a new round, or a new run), so every control starts fresh — no
+   * draft, no placement, no typed text carried over — while reveals keep the
+   * branch mounted. The round id rides along so a swapped round array with a
+   * stable index still remounts.
    */
-  const roundKey = () => `${state().roundIndex}:${round().id}`;
+  const roundKey = () => `${runId()}:${state().roundIndex}:${round().id}`;
 
   return (
     <section class="game-shell">
       <header class="game-shell__header">
         <h1 class="game-shell__title">{props.lessonTitle}</h1>
         <p class="game-shell__progress">
-          {completed()}/{UNLOCK_THRESHOLD} rounds completed
+          {streak()}/{UNLOCK_THRESHOLD} in a row
         </p>
         <Show when={isUnlocked(state().correctCount)}>
           <p class="game-shell__unlocked">Next lesson unlocked!</p>
@@ -109,11 +193,20 @@ export default function GameShell(props: GameShellProps) {
         when={state().phase !== "complete"}
         fallback={
           <p class="game-shell__finished">
-            Lesson complete: {state().correctCount} correct out of {props.rounds.length}.
+            Lesson complete: {state().correctCount} correct out of {runRounds().length}.
           </p>
         }
       >
         <div class="game-shell__round">
+          <Show when={state().phase === "answering"}>
+            {/* Visible countdown for the current question. Structural text only:
+                the timer never names the answer, so the no-answer-leak aria
+                contract is untouched; aria-live is off so ticks are not read
+                out every quarter-second. */}
+            <p class="game-shell__timer" role="timer" aria-live="off">
+              {remainingSeconds(remainingMs())}s
+            </p>
+          </Show>
           <Show keyed when={roundKey()}>
             {(_roundKey) => (
               <>
@@ -130,30 +223,37 @@ export default function GameShell(props: GameShellProps) {
                 <Dynamic
                   component={getAnswerComponent(round().answer.kind)}
                   answer={round().answer}
-                  revealed={state().phase === "revealed"}
+                  revealed={locked()}
                   submission={state().submission}
                   onSubmit={handleSubmit}
                 />
-                <Show when={state().phase === "revealed" && state().feedback}>
+                <Show when={feedbackShown() && state().feedback}>
                   {(feedback) => (
                     <section class="game-shell__feedback" data-correct={String(feedback().correct)}>
                       <p class="game-shell__verdict">
-                        {feedback().correct ? "Correct!" : "Not quite."}
+                        {feedback().correct
+                          ? "Correct!"
+                          : state().miss === "timeout"
+                            ? "Time's up."
+                            : "Not quite."}
                       </p>
                       <p class="game-shell__expected">
                         Correct answer: <strong>{feedback().expected}</strong>
                       </p>
                       <p class="game-shell__rule">{feedback().rule}</p>
                       <Show
-                        when={!state().wasCorrect}
+                        when={state().phase === "failed"}
                         fallback={
                           <button type="button" class="game-shell__next" onClick={handleAdvance}>
                             {isLastRound() ? "Finish" : "Next"}
                           </button>
                         }
                       >
-                        <button type="button" class="game-shell__retry" onClick={handleRetry}>
-                          Retry
+                        <p class="game-shell__missed">
+                          That misses the run: progress is back to 0/{UNLOCK_THRESHOLD}.
+                        </p>
+                        <button type="button" class="game-shell__restart" onClick={handleStartOver}>
+                          Start over
                         </button>
                       </Show>
                     </section>

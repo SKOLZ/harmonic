@@ -90,6 +90,9 @@ describe("GamePage lesson wiring", () => {
     expect(choice).not.toBeNull();
     choice!.click();
     expect(generateCalls).toEqual([10]);
+    // T3: a wrong click fails the run and wipes lesson 10's streak, which would
+    // re-lock /lesson/2; the unlock below is this test's setup, so restore it.
+    localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify({ "10": 10 }));
 
     window.location.hash = "#/lesson/2";
     await waitFor(() => title(host) === "Note Duration", "lesson 11 shell");

@@ -2,7 +2,14 @@ import { describe, expect, it } from "vitest";
 import { UNLOCK_THRESHOLD } from "../../lib/progress/store";
 import type { AnswerSubmission, Round } from "../../lib/rounds/types";
 import { validateRound } from "../../lib/rounds/validate";
-import { advance, expectedAnswerLabel, isUnlocked, retry, start, submit } from "./roundMachine";
+import {
+  advance,
+  expectedAnswerLabel,
+  isUnlocked,
+  start,
+  submit,
+  timeout,
+} from "./roundMachine";
 
 function choiceRound(id: string, correctIndex = 1): Round {
   return {
@@ -71,6 +78,7 @@ describe("roundMachine", () => {
         submission: null,
         wasCorrect: false,
         feedback: null,
+        miss: null,
       });
     });
 
@@ -86,6 +94,7 @@ describe("roundMachine", () => {
       expect(state.correctCount).toBe(1);
       expect(state.phase).toBe("revealed");
       expect(state.wasCorrect).toBe(true);
+      expect(state.miss).toBeNull();
       expect(state.submission).toEqual({ kind: "choices", selectedIndex: 2 });
       expect(state.feedback).toEqual({
         expected: "E",
@@ -94,14 +103,18 @@ describe("roundMachine", () => {
       });
     });
 
-    it("a wrong answer leaves correctCount unchanged and reveals the expected answer", () => {
-      const rounds = [choiceRound("r1", 2)];
-      const state = submit(start(rounds), pick(0), rounds[0]);
+    it("a wrong answer fails the run: the streak is wiped and the miss is recorded", () => {
+      const rounds = manyRounds(3);
+      // Two correct first, so the wipe has something to destroy.
+      let state = playCorrect(start(rounds), rounds, 2);
+      state = submit(state, pick(0), rounds[state.roundIndex]);
       expect(state.correctCount).toBe(0);
-      expect(state.phase).toBe("revealed");
+      expect(state.phase).toBe("failed");
+      expect(state.miss).toBe("wrong");
       expect(state.wasCorrect).toBe(false);
+      expect(state.roundIndex).toBe(2);
       expect(state.feedback).toEqual({
-        expected: "E",
+        expected: "D",
         rule: "D sits a step above C.",
         correct: false,
       });
@@ -125,32 +138,60 @@ describe("roundMachine", () => {
     });
   });
 
-  describe("retry", () => {
-    it("keeps the counter and returns to answering after a wrong answer", () => {
-      const rounds = [choiceRound("r1", 2), choiceRound("r2")];
-      let state = submit(start(rounds), pick(0), rounds[0]); // wrong
-      state = retry(state);
-      expect(state.phase).toBe("answering");
+  describe("timeout", () => {
+    it("an expired clock fails the run exactly like a wrong answer", () => {
+      const rounds = manyRounds(3);
+      let state = playCorrect(start(rounds), rounds, 2);
+      state = timeout(state, rounds[state.roundIndex]);
+
+      expect(state.phase).toBe("failed");
+      expect(state.miss).toBe("timeout");
+      expect(state.wasCorrect).toBe(false);
+      // The streak is wiped by the clock the same way it is wiped by a miss.
       expect(state.correctCount).toBe(0);
-      expect(state.feedback).toBeNull();
       expect(state.submission).toBeNull();
-      // Retry without limit on the same round: a later correct answer still counts.
-      state = submit(state, pick(2), rounds[0]);
-      expect(state.correctCount).toBe(1);
+      expect(state.feedback).toEqual({
+        expected: "D",
+        rule: "D sits a step above C.",
+        correct: false,
+      });
     });
 
-    it("throws after a correct answer (advance instead)", () => {
+    it("shares one failure path with a wrong answer (same state, only miss and submission differ)", () => {
+      const rounds = [choiceRound("r1", 2)];
+      const byWrong = submit(start(rounds), pick(0), rounds[0]);
+      const byClock = timeout(start(rounds), rounds[0]);
+      const { miss: wrongMiss, submission: wrongSubmission, ...byWrongRest } = byWrong;
+      const { miss: clockMiss, submission: clockSubmission, ...byClockRest } = byClock;
+      expect(wrongMiss).toBe("wrong");
+      expect(clockMiss).toBe("timeout");
+      expect(wrongSubmission).toEqual(pick(0));
+      expect(clockSubmission).toBeNull();
+      expect(byClockRest).toEqual(byWrongRest);
+    });
+
+    it("throws when the round is no longer being answered", () => {
       const rounds = [choiceRound("r1")];
+      expect(() => timeout(start(rounds), rounds[0])).not.toThrow();
+      const failed = timeout(start(rounds), rounds[0]);
+      expect(() => timeout(failed, rounds[0])).toThrow(/cannot time out while phase/);
       const revealed = submit(start(rounds), pick(1), rounds[0]);
-      expect(() => retry(revealed)).toThrow(/retry/);
+      expect(() => timeout(revealed, rounds[0])).toThrow(/cannot time out while phase/);
+    });
+
+    it("a timed-out run cannot be submitted or advanced out of the failed phase", () => {
+      const rounds = [choiceRound("r1"), choiceRound("r2")];
+      const failed = timeout(start(rounds), rounds[0]);
+      expect(() => submit(failed, pick(1), rounds[0])).toThrow(/cannot submit while phase/);
+      expect(() => advance(failed, rounds.length)).toThrow(/cannot advance while phase/);
     });
   });
 
   describe("advance", () => {
-    it("throws after a wrong answer; the round does not advance", () => {
+    it("throws after a failed run; the round does not advance", () => {
       const rounds = [choiceRound("r1", 2), choiceRound("r2")];
       const wrong = submit(start(rounds), pick(0), rounds[0]);
-      expect(() => advance(wrong, rounds.length)).toThrow(/wrong answer/);
+      expect(() => advance(wrong, rounds.length)).toThrow(/cannot advance while phase is "failed"/);
       expect(wrong.roundIndex).toBe(0);
       expect(wrong.correctCount).toBe(0);
     });
@@ -180,26 +221,53 @@ describe("roundMachine", () => {
     });
   });
 
+  describe("restart after a failure", () => {
+    it("start clears every trace of the failed run", () => {
+      const rounds = manyRounds(3);
+      let state = playCorrect(start(rounds), rounds, 2);
+      state = submit(state, pick(0), rounds[state.roundIndex]);
+      expect(state.phase).toBe("failed");
+
+      const restarted = start(manyRounds(3));
+      expect(restarted).toEqual(start(manyRounds(3)));
+      expect(restarted.phase).toBe("answering");
+      expect(restarted.roundIndex).toBe(0);
+      expect(restarted.correctCount).toBe(0);
+      expect(restarted.feedback).toBeNull();
+      expect(restarted.miss).toBeNull();
+      expect(restarted.submission).toBeNull();
+    });
+  });
+
   describe("isUnlocked", () => {
     it("is false below the threshold and true at exactly the threshold", () => {
       expect(isUnlocked(UNLOCK_THRESHOLD - 1)).toBe(false);
       expect(isUnlocked(UNLOCK_THRESHOLD)).toBe(true);
     });
 
-    it("exactly ten correct answers unlock", () => {
+    it("exactly ten correct answers in a row unlock", () => {
       const rounds = manyRounds(UNLOCK_THRESHOLD);
       const done = playCorrect(start(rounds), rounds, UNLOCK_THRESHOLD);
       expect(done.correctCount).toBe(UNLOCK_THRESHOLD);
       expect(isUnlocked(done.correctCount)).toBe(true);
     });
 
-    it("wrong answers never contribute to unlocking", () => {
+    it("a wrong answer breaks the run, so it can never contribute to unlocking", () => {
       const rounds = manyRounds(2);
       let state = start(rounds);
-      for (let i = 0; i < 5; i += 1) {
-        state = submit(state, pick(0), rounds[state.roundIndex]); // always wrong
-        state = retry(state);
-      }
+      state = submit(state, pick(1), rounds[state.roundIndex]);
+      state = advance(state, rounds.length);
+      state = submit(state, pick(0), rounds[state.roundIndex]); // wrong
+      expect(state.correctCount).toBe(0);
+      expect(isUnlocked(state.correctCount)).toBe(false);
+    });
+
+    it("a timeout breaks the run the same way a wrong answer does", () => {
+      const rounds = manyRounds(2);
+      let state = start(rounds);
+      state = submit(state, pick(1), rounds[state.roundIndex]);
+      state = advance(state, rounds.length);
+      state = timeout(state, rounds[state.roundIndex]);
       expect(state.correctCount).toBe(0);
       expect(isUnlocked(state.correctCount)).toBe(false);
     });
@@ -242,10 +310,12 @@ describe("roundMachine", () => {
       });
     });
 
-    it("textInput: rejects text matching no accepted spelling and leaves the counter unchanged", () => {
+    it("textInput: rejects text matching no accepted spelling and fails the run", () => {
       const rounds = [textInputRound()];
       const state = submit(start(rounds), { kind: "textInput", text: "C#" }, rounds[0]);
       expect(state.wasCorrect).toBe(false);
+      expect(state.phase).toBe("failed");
+      expect(state.miss).toBe("wrong");
       expect(state.correctCount).toBe(0);
       expect(state.feedback?.expected).toBe("B♭");
       expect(state.feedback?.correct).toBe(false);
@@ -271,6 +341,7 @@ describe("roundMachine", () => {
         rounds[0],
       );
       expect(wrongSameLength.wasCorrect).toBe(false);
+      expect(wrongSameLength.phase).toBe("failed");
       expect(wrongSameLength.correctCount).toBe(0);
       const subset = submit(start(rounds), { kind: "notePick", notes: ["A", "C#"] }, rounds[0]);
       expect(subset.wasCorrect).toBe(false);
@@ -285,6 +356,7 @@ describe("roundMachine", () => {
         rounds[0],
       );
       expect(wrongOrder.wasCorrect).toBe(false);
+      expect(wrongOrder.phase).toBe("failed");
       expect(wrongOrder.correctCount).toBe(0);
       expect(wrongOrder.feedback?.expected).toBe("A → C# → E");
       const rightOrder = submit(
@@ -296,12 +368,16 @@ describe("roundMachine", () => {
       expect(rightOrder.correctCount).toBe(1);
     });
 
-    it("a wrong textInput answer cannot advance; retry keeps the counter and a later correct answer counts once", () => {
+    it("a wrong textInput answer fails the run instead of reopening the question", () => {
       const rounds = [textInputRound()];
       let state = submit(start(rounds), { kind: "textInput", text: "C" }, rounds[0]);
       expect(state.correctCount).toBe(0);
-      expect(() => advance(state, rounds.length)).toThrow(/wrong answer/);
-      state = retry(state);
+      expect(state.phase).toBe("failed");
+      expect(() => advance(state, rounds.length)).toThrow(/cannot advance while phase is "failed"/);
+
+      // Restarting is the only way out of a failed run, and it starts at zero.
+      state = start(rounds);
+      expect(state.phase).toBe("answering");
       expect(state.correctCount).toBe(0);
       expect(state.submission).toBeNull();
       state = submit(state, { kind: "textInput", text: "bb" }, rounds[0]);

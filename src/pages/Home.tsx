@@ -27,7 +27,7 @@ export default function Home() {
       <header class="home__header">
         <h1>Music Theory Practice</h1>
         <p class="home__lede">
-          Answer {UNLOCK_THRESHOLD} rounds correctly in a lesson to unlock the next one.
+          Answer {UNLOCK_THRESHOLD} rounds in a row in a lesson to unlock the next one.
         </p>
       </header>
 
@@ -49,7 +49,7 @@ export default function Home() {
                           <span class="home__lesson-title">{entry.title}</span>
                           <span class="home__lesson-meta">
                             <span class="home__lesson-progress">
-                              {progress.completedRounds(entry.id)}/{UNLOCK_THRESHOLD}
+                              {progress.streak(entry.id)}/{UNLOCK_THRESHOLD}
                             </span>
                             <span class="home__lesson-lock">Locked</span>
                           </span>
@@ -59,7 +59,7 @@ export default function Home() {
                       <A class="home__lesson-body" href={`/lesson/${index + 1}`}>
                         <span class="home__lesson-title">{entry.title}</span>
                         <span class="home__lesson-progress">
-                          {progress.completedRounds(entry.id)}/{UNLOCK_THRESHOLD}
+                          {progress.streak(entry.id)}/{UNLOCK_THRESHOLD}
                         </span>
                       </A>
                     </Show>

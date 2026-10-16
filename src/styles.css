@@ -176,6 +176,16 @@ a.home__lesson-body:hover {
   gap: 1.25rem;
 }
 
+/* The countdown belongs to the current question: numeric seconds, right-
+   aligned above the prompt, colour only ever reinforcing the number. */
+.game-shell__timer {
+  justify-self: end;
+  margin: 0;
+  color: #5a616b;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Feedback reads as a panel with the verdict colour carried by a left edge,
    never by colour alone — the verdict words stay the primary signal. */
 .game-shell__feedback {
@@ -220,6 +230,13 @@ a.home__lesson-body:hover {
   font-size: 0.95rem;
 }
 
+/* Shown only on a failed run, to explain the reset the header now displays. */
+.game-shell__missed {
+  margin: 0.75rem 0 0;
+  color: #7f1d1d;
+  font-size: 0.95rem;
+}
+
 .game-shell__finished {
   margin: 0;
   padding: 1rem 1.1rem;
@@ -230,9 +247,9 @@ a.home__lesson-body:hover {
 }
 
 /* Buttons inherit the app typeface instead of the UA default, and carry a
-   clear primary/secondary split: Next is the advance, Retry is the recovery. */
+   clear primary/secondary split: Next is the advance, Start over the recovery. */
 .game-shell__next,
-.game-shell__retry,
+.game-shell__restart,
 .game-shell__exit {
   font: inherit;
   border-radius: 6px;
@@ -253,14 +270,14 @@ a.home__lesson-body:hover {
   background: #1e40af;
 }
 
-.game-shell__retry {
+.game-shell__restart {
   padding: 0.5rem 1.1rem;
   border: 1px solid #8a93a0;
   background: #fff;
   color: #1c1f24;
 }
 
-.game-shell__retry:hover {
+.game-shell__restart:hover {
   border-color: #5a616b;
   background: #f3f4f6;
 }
