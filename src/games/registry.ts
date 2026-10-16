@@ -34,6 +34,9 @@ import { lesson57 } from "./lesson57";
 import { lesson60 } from "./lesson60";
 import { lesson61 } from "./lesson61";
 import { lesson62 } from "./lesson62";
+import { lesson120 } from "./lesson120";
+import { lesson121 } from "./lesson121";
+import { lesson122 } from "./lesson122";
 import type { LessonModule } from "./types";
 
 /**
@@ -79,6 +82,9 @@ const modules: ReadonlyMap<number, LessonModule> = new Map<number, LessonModule>
   [60, lesson60],
   [61, lesson61],
   [62, lesson62],
+  [120, lesson120],
+  [121, lesson121],
+  [122, lesson122],
 ]);
 
 /** The lesson ids that currently have a module; drives the contract tests. */

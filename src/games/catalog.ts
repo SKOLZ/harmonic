@@ -46,6 +46,9 @@ export const catalog: LessonEntry[] = [
   { id: 60, title: "Triads in First Inversion", section: "Chord Progressions", order: 34 },
   { id: 61, title: "Triads in Second Inversion", section: "Chord Progressions", order: 35 },
   { id: 62, title: "Analysis: Auld Lang Syne", section: "Chord Progressions", order: 36 },
+  { id: 120, title: "Building Neapolitan Chords", section: "Neapolitan Chords", order: 37 },
+  { id: 121, title: "Using Neapolitan Chords", section: "Neapolitan Chords", order: 38 },
+  { id: 122, title: "Analysis: Moonlight Sonata", section: "Neapolitan Chords", order: 39 },
 ];
 
 /**
