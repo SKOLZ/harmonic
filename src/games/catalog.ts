@@ -36,6 +36,9 @@ export const catalog: LessonEntry[] = [
   { id: 44, title: "Roman Numeral Analysis: Triads", section: "Diatonic Chords", order: 24 },
   { id: 46, title: "Diatonic Seventh Chords", section: "Diatonic Chords", order: 25 },
   { id: 49, title: "Roman Numeral Analysis: Seventh Chords", section: "Diatonic Chords", order: 26 },
+  { id: 50, title: "Composing with Minor Scales", section: "Diatonic Chords", order: 27 },
+  { id: 51, title: "Voicing Chords", section: "Diatonic Chords", order: 28 },
+  { id: 52, title: "Analysis: O Canada", section: "Diatonic Chords", order: 29 },
 ];
 
 /**
