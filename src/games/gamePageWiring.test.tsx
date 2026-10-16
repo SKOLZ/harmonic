@@ -69,9 +69,10 @@ function title(host: HTMLElement): string | undefined {
 
 describe("GamePage lesson wiring", () => {
   it("generates rounds from the registry once per lesson visit", async () => {
-    // Lesson 11 unlocks only after 10 correct rounds of lesson 10.
+    // Ordinal /lesson/1 (catalog[0], source id 10) unlocks /lesson/2 only
+    // after 10 correct rounds; the seed stays keyed by source id.
     localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify({ "10": 10 }));
-    window.location.hash = "#/lesson/10";
+    window.location.hash = "#/lesson/1";
 
     const host = mount(() => (
       <HashRouter>
@@ -90,21 +91,22 @@ describe("GamePage lesson wiring", () => {
     choice!.click();
     expect(generateCalls).toEqual([10]);
 
-    window.location.hash = "#/lesson/11";
+    window.location.hash = "#/lesson/2";
     await waitFor(() => title(host) === "Note Duration", "lesson 11 shell");
     expect(generateCalls).toEqual([10, 11]);
 
     // A fresh visit to a lesson regenerates, i.e. once per visit, not once ever.
     window.location.hash = "#/";
     await waitFor(() => host.querySelector(".game-page") === null, "leave game page");
-    window.location.hash = "#/lesson/10";
+    window.location.hash = "#/lesson/1";
     await waitFor(() => title(host) === "The Staff, Clefs, and Ledger Lines", "lesson 10 again");
     expect(generateCalls).toEqual([10, 11, 10]);
   });
 
   it("shows the locked screen without asking the registry for rounds", async () => {
-    // No progress recorded, so lesson 12 stays locked and unregistered.
-    window.location.hash = "#/lesson/12";
+    // No progress recorded, so ordinal /lesson/3 (catalog[2]) stays locked
+    // and unregistered.
+    window.location.hash = "#/lesson/3";
     const host = mount(() => (
       <HashRouter>
         <Route path="/lesson/:id" component={GamePage} />

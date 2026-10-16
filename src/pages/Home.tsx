@@ -37,7 +37,7 @@ export default function Home() {
             <h2 class="home__section-title">{sectionName}</h2>
             <ul class="home__lessons">
               <For each={rows}>
-                {({ entry, unlocked }) => (
+                {({ entry, index, unlocked }) => (
                   <li
                     class="home__lesson"
                     classList={{ "home__lesson--locked": !unlocked }}
@@ -56,7 +56,7 @@ export default function Home() {
                         </div>
                       }
                     >
-                      <A class="home__lesson-body" href={`/lesson/${entry.id}`}>
+                      <A class="home__lesson-body" href={`/lesson/${index + 1}`}>
                         <span class="home__lesson-title">{entry.title}</span>
                         <span class="home__lesson-progress">
                           {progress.completedRounds(entry.id)}/{UNLOCK_THRESHOLD}

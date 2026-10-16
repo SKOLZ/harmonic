@@ -153,7 +153,8 @@ describe("Home: lock state", () => {
     expect(lessonRows[0]!.classList.contains("home__lesson--locked")).toBe(false);
     const firstBody = lessonRows[0]!.querySelector(".home__lesson-body");
     expect(firstBody?.tagName).toBe("A");
-    expect(firstBody?.getAttribute("href")).toBe(`/lesson/${catalog[0]!.id}`);
+    // Lesson URLs are ordinal: catalog[0] is /lesson/1, never its source id.
+    expect(firstBody?.getAttribute("href")).toBe("/lesson/1");
     expect(lessonRows[0]!.querySelector(".home__lesson-lock")).toBeNull();
 
     for (const row of lessonRows.slice(1)) {
@@ -180,8 +181,9 @@ describe("Home: lock state", () => {
 
     const unlockedRow = rowByTitle(host, second.title);
     expect(unlockedRow.classList.contains("home__lesson--locked")).toBe(false);
+    // second is catalog[1], so its ordinal URL is /lesson/2 — not source id 11.
     expect(unlockedRow.querySelector(".home__lesson-body")?.getAttribute("href")).toBe(
-      `/lesson/${second.id}`,
+      "/lesson/2",
     );
     expect(unlockedRow.querySelector(".home__lesson-lock")).toBeNull();
 
@@ -201,7 +203,7 @@ describe("Home: lock state", () => {
     const firstRow = rows(host)[0]!;
     expect(firstRow.querySelector(".home__lesson-body")?.tagName).toBe("A");
     expect(firstRow.querySelector(".home__lesson-body")?.getAttribute("href")).toBe(
-      `/lesson/${catalog[0]!.id}`,
+      "/lesson/1",
     );
   });
 });

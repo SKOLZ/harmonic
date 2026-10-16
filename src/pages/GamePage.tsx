@@ -9,8 +9,16 @@ import { progress, UNLOCK_THRESHOLD } from "../lib/progress";
 export default function GamePage() {
   const params = useParams();
   const navigate = useNavigate();
-  const lessonIndex = () =>
-    catalog.findIndex((entry) => String(entry.id) === params.id);
+  // The URL surface is ordinal: /lesson/N is catalog[N-1], independent of the
+  // musictheory.net source ids the catalog carries as metadata. Anything
+  // outside 1..catalog.length (zero, past the end, non-numeric) resolves to
+  // -1 and falls through to the not-found branch.
+  const lessonIndex = () => {
+    const ordinal = Number(params.id);
+    return Number.isInteger(ordinal) && ordinal >= 1 && ordinal <= catalog.length
+      ? ordinal - 1
+      : -1;
+  };
   const lesson = () => {
     const index = lessonIndex();
     return index >= 0 ? catalog[index] : undefined;
