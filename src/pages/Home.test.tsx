@@ -208,6 +208,37 @@ describe("Home: lock state", () => {
   });
 });
 
+describe("Home: endless practice sits outside the lesson catalog", () => {
+  it("links the practice route without adding a lesson row", async () => {
+    const host = await mountHome();
+
+    const link = host.querySelector<HTMLAnchorElement>('a[href="/practice"]');
+    expect(link).not.toBeNull();
+    expect(link!.textContent?.trim()).toBe("Start endless practice");
+
+    // The link is its own block, not a lesson row: the catalog is untouched,
+    // so the lesson counts and the lock chain above keep holding.
+    expect(link!.closest("li.home__lesson")).toBeNull();
+    expect(link!.closest(".home__section")).toBeNull();
+    expect(rows(host)).toHaveLength(catalog.length);
+    expect(sectionTitles(host)).toEqual(
+      [...new Set(catalog.map((entry) => entry.section))],
+    );
+  });
+
+  it("does not gate the practice link behind lesson progress", async () => {
+    // Every lesson locked, i.e. a brand-new learner: practice is still open.
+    const host = await mountHome();
+
+    const link = host.querySelector<HTMLAnchorElement>('a[href="/practice"]');
+    expect(link).not.toBeNull();
+    expect(link!.closest(".home__lesson--locked")).toBeNull();
+    for (const row of rows(host).slice(1)) {
+      expect(row.classList.contains("home__lesson--locked")).toBe(true);
+    }
+  });
+});
+
 describe("Home: per-lesson progress", () => {
   it("shows each lesson's current streak against UNLOCK_THRESHOLD", async () => {
     const seeded: Record<string, number> = {

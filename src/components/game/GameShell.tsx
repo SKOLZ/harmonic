@@ -1,4 +1,4 @@
-import { createEffect, createSignal, mergeProps, on, onCleanup, Show, Suspense } from "solid-js";
+import { createSignal, mergeProps, Show, Suspense } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import { getAnswerComponent } from "../answers/registry";
 import { getPromptComponent } from "../prompts/registry";
@@ -13,7 +13,8 @@ import {
   timeout,
   type MachineState,
 } from "./roundMachine";
-import { QUESTION_TIME_MS, TIMER_TICK_MS, remainingSeconds } from "./timer";
+import { createQuestionCountdown } from "./questionCountdown";
+import { remainingSeconds } from "./timer";
 
 export interface GameShellProps {
   /** Catalog lesson id as a route string; the progress store keys on Number(id). */
@@ -66,7 +67,6 @@ export default function GameShell(props: GameShellProps) {
 
   const [state, setState] = createSignal<MachineState>(start(runRounds()));
   const [streak, setStreak] = createSignal(progress.streak(lessonNumber()));
-  const [remainingMs, setRemainingMs] = createSignal(QUESTION_TIME_MS);
 
   /**
    * The one failure path in the shell, mirroring the machine's shared `fail`:
@@ -123,38 +123,14 @@ export default function GameShell(props: GameShellProps) {
     resolved.onExit?.();
   }
 
-  // The countdown: one interval per answering phase, cancelled the moment the
-  // phase leaves `answering` (a reveal or a miss) and restarted per round.
-  let timerHandle: ReturnType<typeof setInterval> | undefined;
-  function stopTimer() {
-    if (timerHandle !== undefined) {
-      clearInterval(timerHandle);
-      timerHandle = undefined;
-    }
-  }
-
-  createEffect(
-    on(
-      () => `${runId()}:${state().roundIndex}:${state().phase}`,
-      () => {
-        stopTimer();
-        if (state().phase !== "answering") return;
-        setRemainingMs(QUESTION_TIME_MS);
-        const deadline = Date.now() + QUESTION_TIME_MS;
-        timerHandle = setInterval(() => {
-          const left = deadline - Date.now();
-          if (left <= 0) {
-            stopTimer();
-            setRemainingMs(0);
-            handleTimeout();
-            return;
-          }
-          setRemainingMs(left);
-        }, TIMER_TICK_MS);
-      },
-    ),
+  // The countdown is the shared per-question clock: it re-arms on every new
+  // run/round/phase, runs only while `answering`, and calls handleTimeout —
+  // the same failure path a wrong answer takes — when the deadline passes.
+  const remainingMs = createQuestionCountdown(
+    () => `${runId()}:${state().roundIndex}:${state().phase}`,
+    () => state().phase === "answering",
+    handleTimeout,
   );
-  onCleanup(stopTimer);
 
   const round = () => runRounds()[state().roundIndex];
   const isLastRound = () => state().roundIndex + 1 >= runRounds().length;

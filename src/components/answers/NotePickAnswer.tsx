@@ -8,6 +8,13 @@ export interface NotePickAnswerProps {
   onSubmit: (submission: AnswerSubmission) => void;
   revealed?: boolean;
   submission?: AnswerSubmission | null;
+  /**
+   * Inclusive keyboard bounds, forwarded to `Keyboard`. The endless practice
+   * mode answers on C3–C6 so a bass-clef note still has a key to be picked
+   * on; omitted keeps the default C4–C6 every other caller sees.
+   */
+  startNote?: string;
+  endNote?: string;
 }
 
 /**
@@ -68,6 +75,8 @@ export default function NotePickAnswer(props: NotePickAnswerProps) {
         selectable={!locked()}
         selected={notes()}
         onToggle={toggle}
+        startNote={props.startNote}
+        endNote={props.endNote}
       />
       <ul class="note-pick__selection" aria-label="Selected notes">
         <For each={notes()}>{(note) => <li>{note}</li>}</For>

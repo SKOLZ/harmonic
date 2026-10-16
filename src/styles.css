@@ -132,6 +132,65 @@ a.home__lesson-body:hover {
   color: #5a616b;
 }
 
+/* ---------- Endless practice ---------- */
+
+/* Home's practice entry. Deliberately its own block rather than a section or
+   a lesson row: it is a mode, not a lesson, so it carries no lock state, no
+   streak count, and no place in the catalog order. */
+.home__practice {
+  margin-top: 2rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid #d8dce2;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.home__practice-title {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+}
+
+.home__practice-lede {
+  margin: 0 0 0.75rem;
+  color: #5a616b;
+  font-size: 0.95rem;
+}
+
+.home__practice-link {
+  display: inline-block;
+  padding: 0.5rem 1.1rem;
+  border: 1px solid #1d4ed8;
+  border-radius: 6px;
+  background: #1d4ed8;
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.home__practice-link:hover {
+  border-color: #1e40af;
+  background: #1e40af;
+}
+
+/* Practice is a game shell with a score instead of a streak and a run that
+   never completes, so it reuses the game-shell classes and only adds the two
+   pieces of text that are its own. */
+.practice-shell__score {
+  margin: 0;
+  color: #5a616b;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.practice-shell__final {
+  margin: 0.75rem 0 0;
+  color: #7f1d1d;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
 /* ---------- Game shell ---------- */
 
 .game-shell {

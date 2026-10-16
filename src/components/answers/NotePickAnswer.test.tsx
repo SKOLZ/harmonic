@@ -141,6 +141,26 @@ describe("NotePickAnswer", () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
+  it("draws the keyboard inside the optional startNote/endNote range", () => {
+    // The endless practice mode answers on a three-octave keyboard (C3–C6) so
+    // bass-clef notes have a key to be picked on; the defaults stay C4–C6.
+    const wide = mount(() => (
+      <NotePickAnswer
+        answer={answer}
+        onSubmit={() => {}}
+        startNote="C3"
+        endNote="C6"
+      />
+    ));
+    expect(keyButton(wide, "C3").tagName).toBe("BUTTON");
+    expect(keyButton(wide, "B3").tagName).toBe("BUTTON");
+    expect(keyButton(wide, "C6").tagName).toBe("BUTTON");
+
+    const narrow = mount(() => <NotePickAnswer answer={answer} onSubmit={() => {}} />);
+    expect(narrow.querySelector('button[data-note="C3"]')).toBeNull();
+    expect(keyButton(narrow, "C4").tagName).toBe("BUTTON");
+  });
+
   it("shows the stored submission while revealed and lets the learner re-select after a retry", () => {
     const [submission, setSubmission] = createSignal<AnswerSubmission | null>(null);
     const [revealed, setRevealed] = createSignal(false);

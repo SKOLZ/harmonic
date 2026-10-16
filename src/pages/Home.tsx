@@ -31,6 +31,20 @@ export default function Home() {
         </p>
       </header>
 
+      {/* Endless practice lives on its own route, outside the 39-lesson chain:
+          this block is deliberately not a `.home__section` / `.home__lesson`
+          row, so it never enters the catalog counts, the lock state, or the
+          unlock chain the sections below drive. */}
+      <section class="home__practice">
+        <h2 class="home__practice-title">Endless practice</h2>
+        <p class="home__practice-lede">
+          Guess the note on the staff against the clock. One miss ends the run.
+        </p>
+        <A class="home__practice-link" href="/practice">
+          Start endless practice
+        </A>
+      </section>
+
       <For each={[...sections]}>
         {([sectionName, rows]) => (
           <section class="home__section">
