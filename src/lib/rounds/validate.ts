@@ -8,6 +8,24 @@ function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item) => typeof item === "string");
 }
 
+/**
+ * Boundary check for the staff notation shape shared by a `staff` prompt and
+ * a round's optional `illustration`. `label` is the owning phrase (e.g.
+ * `Round "x": prompt`), so failures name the exact surface.
+ */
+function validateStaffSpec(spec: unknown, label: string): void {
+  if (typeof spec !== "object" || spec === null || Array.isArray(spec)) {
+    throw new Error(`${label} must be an object`);
+  }
+  const { clef, notes } = spec as { clef?: unknown; notes?: unknown };
+  if (clef !== "treble" && clef !== "bass") {
+    throw new Error(`${label} clef must be "treble" or "bass"`);
+  }
+  if (!isStringArray(notes) || notes.length === 0) {
+    throw new Error(`${label} notes must be a non-empty string array`);
+  }
+}
+
 function validatePrompt(prompt: unknown, label: string): void {
   if (typeof prompt !== "object" || prompt === null || Array.isArray(prompt)) {
     throw new Error(`${label}: prompt must be an object`);
@@ -21,13 +39,7 @@ function validatePrompt(prompt: unknown, label: string): void {
       return;
     }
     case "staff": {
-      const { clef, notes } = prompt as { clef?: unknown; notes?: unknown };
-      if (clef !== "treble" && clef !== "bass") {
-        throw new Error(`${label}: prompt clef must be "treble" or "bass"`);
-      }
-      if (!isStringArray(notes) || notes.length === 0) {
-        throw new Error(`${label}: prompt notes must be a non-empty string array`);
-      }
+      validateStaffSpec(prompt, `${label}: prompt`);
       return;
     }
     case "audio": {
@@ -117,9 +129,10 @@ export function validateRound(round: unknown): void {
   if (typeof round !== "object" || round === null || Array.isArray(round)) {
     throw new Error("validateRound: round must be an object");
   }
-  const { id, prompt, answer, rule } = round as Partial<Round> & {
+  const { id, prompt, answer, rule, illustration } = round as Partial<Round> & {
     prompt?: unknown;
     answer?: unknown;
+    illustration?: unknown;
   };
   const label = `Round ${typeof id === "string" && id !== "" ? JSON.stringify(id) : "<no id>"}`;
   if (!isNonEmptyString(id)) {
@@ -127,6 +140,12 @@ export function validateRound(round: unknown): void {
   }
   validatePrompt(prompt, label);
   validateAnswer(answer, label);
+  // The companion illustration is optional; when present it must speak the
+  // same staff notation shape a `staff` prompt does — same boundary, same
+  // errors, so a bad draw fails at validation, not mid-engrave.
+  if (illustration !== undefined) {
+    validateStaffSpec(illustration, `${label}: illustration`);
+  }
   if (!isNonEmptyString(rule)) {
     throw new Error(`${label}: rule must be a non-empty string`);
   }

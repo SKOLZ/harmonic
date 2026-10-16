@@ -67,6 +67,34 @@ describe("validateRound", () => {
     }
   });
 
+  it("accepts a round whose optional illustration is a valid staff spec", () => {
+    const round = choicesRound({
+      illustration: { clef: "treble", notes: ["C#4"], duration: "q" },
+    });
+    expect(() => validateRound(round)).not.toThrow();
+  });
+
+  it("throws on an illustration whose clef is unsupported", () => {
+    // The illustration slot reuses the staff-prompt shape, so it inherits the
+    // same boundary checks — an unknown clef must fail here, not mid-engrave.
+    const round = choicesRound({
+      illustration: { clef: "alto", notes: ["C4"] },
+    });
+    expect(() => validateRound(round)).toThrow(/illustration clef/);
+  });
+
+  it("throws on an illustration with no notes", () => {
+    const round = choicesRound({ illustration: { clef: "bass", notes: [] } });
+    expect(() => validateRound(round)).toThrow(/illustration notes/);
+  });
+
+  it("throws on a non-object illustration", () => {
+    for (const illustration of ["C4", 42, ["C4"]]) {
+      const round = choicesRound({ illustration });
+      expect(() => validateRound(round)).toThrow(/illustration must be an object/);
+    }
+  });
+
   it("accepts valid rounds for the other answer kinds", () => {
     const textInput = choicesRound({
       answer: { kind: "textInput", accepted: ["Bb", "B flat"], expected: "B♭" },

@@ -80,3 +80,17 @@ describe("lesson 10 question pool", () => {
     expect(rules).toMatch(/grand staff|eleven lines|joined by middle C/);
   });
 });
+
+describe("lesson 10 companion illustrations (T5 pilot)", () => {
+  it("keeps every round text-only: every candidate would leak its answer", () => {
+    // Pilot decision, audited round by round: the lesson's text rounds are
+    // either conceptual (clef names, definitions) or ask the learner to
+    // IDENTIFY what a picture would already answer — the bottom treble line
+    // IS E, the clef's curl IS the G line, the grand-staff join IS middle C.
+    // Engraving those subjects draws the answer, which is a defect under the
+    // no-leak contract. Staff prompts already carry their own notation.
+    for (const round of lesson10Pool) {
+      expect(round.illustration).toBeUndefined();
+    }
+  });
+});

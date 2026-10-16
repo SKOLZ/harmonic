@@ -89,3 +89,16 @@ describe("lesson 12 question pool", () => {
     expect(rules).toMatch(/group into two beats/);
   });
 });
+
+describe("lesson 12 companion illustrations (T5 pilot)", () => {
+  it("keeps every round text-only: counting rounds would leak via the picture", () => {
+    // Pilot decision: the "how many notes does N/M contain" rounds are the
+    // worst possible illustration candidates — the learner would simply count
+    // the engraved glyphs to read the answer. The remaining text rounds are
+    // conceptual (bar lines, number meanings, common time), and Staff draws
+    // no time signature anyway.
+    for (const round of lesson12Pool) {
+      expect(round.illustration).toBeUndefined();
+    }
+  });
+});

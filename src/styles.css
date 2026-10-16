@@ -245,6 +245,14 @@ a.home__lesson-body:hover {
   font-variant-numeric: tabular-nums;
 }
 
+/* Companion staff illustration above the prompt (T5): a visual anchor for a
+   text question, centred like the notation it holds. Only rendered when the
+   round carries an illustration, so unillustrated rounds are untouched. */
+.game-shell__illustration {
+  justify-self: center;
+  margin: 0;
+}
+
 /* Feedback reads as a panel with the verdict colour carried by a left edge,
    never by colour alone — the verdict words stay the primary signal. */
 .game-shell__feedback {

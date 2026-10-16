@@ -5,23 +5,34 @@ export const PROMPT_KINDS = ["text", "staff", "audio", "keyboard"] as const;
 export const ANSWER_KINDS = ["choices", "textInput", "notePick", "sequence"] as const;
 
 /**
+ * The notation shape shared by a `staff` prompt and a round's optional
+ * companion `illustration`: a clef, a list of scientific pitch names, and
+ * optional engraving modifiers. `duration` is an optional VexFlow 5 duration
+ * code applied to every note: `w` whole, `h` half, `q` quarter, `8` eighth,
+ * `16` sixteenth (`32`, `64` also valid), `d` marks a dot after the code
+ * (`qd`), and a trailing `r` draws a rest instead of a note (`qr` quarter
+ * rest, `8r` eighth rest). Omitted means `q`. `simultaneous` resolves the
+ * one shape the `notes` array cannot: the same three pitch names are a
+ * measure (three sequential quarters) or a chord (one stacked sonority), and
+ * nothing in the data says which. Absent or `false` means sequential — a
+ * measure or melodic line, one glyph slot per entry; `true` means the notes
+ * are one chord and engrave as a single stacked StaveNote. Chord lessons must
+ * set it, melodic ones must not. Note-name strings are parsed through the
+ * theory layer; conversion to VexFlow keys happens inside the staff renderer.
+ */
+export interface StaffSpec {
+  clef: "treble" | "bass";
+  notes: string[];
+  keySignature?: string;
+  duration?: string;
+  simultaneous?: boolean;
+}
+
+/**
  * What the learner is asked to look at or listen to.
  *
  * - `text`: a plain question string (e.g. "What is the relative minor of A major?").
- * - `staff`: rendered notation — a clef, an optional key signature, and scientific
- *   pitch names ("C4", "Eb4"). These are parsed through the theory layer the same
- *   way every other note list in a round is; conversion to VexFlow keys happens
- *   inside the staff renderer, not here. `duration` is an optional VexFlow 5
- *   duration code applied to every note in the prompt: `w` whole, `h` half,
- *   `q` quarter, `8` eighth, `16` sixteenth (`32`, `64` also valid), `d` marks
- *   a dot after the code (`qd`), and a trailing `r` draws a rest instead of a
- *   note (`qr` quarter rest, `8r` eighth rest). Omitted means `q`.
- *   `simultaneous` resolves the one shape the `notes` array cannot: the same
- *   three pitch names are a measure (three sequential quarters) or a chord (one
- *   stacked sonority), and nothing in the data says which. Absent or `false`
- *   means sequential — a measure or melodic line, one glyph slot per entry;
- *   `true` means the notes are one chord and engrave as a single stacked
- *   StaveNote. Chord lessons must set it, melodic ones must not.
+ * - `staff`: rendered notation — see {@link StaffSpec} for the full shape.
  * - `audio`: something to hear — the `play` verb says whether the pitches form a
  *   single note, a chord, a scale, or an interval, so the synth knows how to group them.
  * - `keyboard`: a piano visual with certain keys highlighted (pitch names like "F#4");
@@ -29,7 +40,7 @@ export const ANSWER_KINDS = ["choices", "textInput", "notePick", "sequence"] as 
  */
 export type PromptSpec =
   | { kind: "text"; text: string }
-  | { kind: "staff"; clef: "treble" | "bass"; notes: string[]; keySignature?: string; duration?: string; simultaneous?: boolean }
+  | ({ kind: "staff" } & StaffSpec)
   | { kind: "audio"; play: "note" | "chord" | "scale" | "interval"; notes: string[] }
   | { kind: "keyboard"; highlight: string[]; octave?: number };
 
@@ -77,4 +88,16 @@ export interface Round {
   prompt: PromptSpec;
   answer: AnswerSpec;
   rule: string;
+  /**
+   * Optional companion staff drawn above the prompt (T5), reusing the exact
+   * {@link StaffSpec} shape a `staff` prompt speaks. The hard content rule —
+   * enforced by the lesson suites, not the type: the illustration carries the
+   * QUESTION's pitches and never the answer. "Fifth above C" would show C,
+   * not C and G; a counting round would leak by letting the learner count the
+   * glyphs; a rest-identification round would leak because the rest glyph IS
+   * the answer. Rounds without an illustration (every conceptual round, and
+   * every round whose picture would reveal its answer) render exactly as
+   * before — the slot is truly optional, not a defaulted empty staff.
+   */
+  illustration?: StaffSpec;
 }

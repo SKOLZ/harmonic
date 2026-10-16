@@ -76,3 +76,16 @@ describe("lesson 11 question pool", () => {
     expect(rules).toMatch(/dot increases duration by one half/);
   });
 });
+
+describe("lesson 11 companion illustrations (T5 pilot)", () => {
+  it("keeps every round text-only: duration arithmetic is not about pitches", () => {
+    // Pilot decision: every text round here asks for a count or a duration
+    // fact. None names a concrete pitch as its subject, and engraving any
+    // duration would draw the very quantity being asked about (four quarters
+    // for "how many quarters fill a whole" is the answer counted off the
+    // picture). Staff prompts already carry the notation side.
+    for (const round of lesson11Pool) {
+      expect(round.illustration).toBeUndefined();
+    }
+  });
+});

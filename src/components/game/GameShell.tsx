@@ -186,6 +186,29 @@ export default function GameShell(props: GameShellProps) {
           <Show keyed when={roundKey()}>
             {(_roundKey) => (
               <>
+                {/* Optional companion illustration (T5): a staff above the
+                    prompt carrying the QUESTION's pitches — never the answer.
+                    It renders through the same lazy registry entry as a staff
+                    prompt, so text rounds without one never pull the notation
+                    chunk, and rounds WITH one keep the text prompt and answer
+                    control un-delayed (only the illustration waits). The
+                    Show emits nothing — not even a wrapper — when the slot is
+                    absent, so unillustrated rounds are byte-identical to
+                    before. The aria contract rides StaffPrompt: structural
+                    only (clef, accidental count, glyph count), never pitch
+                    names, durations, or key identity. */}
+                <Show when={round().illustration}>
+                  {(illustration) => (
+                    <div class="game-shell__illustration">
+                      <Suspense fallback={null}>
+                        <Dynamic
+                          component={getPromptComponent("staff")}
+                          prompt={{ kind: "staff", ...illustration() }}
+                        />
+                      </Suspense>
+                    </div>
+                  )}
+                </Show>
                 {/* Scoped Suspense: only the prompt waits on the lazy staff
                     chunk. Answer controls and feedback render immediately, so
                     a text/choices round is never delayed by VexFlow loading. */}

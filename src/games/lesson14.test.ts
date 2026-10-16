@@ -117,3 +117,16 @@ describe("lesson 14 question pool", () => {
     expect(rules).toMatch(/slur/);
   });
 });
+
+describe("lesson 14 companion illustrations (T5 pilot)", () => {
+  it("keeps every round text-only: durations and ties lie outside the pilot rule", () => {
+    // Pilot decision: the text rounds ask for dot arithmetic or tie facts.
+    // Durations are not concrete pitches under the pilot rule, ties are not
+    // part of the notation-spec shape (no tie field), and engraving a dotted
+    // value would draw the subject of a "how many beats" count rather than
+    // guide a pitch question. Staff prompts already carry the dotted glyphs.
+    for (const round of lesson14Pool) {
+      expect(round.illustration).toBeUndefined();
+    }
+  });
+});

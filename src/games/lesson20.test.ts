@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseNote } from "../lib/theory";
 import { validateRound } from "../lib/rounds/validate";
-import type { PromptSpec } from "../lib/rounds/types";
+import type { PromptSpec, Round } from "../lib/rounds/types";
 import { createRng } from "./rng";
 import { lesson20, lesson20Pool } from "./lesson20";
 
@@ -101,5 +101,77 @@ describe("lesson 20 question pool", () => {
     expect(rules).toMatch(/adjacent letter name/);
     expect(rules).toMatch(/chromatic step/);
     expect(rules).toMatch(/E and F and between B and C/);
+  });
+});
+
+describe("lesson 20 companion illustrations (T5 pilot)", () => {
+  function illustratedRounds(): Round[] {
+    return lesson20Pool.filter((round) => round.illustration !== undefined);
+  }
+
+  it("illustrates exactly the two concrete-pitch text rounds", () => {
+    // The pilot rule: text rounds about concrete pitches get the companion
+    // staff; conceptual rounds stay text-only. On The Basics only these two
+    // qualify — every other text round is conceptual, or its illustration
+    // would draw the answer (counting, line-identification, rest glyphs).
+    const ids = illustratedRounds().map((round) => round.id).sort();
+    expect(ids).toEqual([
+      "l20-text-enharmonic-cs-db",
+      "l20-text-major-scale-half-steps",
+    ]);
+  });
+
+  it("attaches illustrations only to text-prompt rounds", () => {
+    for (const round of illustratedRounds()) {
+      expect(round.prompt.kind).toBe("text");
+    }
+  });
+
+  it("engraves the question's pitches: C# for the enharmonic round, the scale for the pair round", () => {
+    const enharmonic = lesson20Pool.find((round) => round.id === "l20-text-enharmonic-cs-db")!;
+    // The question names C#; the answer is Db. The illustration shows C# only.
+    expect(enharmonic.illustration).toEqual({ clef: "treble", notes: ["C#4"] });
+
+    const scale = lesson20Pool.find(
+      (round) => round.id === "l20-text-major-scale-half-steps",
+    )!;
+    // The C major scale, unaltered: every letter equally placed, so no pair
+    // is privileged by the engraving.
+    expect(scale.illustration).toEqual({
+      clef: "treble",
+      notes: ["C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5"],
+      duration: "q",
+    });
+  });
+
+  it("never engraves the correct answer as an illustration note", () => {
+    for (const round of illustratedRounds()) {
+      if (round.answer.kind !== "choices") continue;
+      const correct = round.answer.options[round.answer.correctIndex];
+      const noteLike = /^[A-G](#{1,2}|b{1,2})?$/.exec(correct);
+      if (noteLike === null) continue; // answer is not a bare pitch name
+      for (const name of round.illustration!.notes) {
+        const { letter, accidental } = parseNote(name);
+        const spelled = `${letter}${accidental === 0 ? "" : accidental > 0 ? "#".repeat(accidental) : "b".repeat(-accidental)}`;
+        expect(spelled).not.toBe(correct);
+      }
+    }
+  });
+
+  it("marks no half-step pair in the scale illustration: every tone is natural", () => {
+    const scale = lesson20Pool.find(
+      (round) => round.id === "l20-text-major-scale-half-steps",
+    )!;
+    for (const name of scale.illustration!.notes) {
+      expect(parseNote(name).accidental).toBe(0);
+    }
+  });
+
+  it("keeps illustration note names engraveable through the theory parser", () => {
+    for (const round of illustratedRounds()) {
+      for (const name of round.illustration!.notes) {
+        expect(parseNote(name).octave).toBeDefined();
+      }
+    }
   });
 });

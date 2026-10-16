@@ -344,6 +344,74 @@ describe("GameShell: every answer kind flows through the same submit path", () =
   });
 });
 
+describe("GameShell: companion staff illustration", () => {
+  function illustratedRound(id: string): Round {
+    return {
+      id,
+      prompt: { kind: "text", text: `Question ${id}?` },
+      answer: { kind: "choices", options: ["A", "B", "C"], correctIndex: 1 },
+      rule: `Rule for ${id}.`,
+      // The illustration carries the QUESTION's pitch (C#), never an answer.
+      illustration: { clef: "treble", notes: ["C#4"] },
+    };
+  }
+
+  async function waitFor(check: () => boolean, label: string): Promise<void> {
+    const deadline = Date.now() + 2000;
+    while (!check()) {
+      if (Date.now() > deadline) {
+        throw new Error(`waitFor timed out: ${label}`);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+  }
+
+  it("a text round with an illustration draws a staff above the prompt", async () => {
+    const host = mount(() => (
+      <GameShell lessonId="10" lessonTitle="Illustration" rounds={[illustratedRound("r1")]} />
+    ));
+    // The illustration rides the lazy notation chunk, same as a staff prompt.
+    await waitFor(() => host.querySelector(".game-shell__illustration svg") !== null, "illustration svg");
+
+    const wrapper = host.querySelector(".game-shell__illustration");
+    expect(wrapper).not.toBeNull();
+    expect(wrapper!.querySelector(".prompt--staff")).not.toBeNull();
+    // It is a companion: the text prompt still renders in full.
+    expect(host.querySelector(".prompt--text")?.textContent).toBe("Question r1?");
+    // Above the prompt, in document order.
+    const prompt = host.querySelector(".prompt--text")!;
+    expect(
+      wrapper!.compareDocumentPosition(prompt) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it("the illustration aria-label stays structural — never pitches, durations, or keys", async () => {
+    const host = mount(() => (
+      <GameShell lessonId="10" lessonTitle="Illustration" rounds={[illustratedRound("r1")]} />
+    ));
+    await waitFor(() => host.querySelector(".game-shell__illustration svg") !== null, "illustration svg");
+
+    const label =
+      host.querySelector(".game-shell__illustration .prompt--staff")?.getAttribute("aria-label") ??
+      "";
+    expect(label).toBe("Staff notation, treble clef, 1 note");
+    // Structural contract: no pitch names, no durations, no key identity.
+    expect(label).not.toMatch(/[A-G][#b]{0,2}\d/);
+    expect(label).not.toMatch(/whole|half|quarter|eighth|sixteenth|dotted|sharp|flat|major|minor/i);
+  });
+
+  it("a round without an illustration renders no illustration wrapper at all", async () => {
+    const host = mount(() => (
+      <GameShell lessonId="10" lessonTitle="No illustration" rounds={[choiceRound("r1")]} />
+    ));
+    // Give the lazy chunk a chance to resolve in case something wrongly
+    // requested it; the wrapper must never appear for an unillustrated round.
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(host.querySelector(".game-shell__illustration")).toBeNull();
+    expect(host.querySelector(".prompt--text")?.textContent).toBe("Question r1?");
+  });
+});
+
 describe("GameShell: one miss fails the whole run", () => {
   it("a wrong answer wipes the streak and offers Start over, never Retry", () => {
     const rounds = [choiceRound("r1", 1), choiceRound("r2"), choiceRound("r3")];

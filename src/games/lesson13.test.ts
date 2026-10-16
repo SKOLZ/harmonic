@@ -117,3 +117,16 @@ describe("lesson 13 question pool", () => {
     expect(rules).toMatch(/quarter of a beat/);
   });
 });
+
+describe("lesson 13 companion illustrations (T5 pilot)", () => {
+  it("keeps every round text-only: any rest glyph would be the answer", () => {
+    // Pilot decision: every text round concerns rest shapes ("box hanging
+    // below which line") or rest durations. Engraving any rest draws the
+    // glyph whose identity IS the answer, and rests carry no pitches for a
+    // question-side illustration to show. The hard no-leak rule rules the
+    // whole lesson out.
+    for (const round of lesson13Pool) {
+      expect(round.illustration).toBeUndefined();
+    }
+  });
+});

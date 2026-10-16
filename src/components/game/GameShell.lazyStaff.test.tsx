@@ -66,4 +66,36 @@ describe("GameShell lazy staff boundary", () => {
       host.querySelector("svg")!.querySelectorAll("path").length,
     ).toBeGreaterThanOrEqual(5);
   });
+
+  it("an illustration-only text round pulls the notation chunk without delaying the prompt", async () => {
+    const round: Round = {
+      id: "i1",
+      prompt: { kind: "text", text: "Which note is enharmonic with C#?" },
+      answer: { kind: "choices", options: ["Db", "D", "B", "Eb"], correctIndex: 0 },
+      rule: "C# and Db name the same pitch.",
+      illustration: { clef: "treble", notes: ["C#4"] },
+    };
+    const host = mount(() => (
+      <GameShell lessonId="20" lessonTitle="Lazy illustration" rounds={[round]} />
+    ));
+    // The text prompt and answer control are outside the illustration's
+    // Suspense: they paint before the chunk lands.
+    expect(host.querySelector(".prompt--text")?.textContent).toBe(
+      "Which note is enharmonic with C#?",
+    );
+    expect([...host.querySelectorAll("button")].map((b) => b.textContent)).toEqual([
+      "Db",
+      "D",
+      "B",
+      "Eb",
+    ]);
+    // The illustration itself waits on the same lazy chunk as a staff prompt.
+    await waitFor(
+      () => host.querySelector(".game-shell__illustration svg") !== null,
+      "illustration svg",
+    );
+    expect(
+      host.querySelector(".game-shell__illustration .prompt--staff")?.getAttribute("aria-label"),
+    ).toBe("Staff notation, treble clef, 1 note");
+  });
 });
