@@ -10,7 +10,7 @@ import {
 import type { AnswerSubmission, Round } from "../../lib/rounds/types";
 import { advance, start, submit, timeout, type MachineState } from "./roundMachine";
 import { createQuestionCountdown } from "./questionCountdown";
-import { remainingSeconds } from "./timer";
+import CountdownRing from "./CountdownRing";
 
 export interface PracticeShellProps {
   /** Heading above the run. */
@@ -178,13 +178,12 @@ export default function PracticeShell(props: PracticeShellProps) {
 
       <div class="game-shell__round">
         <Show when={run().machine.phase === "answering"}>
-          {/* Visible countdown for the current question. Structural text only:
-              the timer never names the answer, so the no-answer-leak aria
-              contract is untouched; aria-live is off so ticks are not read
-              out every quarter-second. */}
-          <p class="game-shell__timer" role="timer" aria-live="off">
-            {remainingSeconds(remainingMs())}s
-          </p>
+          {/* Visible countdown for the current question: the shared ring +
+              numeric readout. Structural text only — the timer never names
+              the answer, so the no-answer-leak aria contract is untouched;
+              aria-live stays off so ticks are not read out every
+              quarter-second (see CountdownRing). */}
+          <CountdownRing remainingMs={remainingMs} />
         </Show>
         <Show keyed when={roundKey()}>
           {(_roundKey) => (

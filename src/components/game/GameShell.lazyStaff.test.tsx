@@ -53,8 +53,11 @@ describe("GameShell lazy staff boundary", () => {
       <GameShell lessonId="10" lessonTitle="Lazy staff" rounds={[staffRound("s1")]} />
     ));
     // The SVG is behind the dynamic import(), so it cannot be asserted in the
-    // same synchronous block as the mount — poll until the chunk lands.
-    await waitFor(() => host.querySelector("svg") !== null, "staff svg");
+    // same synchronous block as the mount — poll until the chunk lands. The
+    // query is scoped to the staff prompt: the countdown ring renders its own
+    // decorative SVG immediately, so a bare "svg" selector would resolve
+    // before the notation chunk and race the Suspense boundary.
+    await waitFor(() => host.querySelector(".prompt--staff svg") !== null, "staff svg");
     const wrapper = host.querySelector(".prompt--staff");
     expect(wrapper).not.toBeNull();
     // The aria-label contract (T6c/T8c) must be identical through the lazy
@@ -63,7 +66,7 @@ describe("GameShell lazy staff boundary", () => {
       "Staff notation, treble clef, 3 notes",
     );
     expect(
-      host.querySelector("svg")!.querySelectorAll("path").length,
+      wrapper!.querySelectorAll("svg path").length,
     ).toBeGreaterThanOrEqual(5);
   });
 

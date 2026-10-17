@@ -129,6 +129,12 @@ function timerText(host: HTMLElement): string | undefined {
   return host.querySelector(".game-shell__timer")?.textContent?.trim() ?? undefined;
 }
 
+/** Stroke offset of the countdown ring's progress arc, or null when absent. */
+function ringOffset(host: HTMLElement): number | null {
+  const arc = host.querySelector(".game-shell__timer-ring-progress");
+  return arc === null ? null : Number(arc.getAttribute("stroke-dashoffset"));
+}
+
 describe("GameShell", () => {
   it("renders the lesson title, the first prompt, and the answer options", () => {
     const rounds = [choiceRound("r1"), choiceRound("r2")];
@@ -542,6 +548,33 @@ describe("GameShell: countdown timer", () => {
     expect(timerText(host)).toBe(`${QUESTION_TIME_MS / 1000 - 5}s`);
     expect(recordSpy).not.toHaveBeenCalled();
     expect(resetSpy).not.toHaveBeenCalled();
+  });
+
+  it("the ring arc shrinks by the same remaining-time fraction as the displayed number", () => {
+    const host = mount(() => (
+      <GameShell lessonId="10" lessonTitle="The Basics" rounds={[choiceRound("r1")]} />
+    ));
+    // Full duration: complete ring, offset zero.
+    expect(ringOffset(host)).toBe(0);
+
+    vi.advanceTimersByTime(5000); // 15s of 20s left: fraction 0.75 → offset 25.
+    expect(timerText(host)).toBe(`${QUESTION_TIME_MS / 1000 - 5}s`);
+    expect(ringOffset(host)).toBe(25);
+
+    vi.advanceTimersByTime(5000); // 10s of 20s left: fraction 0.5 → offset 50.
+    expect(ringOffset(host)).toBe(50);
+  });
+
+  it("keeps the timer's screen-reader contract with the ring attached", () => {
+    const host = mount(() => (
+      <GameShell lessonId="10" lessonTitle="The Basics" rounds={[choiceRound("r1")]} />
+    ));
+    const timer = host.querySelector(".game-shell__timer")!;
+    expect(timer.getAttribute("role")).toBe("timer");
+    expect(timer.getAttribute("aria-live")).toBe("off");
+    expect(timer.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
+    // The seconds text is still the only thing assistive tech reads.
+    expect(timer.textContent?.trim()).toBe(`${QUESTION_TIME_MS / 1000}s`);
   });
 
   it("an expired timer fails the run through the same failure path as a wrong answer", () => {

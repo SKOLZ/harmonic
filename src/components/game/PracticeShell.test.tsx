@@ -117,6 +117,12 @@ function timerText(host: HTMLElement): string | undefined {
   return host.querySelector(".game-shell__timer")?.textContent?.trim() ?? undefined;
 }
 
+/** Stroke offset of the countdown ring's progress arc, or null when absent. */
+function ringOffset(host: HTMLElement): number | null {
+  const arc = host.querySelector(".game-shell__timer-ring-progress");
+  return arc === null ? null : Number(arc.getAttribute("stroke-dashoffset"));
+}
+
 function progressSnapshot(): Record<string, number> {
   const raw = window.localStorage.getItem(PROGRESS_STORAGE_KEY);
   return raw === null ? {} : (JSON.parse(raw) as Record<string, number>);
@@ -226,6 +232,18 @@ describe("PracticeShell: the endless run", () => {
 });
 
 describe("PracticeShell: one countdown, one failure path", () => {
+  it("the ring arc shrinks by the same remaining-time fraction as the displayed number", async () => {
+    vi.useFakeTimers();
+    const { draw } = scripted(["G4"]);
+    const host = mount(() => <PracticeShell draw={draw} />);
+    expect(timerText(host)).toBe(`${QUESTION_TIME_MS / 1000}s`);
+    expect(ringOffset(host)).toBe(0);
+
+    vi.advanceTimersByTime(QUESTION_TIME_MS / 2);
+    expect(timerText(host)).toBe(`${QUESTION_TIME_MS / 1000 / 2}s`);
+    expect(ringOffset(host)).toBe(50);
+  });
+
   it("an expired timer ends the run exactly like a wrong answer", async () => {
     vi.useFakeTimers();
     const { draw } = scripted(["G4"]);

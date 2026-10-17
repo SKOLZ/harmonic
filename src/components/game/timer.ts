@@ -17,3 +17,15 @@ export const TIMER_TICK_MS = 250;
 export function remainingSeconds(remainingMs: number): number {
   return Math.max(0, Math.ceil(remainingMs / 1000));
 }
+
+/**
+ * Fraction of the question duration still on the clock, clamped to 0..1.
+ *
+ * The countdown ring consumes its arc by this value. It is derived from the
+ * same `remainingMs` the seconds label shows — never from a second interval
+ * or an independent animation — so the ring cannot drift against the number:
+ * one clock, two views.
+ */
+export function remainingFraction(remainingMs: number): number {
+  return Math.min(1, Math.max(0, remainingMs / QUESTION_TIME_MS));
+}

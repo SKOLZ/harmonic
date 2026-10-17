@@ -37,6 +37,12 @@
   --danger: #b91c1c;
   --danger-ink: #7f1d1d;
   --danger-bg: #fdf5f5;
+
+  /* Countdown ring: the full track circle and the arc that consumes with the
+     remaining time. Retheme here — the component carries no colour of its
+     own, so a restyle moves the ring with everything else. */
+  --timer-ring-track: var(--hairline);
+  --timer-ring-progress: var(--accent);
 }
 
 * {
@@ -276,14 +282,45 @@ a.home__lesson-body:hover {
   gap: 1.25rem;
 }
 
-/* The countdown belongs to the current question: numeric seconds, right-
-   aligned above the prompt, colour only ever reinforcing the number. */
+/* The countdown belongs to the current question: numeric seconds inside a
+   ring whose arc shrinks with the remaining-time fraction — colour only ever
+   reinforcing the number, never carrying it alone. */
 .game-shell__timer {
   justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   margin: 0;
   color: var(--ink-500);
   font-size: 0.9rem;
   font-variant-numeric: tabular-nums;
+}
+
+.game-shell__timer-ring {
+  width: 1.75em;
+  height: 1.75em;
+  flex: none;
+}
+
+.game-shell__timer-ring-track,
+.game-shell__timer-ring-progress {
+  fill: none;
+  stroke-width: 3;
+}
+
+.game-shell__timer-ring-track {
+  stroke: var(--timer-ring-track);
+}
+
+/* The dash geometry is set as SVG attributes on the element (dasharray 100,
+   dashoffset = 100 × (1 − remaining fraction)) — a stylesheet rule here
+   would outrank those presentation attributes and freeze the ring, so the
+   arc's colour is the only thing CSS owns. Rotated so the arc starts at 12
+   o'clock and is drawn clockwise, shrinking back as time runs out. */
+.game-shell__timer-ring-progress {
+  stroke: var(--timer-ring-progress);
+  transform: rotate(-90deg);
+  transform-origin: center;
 }
 
 /* Companion staff illustration above the prompt (T5): a visual anchor for a
@@ -811,5 +848,11 @@ a.home__lesson-body:hover {
   *::after {
     transition-duration: 1ms !important;
     animation-duration: 1ms !important;
+  }
+
+  /* The countdown ring's shrinking arc is motion: hide it and leave the
+     static full track ring, while the number inside keeps ticking. */
+  .game-shell__timer-ring-progress {
+    display: none;
   }
 }
