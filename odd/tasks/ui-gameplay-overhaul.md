@@ -1,6 +1,10 @@
 # UI and gameplay overhaul
 
-> **COMPLETE.** All six tasks shipped. Final suite: **1340 tests, 84 files** (from 1040 at feature start). Commits `ea43a0e` (T1), `ba580b2` (T2), `09c4628` (T3), `4e1b57c` (T4), `2529e63`/`9a5fc65`/`371b6a7`/`60eeb61`/`cf04568` (T5a–T5e), `56b37ee` (T6).
+> **REOPENED.** T1–T6 shipped (final suite 1340 tests / 84 files). A second testing
+> round surfaced three rendering defects and a harder design verdict: the app still
+> reads as "a random app built with bootstrap in 2012". T7–T9 are the response.
+> Prior commits: `ea43a0e` (T1), `ba580b2` (T2), `09c4628` (T3), `4e1b57c` (T4),
+> `2529e63`/`9a5fc65`/`371b6a7`/`60eeb61`/`cf04568` (T5a–T5e), `56b37ee` (T6).
 
 ## Objective
 
@@ -72,6 +76,9 @@ feature request dressed up as polish.
 | T4 | Endless "guess the note" practice mode with timer | writer | **done** |
 | T5 | Guiding staff illustrations on concrete-pitch text rounds | writer | **done** (5 batches T5a–T5e; 19 illustrations / 440 text rounds, 4.3%) |
 | T6 | Visual overhaul: answer controls + whole site | writer | **done** |
+| T7 | Staff rendering defects: clef top clipped, stem detached in practice | writer | **in progress** |
+| T8 | Circular countdown ring around the timer | writer | pending |
+| T9 | Visual identity: type, black-dominant palette, ≤2px radius, muted status | writer | pending |
 
 ### Route rationale
 - T1 is independent and unblocks every later link surface.
@@ -152,6 +159,52 @@ styled; they are the worst offender. Then raise the rest of the site to match
 the Home page. Keep it a polish pass, not an information-architecture
 redesign.
 
+---
+
+**T7 — Staff rendering defects.** Two defects from the second testing round,
+both in `Staff.tsx`'s viewport fitting, both visible in the endless-practice view.
+
+- *Clef top clipped.* `contentExtentY` measures `<text>` elements by their `y`
+  attribute, which is the **baseline**, not the ink box. A treble clef's ink
+  reaches well above its baseline, so `min` ends up decided by the stave paths,
+  `top = min - STAFF_SPACE` starts too low, and the clef's upper loop falls
+  outside the `viewBox`.
+- *Stem detached from the notehead.* `StaffViewport.test.tsx` sweeps *every
+  lesson pool staff prompt* — the **practice pool was never covered**. It spans
+  C3–C6 across both clefs and includes sharps, so it exercises engraving shapes
+  the sweep has never seen. Reproduce it empirically before fixing; it may be the
+  same measurement flaw or a second one.
+
+happy-dom has no canvas so `getBBox()` returns zeros — T2 solved this by parsing
+SVG attribute coordinates and the fix must stay on that path. Every
+practice-pool prompt must join the existing viewport sweep.
+
+**T8 — Circular countdown ring.** The countdown is bare `13s` text in the
+top-right corner; a learner reads it as a stray number, not a clock. Replace it
+with a **circular ring that visibly depletes as the number decreases**, number
+still present. SVG `stroke-dasharray`/`stroke-dashoffset` fed by the
+remaining-time fraction from `createQuestionCountdown` — one clock, no drift. The
+numeric label stays; the ring must not become the only cue. Respect
+`prefers-reduced-motion` (a static full ring is the correct degradation). The
+timer's keyboard/screen-reader contract is unchanged.
+
+**T9 — Visual identity.** The design verdict: *"still looks like a random app
+built with bootstrap in 2012."* The brief pins these axes and the brief wins:
+
+- **Black as the main color**, not `#1c1f24`-on-grey defaulting.
+- **No rounded corners** — **2px border radius is the maximum anywhere** (the app
+  currently ships 6px on cards, buttons, and inputs).
+- **More interesting fonts.** Pick deliberate typefaces and set a real type
+  scale; do not reach for system-ui by reflex.
+- **Status colors in green / yellow / red, but less basic shades** — the current
+  accent `#1d4ed8` and stock success/danger hues read as Bootstrap defaults.
+
+Out of scope: no information-architecture redesign, no component behavior
+change, no aria-contract change. A design-system restyle of `src/styles.css`
+(and token-level typography hooks) that keeps structure and interactions exactly
+as they are. Apply the `frontend-design` skill, but where this brief names an
+axis the brief overrides the skill's own defaults.
+
 ## Acceptance criteria
 
 - No staff SVG clips at the bottom for any lesson's round pool; no detached
@@ -192,3 +245,4 @@ a planning estimate, not a cap.
 | T5d | Parent spot check: `npm test` → **1282 passed (84 files)**, typecheck clean, build succeeds. **Yield: 2 of 149 text rounds (1.3%)** — the densest sections in the catalog produced the sparsest result yet. L40 illustrates the Eb diminished spelling drill with the **root alone** (`Eb4`), leaving the derived Gb/Bbb off-page; L43 illustrates *"Which triads of the C natural minor scale are always major?"* with the C natural minor scale itself. **The parent verified L43 as the pass's one judgement call and ruled it sound**: the question names a concrete scale, the answer is *"the third, six and seventh"* — degrees, not pitches — and a scale line marks no triad qualities, so the learner derives the seven triads from the pictured scale, which is the lesson's own three-step process with step one drawn. That is the question's subject, not an invented one. The other ten lessons yielded zero with per-class rejection tables recorded (definitions, counts, formulas, abbreviations, procedures, position/figure vocabulary, numeral-system rounds, scale-species patterns, self-revealing worked examples and posed voicings). **Measurement gotcha worth keeping**: L44 and L49 generate text rounds dynamically, so static `id:` greps undercount — yield must be measured from the exported pool. **Cumulative honest yield: 10 illustrations across 336 piloted text rounds (~3.0%)**, against the ~10% projected when the options were presented. Tier: **medium**, `slice_budget_reached`, 25 paths / 1783 lines → writer self-verification. | `60eeb61` |
 | T5e | Parent spot check: `npm test` → **1340 passed (84 files)**, typecheck clean, build succeeds. **Yield: 9 of 104 text rounds (8.7%)** — the densest slice of the fan-out, and it completes T5. All nine sit in Neapolitan: L120 carries six (three "in [key], what is the second scale degree?" tonic-alone drills, one lowering round showing `Bbb`'s predecessor `Bb`, two conclusion rounds), L121 one (`F4` alone — the C-minor scale was **deliberately not drawn** because its fourth glyph would *be* F, a counting leak), L122 two (root-alone `D4`, and a stacked `D4–F#4–A4` chord). **The parent verified all three judgement calls as sound**: L120's degree rounds name a tonic by key and ask the learner to count the answer off-page, which is the lesson-21 archetype; L122's question is literally *"Why is D–F#–A a Neapolitan in C# minor?"* with prose-reasoning answers, so engraving the named triad cannot reveal the answer. **Chord Progressions yielded exactly zero across seven lessons** — definitions, numeral charts, procedures, vocabulary, and self-revealing rounds, each with a recorded rejection class. Notable rejections: `l56-text-upsixth` (names C and A, but "up a sixth" would be readable off the staff — a derivability leak), `l62-text-conclude` and `l57-text-example` (engraving would *be* the answer), `l62-text-escape` (an E incidental whose full figure would invent pitches). **T5 closed: 19 illustrations across 440 text rounds (4.3%)**, against the ~10% projected when the options were presented — and the distribution is extremely uneven, with Neapolitan alone contributing 9. Tier: **medium**, `slice_budget_reached`, 13 paths / 744 lines → writer self-verification. | `cf04568` |
 | T6 | Parent spot check: `npm test` → **1340 passed (84 files)**, zero regression; typecheck clean, build succeeds (CSS 11.26 kB). **Exactly one file changed — `src/styles.css`, 363 → 815 lines — and zero `.tsx` files**, which is the strongest available guarantee that every aria contract is byte-identical: no component byte was touched, so no label could drift. The palette moved into a `:root` token block so the system has one source of truth; the keyboard needed `position: absolute` to activate its existing inline geometry (keys had been laying out in document order with black keys beneath white). **The writer corrected the parent's audit and was right to**: the briefing named `.staff-prompt`, `.sequence`, and `.text-input`, none of which exist — the shipping selectors are `.prompt--staff`, `.sequence-answer`, and `.text-input-answer`. It styled the real names rather than renaming, **because tests outside its allowed edit surfaces pin them** (`src/games/lesson*.test.ts`, `GameShell`, `PracticeShell`, `StaffViewport` all query `.prompt--staff`); a rename would have forced forbidden edits. That is exactly the boundary discipline the delegation contract asks for. It also styled `.prompt--text` and `.prompt--audio` beyond the enumerated list on the grounds that they share the same zero-CSS defect and sit inside the allowed surfaces — accepted, same defect class. Tier: **medium**, `slice_budget_reached`, 1 path / 572 lines → writer self-verification. | `56b37ee` |
+| T7 | Parent spot check: `npm test` → **1341 passed (84 files)**, typecheck clean, build succeeds. **Both reported defects turned out to be one root cause, and the test oracle shared it.** `contentExtentY` measured every `<text>` glyph by its `y` attribute — the **alphabetic baseline** — not its ink box. VexFlow writes all glyphs as `<text font-size="30pt">` on that baseline; a treble clef's ink reaches ~4.39 staff spaces *above* its baseline, so `min` was decided by the stave paths and the viewBox top sat at 70 while the real clef ink top was at 66.08. **The same baseline-only blind spot existed in `StaffViewport.test.tsx`'s own `extent()` oracle, which is exactly why T2's sweep passed while real rendering still clipped** — the test and the code were wrong in the same direction. That is the more important finding: a shared assumption in both subject and oracle validates nothing. Fix is a new codepoint→ink-offset table (`glyphInk.ts`, 90 lines) scaled by `STAFF_SPACE`, staying on T2's attribute-parsing path because happy-dom's `getBBox()` returns zeros. **The practice pool now joins the sweep** (`practiceStaffPrompts()` over every `PRACTICE_NOTES` entry) — it was the uncovered pool spanning C3–C6, both clefs, and sharps. On defect 2 specifically: RED showed the practice failures are the *same* baseline-vs-ink class rather than a separate stem-geometry bug — `attachmentFailures` stayed clean throughout, so the "detached stem" was a clipped notehead again. Tier: **medium**, `under_budget`, 4 paths / 272 lines → writer self-verification. | _backfill at T8_ |

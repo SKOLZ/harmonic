@@ -14,6 +14,7 @@ import {
   type NotationSpec,
 } from "../../lib/notation/spec";
 import type { Note } from "../../lib/theory";
+import { GLYPH_INK } from "./glyphInk";
 
 export interface StaffProps {
   notes: Note[];
@@ -174,10 +175,37 @@ function contentExtentY(svg: SVGSVGElement): { min: number; max: number } {
     track(y + h);
   }
   for (const text of svg.querySelectorAll("text")) {
-    track(Number(text.getAttribute("y")));
+    // A text glyph's `y` is its alphabetic baseline, not its ink box (T7). A
+    // treble clef's ink reaches ~4.4 staff spaces above its baseline, so
+    // tracking the baseline alone under-reports the top and the viewBox clips
+    // the clef's upper loop. Measure the true ink box instead.
+    const ink = textGlyphInk(text);
+    track(ink.top);
+    track(ink.bottom);
   }
 
   return { min, max };
+}
+
+/**
+ * The true ink extent of one `<text>` glyph, in absolute SVG y.
+ *
+ * The glyph sits on its alphabetic baseline (`y`); its ink box is the
+ * glyph-ink table's staff-space offsets from that baseline, scaled by the
+ * staff space. An unlisted codepoint falls back to its baseline so a new glyph
+ * degrades to the old measurement instead of crashing.
+ */
+function textGlyphInk(text: Element): { top: number; bottom: number } {
+  const baseline = Number(text.getAttribute("y"));
+  const codepoint = [...(text.textContent ?? "")][0]?.codePointAt(0);
+  const ink = codepoint === undefined ? undefined : GLYPH_INK[codepoint];
+  if (ink === undefined) {
+    return { top: baseline, bottom: baseline };
+  }
+  return {
+    top: baseline + ink.top * STAFF_SPACE,
+    bottom: baseline + ink.bottom * STAFF_SPACE,
+  };
 }
 
 /**

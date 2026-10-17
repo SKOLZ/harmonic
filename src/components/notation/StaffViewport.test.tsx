@@ -4,10 +4,12 @@ import { afterEach, describe, expect, it } from "vitest";
 import { getLessonModule, registeredLessonIds } from "../../games/registry";
 import { createRng } from "../../games/rng";
 import type { PromptSpec, Round } from "../../lib/rounds/types";
+import { PRACTICE_NOTES } from "../../lib/rounds/practice";
 import { parseNote } from "../../lib/theory";
 import GameShell from "../game/GameShell";
 import StaffPrompt from "../prompts/StaffPrompt";
 import Staff from "./Staff";
+import { GLYPH_INK } from "./glyphInk";
 
 /**
  * T2 — reproduction harness for the two defects real testing reported:
@@ -85,6 +87,26 @@ function svgOf(host: HTMLElement): SVGElement {
 }
 
 /**
+ * Every distinct staff prompt the endless-practice pool can draw — one per
+ * `PRACTICE_NOTES` entry (T7). The lesson sweep never covered this pool: it
+ * spans C3–C6 across both clefs and includes sharps, exercising engraving
+ * shapes the lesson sweep has never seen.
+ */
+function practiceStaffPrompts(): StaffPromptSpec[] {
+  const seen = new Map<string, StaffPromptSpec>();
+  for (const note of PRACTICE_NOTES) {
+    const prompt: StaffPromptSpec = {
+      kind: "staff",
+      clef: note.clef,
+      notes: [note.pitch],
+    };
+    const key = JSON.stringify(prompt);
+    if (!seen.has(key)) seen.set(key, prompt);
+  }
+  return [...seen.values()];
+}
+
+/**
  * Vertical coordinates VexFlow wrote. Path `d` data is read by pairing the
  * numbers: `SVGContext` emits only absolute uppercase commands, each with an
  * even number of coordinates. A relative (lower-case) command would silently
@@ -134,9 +156,35 @@ function extent(svg: SVGElement): Extent {
     track(y + Number(rect.getAttribute("height")));
   }
   for (const text of svg.querySelectorAll("text")) {
-    track(Number(text.getAttribute("y")));
+    // A text glyph's `y` is its alphabetic baseline, not its ink box (T7).
+    // Measure the true ink box so the sweep catches a clef's loop poking above
+    // the viewBox even when the baseline itself is comfortably inside.
+    const ink = textGlyphInk(text);
+    track(ink.top);
+    track(ink.bottom);
   }
   return { min, max };
+}
+
+/**
+ * The true ink extent of one `<text>` glyph, in absolute SVG y.
+ *
+ * The glyph sits on its alphabetic baseline (`y`); its ink box is the
+ * glyph-ink table's staff-space offsets from that baseline, scaled by the
+ * staff space. An unlisted codepoint falls back to its baseline so a new glyph
+ * degrades to the old measurement instead of crashing.
+ */
+function textGlyphInk(text: Element): { top: number; bottom: number } {
+  const baseline = Number(text.getAttribute("y"));
+  const codepoint = [...(text.textContent ?? "")][0]?.codePointAt(0);
+  const ink = codepoint === undefined ? undefined : GLYPH_INK[codepoint];
+  if (ink === undefined) {
+    return { top: baseline, bottom: baseline };
+  }
+  return {
+    top: baseline + ink.top * STAFF_SPACE,
+    bottom: baseline + ink.bottom * STAFF_SPACE,
+  };
 }
 
 interface ViewportWindow {
@@ -214,10 +262,14 @@ describe("Staff viewport — bottom clipping", () => {
       const svgHeight = Number(svg.getAttribute("height"));
       const container = host.querySelector(".prompt--staff > div") as HTMLElement | null;
       const containerHeight = container?.style.height ?? "";
+      // The SVG height attribute is written from the same number as the
+      // viewBox, so it must match exactly. The container's CSS height is
+      // serialized (happy-dom rounds to 2 decimals), so it is compared within
+      // float tolerance.
       if (svgHeight !== win.height) {
         failures.push(`${JSON.stringify(prompt.notes)}: svg height ${svgHeight} ≠ viewBox height ${win.height}`);
       }
-      if (containerHeight !== `${win.height}px`) {
+      if (Math.abs(Number.parseFloat(containerHeight) - win.height) > 1e-6) {
         failures.push(`${JSON.stringify(prompt.notes)}: container height ${containerHeight} ≠ viewport ${win.height}px`);
       }
       if (drawn.max + STAFF_SPACE > win.bottom) {
@@ -232,6 +284,47 @@ describe("Staff viewport — bottom clipping", () => {
           `${JSON.stringify(prompt.notes)} ${prompt.clef}: top ${drawn.min} overflows the window ` +
             `(top ${win.top}) by ${win.top - (drawn.min - STAFF_SPACE)}px`,
         );
+      }
+    }
+    expect(failures.slice(0, 10)).toEqual([]);
+    expect(failures).toHaveLength(0);
+  });
+
+  it("keeps every drawn element a full staff space inside the viewport for every practice-pool staff prompt", () => {
+    const failures: string[] = [];
+    for (const prompt of practiceStaffPrompts()) {
+      const host = renderStaffPrompt(prompt);
+      const svg = svgOf(host);
+      const win = viewport(svg);
+      const drawn = extent(svg);
+      const svgHeight = Number(svg.getAttribute("height"));
+      const container = host.querySelector(".prompt--staff > div") as HTMLElement | null;
+      const containerHeight = container?.style.height ?? "";
+      // The SVG height attribute is written from the same number as the
+      // viewBox, so it must match exactly. The container's CSS height is
+      // serialized (happy-dom rounds to 2 decimals), so it is compared within
+      // float tolerance.
+      if (svgHeight !== win.height) {
+        failures.push(`${JSON.stringify(prompt.notes)}: svg height ${svgHeight} ≠ viewBox height ${win.height}`);
+      }
+      if (Math.abs(Number.parseFloat(containerHeight) - win.height) > 1e-6) {
+        failures.push(`${JSON.stringify(prompt.notes)}: container height ${containerHeight} ≠ viewport ${win.height}px`);
+      }
+      if (drawn.max + STAFF_SPACE > win.bottom) {
+        failures.push(
+          `${JSON.stringify(prompt.notes)} ${prompt.clef}: bottom ` +
+            `${drawn.max} overflows the window (top ${win.top}, bottom ${win.bottom}) by ` +
+            `${drawn.max + STAFF_SPACE - win.bottom}px`,
+        );
+      }
+      if (drawn.min - STAFF_SPACE < win.top) {
+        failures.push(
+          `${JSON.stringify(prompt.notes)} ${prompt.clef}: top ${drawn.min} overflows the window ` +
+            `(top ${win.top}) by ${win.top - (drawn.min - STAFF_SPACE)}px`,
+        );
+      }
+      for (const failure of attachmentFailures(svg)) {
+        failures.push(`${JSON.stringify(prompt.notes)} ${prompt.clef}: ${failure}`);
       }
     }
     expect(failures.slice(0, 10)).toEqual([]);
