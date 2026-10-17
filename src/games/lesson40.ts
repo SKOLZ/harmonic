@@ -47,6 +47,19 @@ import type { LessonModule } from "./types";
  * (`sampleStratifiedRounds`): one staff and one text round are guaranteed in
  * every 12-round draw, which a plain `sampleRounds` call could no longer
  * promise once keyboard rounds joined the pool.
+ *
+ * Companion illustrations (T5d Chords pass): exactly one text round carries
+ * an `illustration` — the Eb diminished spelling drill engraves Eb alone,
+ * the question's root, while the derived upper tones (Gb, Bbb — the very
+ * answer) stay off the page. That is the T5a/T5b build-drill archetype:
+ * a concrete root on the staff, the spelled triad built off it in the
+ * learner's head. The remaining eleven text rounds are rejected by class:
+ * four half-step counts (a quantity has no question pitch — "its root" is
+ * a class referent), four triad-type formulas and three definitions
+ * (class-level subjects — no prompt names a concrete pitch, and drawing an
+ * example would invent the subject). Each rejection reason is recorded in
+ * the suite, and every pool round is swept through the shared
+ * `assertNoAnswerLeak` helper there.
  */
 const choices = (options: string[], correctIndex: number): AnswerSpec => ({
   kind: "choices",
@@ -264,6 +277,10 @@ export const lesson40Pool: readonly Round[] = [
     id: "l40-text-eb-diminished-spelling",
     prompt: { kind: "text", text: "How is an Eb diminished triad spelled?" },
     answer: choices(["Eb–Gb–Bbb", "Eb–G–B", "Eb–Gb–Bb", "Eb–Ab–Bbb"], 0),
+    // The question's pitch is Eb; the answer is the full spelling Eb–Gb–Bbb.
+    // Only Eb goes on the page — the diminished upper tones are exactly the
+    // fact the learner has to build from the root.
+    illustration: { clef: "treble", notes: ["Eb4"] },
     rule: "An Eb diminished triad is spelled Eb–Gb–Bbb: three half steps from Eb to Gb and six half steps from Eb to Bbb.",
   },
 ];

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import { validateRound } from "../lib/rounds/validate";
+import { assertNoAnswerLeak } from "../lib/rounds/noAnswerLeak";
 import type { PromptSpec, Round } from "../lib/rounds/types";
 import StaffPrompt from "../components/prompts/StaffPrompt";
 import {
@@ -244,6 +245,55 @@ describe("lesson 52 question pool", () => {
       const label = host.querySelector(".prompt--staff")!.getAttribute("aria-label") ?? "";
       expect(label, `staff round ${id}`).toContain("Staff notation, treble clef, 3 accidentals");
       expect(label).not.toMatch(/[A-G][#b]/);
+    }
+  });
+});
+
+describe("lesson 52 companion illustrations (T5d Diatonic pass)", () => {
+  // Zero yield for Analysis: O Canada. The four text rounds are analysis
+  // PROCEDURE and key INFERENCE: the first step and the repeat convention
+  // are methods; the key-signature round names no pitch (a flat count), and
+  // its only drawable subject — the three-flat signature — displays the
+  // very key pair the learner must infer, so a reader who can read the
+  // signature reads the answer off the picture; the key-conclusion round
+  // reasons from a premise already stated in prose ("an Eb major triad … I
+  // in Eb major"), so a picture would either restate that premise or hand
+  // over the conclusion. No question pitch exists to draw.
+  const PROCEDURE = ["l52-text-first-step", "l52-text-repeat"];
+  const SELF_REVEALING = ["l52-text-key-sig", "l52-text-key-conclude"];
+
+  it("accounts for every text round: all four are classified rejections", () => {
+    const textIds = lesson52Pool
+      .filter((round) => round.prompt.kind === "text")
+      .map((round) => round.id)
+      .sort();
+    expect(textIds).toHaveLength(4);
+    expect(textIds).toEqual([...PROCEDURE, ...SELF_REVEALING].sort());
+  });
+
+  it("has zero companion illustrations across the whole pool", () => {
+    for (const round of lesson52Pool) {
+      expect(round.illustration, round.id).toBeUndefined();
+    }
+  });
+
+  it("keeps the two procedure rounds text-only: methods, not pitches", () => {
+    for (const id of PROCEDURE) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the two key-inference rounds text-only: the engraving is the answer", () => {
+    for (const id of SELF_REVEALING) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("passes the shared no-leak assertion for every pool round", () => {
+    for (const round of lesson52Pool) {
+      expect(() => assertNoAnswerLeak(round), round.id).not.toThrow();
     }
   });
 });

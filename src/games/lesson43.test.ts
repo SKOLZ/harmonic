@@ -1,11 +1,13 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import { validateRound } from "../lib/rounds/validate";
+import { assertNoAnswerLeak } from "../lib/rounds/noAnswerLeak";
 import type { PromptSpec, Round } from "../lib/rounds/types";
 import KeyboardPrompt from "../components/prompts/KeyboardPrompt";
 import StaffPrompt from "../components/prompts/StaffPrompt";
 import {
   TRIAD_INTERVALS,
+  buildScale,
   buildTriad,
   detectTriadQuality,
   diatonicTriadQualities,
@@ -416,5 +418,147 @@ describe("lesson 43 question pool", () => {
     expect(rules).toMatch(/third, fifth, and seventh chords have been altered/);
     expect(rules).toMatch(/second, fourth, and sixth chords have been altered/);
     expect(rules).toMatch(/Therefore, the triad is (major|minor|augmented|diminished)\./);
+  });
+});
+
+describe("lesson 43 companion illustrations (T5d Diatonic pass)", () => {
+  // One illustration in this pass, and it is its own judgement call,
+  // recorded deliberately: "Which triads of the C natural minor scale are
+  // always major?" names a CONCRETE scale — not a scale species — so the
+  // illustration engraves that scale's own pitches, derived from the theory
+  // core exactly as lesson 21 derives its staff scales. The answer is which
+  // DEGREES' triads are major; a scale line marks no triad qualities, so
+  // nothing on the page reveals it and nothing can be counted off it — the
+  // learner derives the seven triads from the pictured scale, which is this
+  // lesson's own three-step process with step one drawn. Every other text
+  // round fails a strict-rule gate, class by class below: the pattern
+  // rounds speak about a scale SPECIES ("a major scale", "harmonic minor")
+  // with no root in the prompt — engraving C minor would invent the very
+  // subject the question never names, option (b) the user declined.
+  const ILLUSTRATED = ["l43-text-minor-majors"];
+  // Class-level patterns: the question is about every scale of the species,
+  // or about harmonic/melodic minor without a root (only the RULE text
+  // mentions C spellings — the prompt itself names no pitch).
+  const PATTERN = [
+    "l43-text-major-recap",
+    "l43-text-major-vii",
+    "l43-text-minor-ii",
+    "l43-text-harmonic-reanalyzed",
+    "l43-text-harmonic-iii",
+    "l43-text-harmonic-v",
+    "l43-text-melodic-reanalyzed",
+    "l43-text-melodic-vi",
+  ];
+  // Procedures: the three-step method and the two scale conversions are
+  // methods, not pitches — the T5c lesson 22 rejection class, unchanged.
+  const PROCEDURE = [
+    "l43-text-process-1",
+    "l43-text-process-2",
+    "l43-text-process-3",
+    "l43-text-harmonic-build",
+    "l43-text-melodic-build",
+  ];
+  const DEFINITION = ["l43-text-definition"];
+  const COUNT = ["l43-text-count"];
+
+  function illustratedRounds(): Round[] {
+    return lesson43Pool.filter((round) => round.illustration !== undefined);
+  }
+
+  it("accounts for every text round: one illustrated, fifteen classified rejections", () => {
+    const textIds = lesson43Pool
+      .filter((round) => round.prompt.kind === "text")
+      .map((round) => round.id)
+      .sort();
+    expect(textIds).toHaveLength(16);
+    expect(textIds).toEqual(
+      [...ILLUSTRATED, ...PATTERN, ...PROCEDURE, ...DEFINITION, ...COUNT].sort(),
+    );
+  });
+
+  it("illustrates exactly the C natural minor majors round", () => {
+    expect(illustratedRounds().map((round) => round.id).sort()).toEqual(ILLUSTRATED);
+  });
+
+  it("attaches the illustration only to a text-prompt round", () => {
+    for (const round of illustratedRounds()) {
+      expect(round.prompt.kind).toBe("text");
+    }
+  });
+
+  it("engraves exactly the C natural minor scale, spelled by the theory core", () => {
+    // The question's subject is the C natural minor scale itself, so the
+    // illustration is that scale — derived from buildScale so the engraving
+    // cannot drift from the core, exactly as this pool's staff rounds do.
+    // The answer (which degrees' triads are major) is not a pitch and is
+    // marked nowhere on a scale line.
+    expect(roundById("l43-text-minor-majors").illustration).toEqual({
+      clef: "treble",
+      notes: buildScale(parseNote("C4"), "naturalMinor").map(scientificName),
+    });
+  });
+
+  it("pins the illustrated scale to the scale its own prompt names", () => {
+    const prompt = roundById("l43-text-minor-majors").prompt;
+    expect(prompt.kind).toBe("text");
+    expect((prompt as Extract<PromptSpec, { kind: "text" }>).text).toContain(
+      "C natural minor scale",
+    );
+    // The answer stays off the page: it names degrees, not pitches.
+    expect(answerOf("l43-text-minor-majors")).toBe("The third, sixth and seventh");
+  });
+
+  it("keeps the eight pattern rounds text-only: scale species, no root named", () => {
+    // The sharpest call here is l43-text-harmonic-iii: its RULE spells out
+    // Eb–G–B, but the PROMPT says only "in harmonic minor" — no root — so
+    // drawing that triad would invent the subject the question never named.
+    expect(PATTERN).toHaveLength(8);
+    for (const id of PATTERN) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the five procedure rounds text-only: methods, not pitches", () => {
+    expect(PROCEDURE).toHaveLength(5);
+    for (const id of PROCEDURE) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the definition and count rounds text-only: no pitch subject", () => {
+    expect(DEFINITION).toHaveLength(1);
+    expect(COUNT).toHaveLength(1);
+    for (const id of [...DEFINITION, ...COUNT]) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("passes the shared no-leak assertion for every pool round", () => {
+    for (const round of lesson43Pool) {
+      expect(() => assertNoAnswerLeak(round), round.id).not.toThrow();
+    }
+  });
+
+  it("engraves every illustration through the real Staff renderer", () => {
+    // Triangulation: the slot speaks the staff-prompt shape, so each
+    // illustration has to survive the actual engraver, not just the type.
+    for (const round of illustratedRounds()) {
+      const host = document.createElement("div");
+      document.body.appendChild(host);
+      const dispose = render(
+        () => StaffPrompt({ prompt: { kind: "staff", ...round.illustration! } }),
+        host,
+      );
+      cleanups.push(() => {
+        dispose();
+        host.remove();
+      });
+      const svg = host.querySelector("svg");
+      expect(svg, `illustration ${round.id} did not engrave`).not.toBeNull();
+      expect(svg!.querySelectorAll("path").length).toBeGreaterThanOrEqual(5);
+    }
   });
 });

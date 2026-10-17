@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import { validateRound } from "../lib/rounds/validate";
+import { assertNoAnswerLeak } from "../lib/rounds/noAnswerLeak";
 import type { PromptSpec, Round } from "../lib/rounds/types";
 import StaffPrompt from "../components/prompts/StaffPrompt";
 import {
@@ -239,5 +240,58 @@ describe("lesson 50 question pool", () => {
     expect(rules).toMatch(/does not mean that v cannot be used/);
     expect(rules).toMatch(/VII and vii° are both used equally/);
     expect(rules).toMatch(/raised seventh degree/);
+  });
+});
+
+describe("lesson 50 companion illustrations (T5d Diatonic pass)", () => {
+  // Zero yield for Composing with Minor Scales. Every text round is the
+  // site's composing GUIDANCE in prose: the scale species are named
+  // class-wide ("natural minor and harmonic minor" — no root), the
+  // III/III+/V/v/VII/vii° conclusions are Roman-numeral guidance with no
+  // concrete pitch subject, and the count round is a count. There is no
+  // question pitch anywhere, so a staff illustration would have to invent
+  // the subject (option (b), which the user declined).
+  const COUNT = ["l50-text-count"];
+  const CLASS = [
+    "l50-text-merge",
+    "l50-text-iii-pref",
+    "l50-text-v-pref",
+    "l50-text-v-usable",
+    "l50-text-vii-use",
+    "l50-text-pairs",
+  ];
+
+  it("accounts for every text round: all seven are classified rejections", () => {
+    const textIds = lesson50Pool
+      .filter((round) => round.prompt.kind === "text")
+      .map((round) => round.id)
+      .sort();
+    expect(textIds).toHaveLength(7);
+    expect(textIds).toEqual([...COUNT, ...CLASS].sort());
+  });
+
+  it("has zero companion illustrations across the whole pool", () => {
+    for (const round of lesson50Pool) {
+      expect(round.illustration, round.id).toBeUndefined();
+    }
+  });
+
+  it("keeps the count round text-only: a count, no pitch subject", () => {
+    expect(roundById("l50-text-count").prompt.kind).toBe("text");
+    expect(roundById("l50-text-count").illustration).toBeUndefined();
+  });
+
+  it("keeps the six composing-guidance rounds text-only: class-level prose", () => {
+    expect(CLASS).toHaveLength(6);
+    for (const id of CLASS) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("passes the shared no-leak assertion for every pool round", () => {
+    for (const round of lesson50Pool) {
+      expect(() => assertNoAnswerLeak(round), round.id).not.toThrow();
+    }
   });
 });

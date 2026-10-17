@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import { validateRound } from "../lib/rounds/validate";
+import { assertNoAnswerLeak } from "../lib/rounds/noAnswerLeak";
 import type { PromptSpec, Round } from "../lib/rounds/types";
 import KeyboardPrompt from "../components/prompts/KeyboardPrompt";
 import StaffPrompt from "../components/prompts/StaffPrompt";
@@ -363,5 +364,89 @@ describe("lesson 42 question pool", () => {
     expect(rules).toMatch(/returns to root position/);
     expect(rules).toMatch(/first inversion/);
     expect(rules).toMatch(/second inversion/);
+  });
+});
+
+describe("lesson 42 companion illustrations (T5d Chords pass)", () => {
+  // Zero yield for Triad Inversion. Every text round fails a strict-rule
+  // gate: the two procedure rounds ask how inversions are made and undone,
+  // five position rounds state the inversion VOCABULARY class-wide
+  // ("Which chord tone is the bass note in first inversion?" asks about
+  // every first-inversion triad — no pitch is ever named), the two naming
+  // rounds define what determines a chord's name, and the worked-example
+  // round names no pitch in its prompt at all — the only faithful engraving
+  // (the lesson's C major triad) would BE the answer. Each rejection class
+  // is recorded below so the table stays auditable.
+  const PROCEDURE = ["l42-text-invert-definition", "l42-text-same-notes"];
+  // Definitions: the chord's name is determined by its root, and the bass
+  // is named by position — class-level subjects with no pitch to draw.
+  const DEFINITION = ["l42-text-name-determiner", "l42-text-bass-name"];
+  // Position vocabulary: every round describes a position of ANY triad;
+  // drawing one example would invent the subject the question never names
+  // (option (b), which the user declined).
+  const POSITION_VOCAB = [
+    "l42-text-root-position",
+    "l42-text-first-inversion",
+    "l42-text-second-inversion",
+    "l42-text-first-name",
+    "l42-text-second-name",
+    "l42-text-return",
+    "l42-text-inversions-of-a-triad",
+  ];
+  // Worked example: "Which triad does this lesson invert…?" names no pitch,
+  // and the lesson's C major triad is exactly the answer — engraving it
+  // would display the answer itself.
+  const SELF_REVEALING = ["l42-text-worked-example"];
+
+  it("accounts for every text round: all twelve are classified rejections", () => {
+    const textIds = lesson42Pool
+      .filter((round) => round.prompt.kind === "text")
+      .map((round) => round.id)
+      .sort();
+    expect(textIds).toHaveLength(12);
+    expect(textIds).toEqual(
+      [...PROCEDURE, ...DEFINITION, ...POSITION_VOCAB, ...SELF_REVEALING].sort(),
+    );
+  });
+
+  it("has zero companion illustrations across the whole pool", () => {
+    for (const round of lesson42Pool) {
+      expect(round.illustration, round.id).toBeUndefined();
+    }
+  });
+
+  it("keeps the two procedure rounds text-only: methods, not pitches", () => {
+    for (const id of PROCEDURE) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the two definition rounds text-only: class subjects, no named pitch", () => {
+    for (const id of DEFINITION) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the seven position-vocabulary rounds text-only: no root named", () => {
+    expect(POSITION_VOCAB).toHaveLength(7);
+    for (const id of POSITION_VOCAB) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the worked-example round text-only: the only engraving is the answer", () => {
+    expect(roundById("l42-text-worked-example").prompt.kind).toBe("text");
+    expect(roundById("l42-text-worked-example").illustration).toBeUndefined();
+    // The prompt names no pitch; the answer is the lesson's worked chord.
+    expect(answerOf("l42-text-worked-example")).toBe("C major");
+  });
+
+  it("passes the shared no-leak assertion for every pool round", () => {
+    for (const round of lesson42Pool) {
+      expect(() => assertNoAnswerLeak(round), round.id).not.toThrow();
+    }
   });
 });

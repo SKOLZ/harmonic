@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import { validateRound } from "../lib/rounds/validate";
+import { assertNoAnswerLeak } from "../lib/rounds/noAnswerLeak";
 import type { PromptSpec, Round } from "../lib/rounds/types";
 import KeyboardPrompt from "../components/prompts/KeyboardPrompt";
 import StaffPrompt from "../components/prompts/StaffPrompt";
@@ -381,5 +382,82 @@ describe("lesson 47 question pool", () => {
     expect(rules).toMatch(/returns to root position/);
     expect(rules).toMatch(/Like triads/);
     expect(rules).toMatch(/four (chord )?tones can be the bass/);
+  });
+});
+
+describe("lesson 47 companion illustrations (T5d Chords pass)", () => {
+  // Zero yield for Seventh Chord Inversion: the lesson 42 shape with one
+  // extra axis (third inversion). The method round asks how inversion works
+  // as a procedure; the nine position rounds state the position VOCABULARY
+  // class-wide ("of a seventh chord in first inversion" — every such
+  // chord, no pitch named); the "Like triads" round transfers that
+  // class-level vocabulary; and the worked-example round's only faithful
+  // engraving (the lesson's C major seventh) would BE the answer. Strict
+  // rule keeps all twelve text-only, class by class below.
+  const PROCEDURE = ["l47-text-invert-method"];
+  // Position vocabulary: nine rounds, all "every seventh chord in <pos>" —
+  // no root is ever named, so an engraving would invent the subject
+  // (option (b), which the user declined).
+  const POSITION_VOCAB = [
+    "l47-text-root-bass",
+    "l47-text-first-bass",
+    "l47-text-second-bass",
+    "l47-text-third-bass",
+    "l47-text-third-name",
+    "l47-text-second-name",
+    "l47-text-first-name",
+    "l47-text-count",
+    "l47-text-return",
+  ];
+  const DEFINITION = ["l47-text-like"];
+  // Worked example: "Which chord does this lesson invert?" names no pitch;
+  // the worked Cmaj7 is the answer itself.
+  const SELF_REVEALING = ["l47-text-worked"];
+
+  it("accounts for every text round: all twelve are classified rejections", () => {
+    const textIds = lesson47Pool
+      .filter((round) => round.prompt.kind === "text")
+      .map((round) => round.id)
+      .sort();
+    expect(textIds).toHaveLength(12);
+    expect(textIds).toEqual(
+      [...PROCEDURE, ...POSITION_VOCAB, ...DEFINITION, ...SELF_REVEALING].sort(),
+    );
+  });
+
+  it("has zero companion illustrations across the whole pool", () => {
+    for (const round of lesson47Pool) {
+      expect(round.illustration, round.id).toBeUndefined();
+    }
+  });
+
+  it("keeps the method round text-only: a procedure, not a pitch", () => {
+    expect(roundById("l47-text-invert-method").prompt.kind).toBe("text");
+    expect(roundById("l47-text-invert-method").illustration).toBeUndefined();
+  });
+
+  it("keeps the nine position-vocabulary rounds text-only: no root named", () => {
+    expect(POSITION_VOCAB).toHaveLength(9);
+    for (const id of POSITION_VOCAB) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the 'Like triads' round text-only: transferred vocabulary", () => {
+    expect(roundById("l47-text-like").prompt.kind).toBe("text");
+    expect(roundById("l47-text-like").illustration).toBeUndefined();
+  });
+
+  it("keeps the worked-example round text-only: the only engraving is the answer", () => {
+    expect(roundById("l47-text-worked").prompt.kind).toBe("text");
+    expect(roundById("l47-text-worked").illustration).toBeUndefined();
+    expect(answerOf("l47-text-worked")).toBe("C major seventh");
+  });
+
+  it("passes the shared no-leak assertion for every pool round", () => {
+    for (const round of lesson47Pool) {
+      expect(() => assertNoAnswerLeak(round), round.id).not.toThrow();
+    }
   });
 });

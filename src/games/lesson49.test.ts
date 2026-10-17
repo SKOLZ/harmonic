@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import { validateRound } from "../lib/rounds/validate";
+import { assertNoAnswerLeak } from "../lib/rounds/noAnswerLeak";
 import type { PromptSpec, Round } from "../lib/rounds/types";
 import KeyboardPrompt from "../components/prompts/KeyboardPrompt";
 import StaffPrompt from "../components/prompts/StaffPrompt";
@@ -446,5 +447,101 @@ describe("lesson 49 question pool", () => {
     expect(rules).toMatch(/6 and 5 identify a first inversion/);
     expect(rules).toMatch(/4 and 3 identify a second inversion/);
     expect(rules).toMatch(/A lone 2 identifies a third inversion/);
+  });
+});
+
+describe("lesson 49 companion illustrations (T5d Diatonic pass)", () => {
+  // Zero yield for Roman Numeral Analysis: Seventh Chords — the lesson 44
+  // shape extended to sevenths. The eight NUMERAL rounds name a scale, but
+  // the subject is one worked SEVENTH CHORD whose engraving displays the
+  // quality that determines the numeral — the answer is what you would
+  // draw. The figure rounds are the inversion-symbol vocabulary, the
+  // M-variant rounds are the system's own rules, and the scope/step/count
+  // rounds carry no pitch subject. Every rejection class is recorded below.
+  const SCOPE = ["l49-text-scales"];
+  const COUNT = ["l49-text-steps"];
+  const PROCEDURE = ["l49-text-step-1", "l49-text-step-2", "l49-text-step-3"];
+  // M-variant system rules: "When are M-variants used?" and "Why are they
+  // skipped?" are the analysis system's conventions — class-level prose.
+  const SYSTEM = ["l49-text-m-add", "l49-text-m-skip"];
+  // Numerals: engraving the named chord (e.g. the first seventh chord of C
+  // major) displays the very quality that fixes its numeral — self-revealing.
+  const NUMERAL = [
+    "l49-text-I7",
+    "l49-text-IV7",
+    "l49-text-viio7",
+    "l49-text-i7",
+    "l49-text-iio7",
+    "l49-text-III7",
+    "l49-text-V7",
+    "l49-text-vii7",
+  ];
+  // Figures: "The symbol 6 and 5 identifies which inversion?" — the figure
+  // system's vocabulary, no pitch subject.
+  const FIGURE = [
+    "l49-text-root-fig",
+    "l49-text-first-fig",
+    "l49-text-second-fig",
+    "l49-text-third-fig",
+  ];
+
+  it("accounts for every text round: all nineteen are classified rejections", () => {
+    const textIds = lesson49Pool
+      .filter((round) => round.prompt.kind === "text")
+      .map((round) => round.id)
+      .sort();
+    expect(textIds).toHaveLength(19);
+    expect(textIds).toEqual(
+      [...SCOPE, ...COUNT, ...PROCEDURE, ...SYSTEM, ...NUMERAL, ...FIGURE].sort(),
+    );
+  });
+
+  it("has zero companion illustrations across the whole pool", () => {
+    for (const round of lesson49Pool) {
+      expect(round.illustration, round.id).toBeUndefined();
+    }
+  });
+
+  it("keeps the scope and count rounds text-only: no pitch subject", () => {
+    for (const id of [...SCOPE, ...COUNT]) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the three step rounds text-only: the analysis procedure", () => {
+    for (const id of PROCEDURE) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the two M-variant rounds text-only: system conventions", () => {
+    for (const id of SYSTEM) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the eight numeral rounds text-only: the engraving would be the answer", () => {
+    expect(NUMERAL).toHaveLength(8);
+    for (const id of NUMERAL) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the four figure rounds text-only: figure vocabulary", () => {
+    expect(FIGURE).toHaveLength(4);
+    for (const id of FIGURE) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("passes the shared no-leak assertion for every pool round", () => {
+    for (const round of lesson49Pool) {
+      expect(() => assertNoAnswerLeak(round), round.id).not.toThrow();
+    }
   });
 });

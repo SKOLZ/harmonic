@@ -1,4 +1,5 @@
 import {
+  buildScale,
   buildTriad,
   parseNote,
   scientificName,
@@ -33,6 +34,20 @@ import type { LessonModule } from "./types";
  * `staff` + 16 `text` + 4 `keyboard` = 36 and the draw is stratified
  * (`sampleStratifiedRounds`): one staff and one text round are guaranteed in
  * every 12-round draw.
+ *
+ * Companion illustrations (T5d Diatonic pass): exactly one text round
+ * carries an `illustration` — "Which triads of the C natural minor scale
+ * are always major?" names a concrete scale, so the illustration engraves
+ * that scale's own pitches, derived from `buildScale` in the theory core
+ * exactly as the staff rounds derive their spellings. A scale line marks no
+ * triad qualities, so nothing on the page reveals which degrees' triads are
+ * major: the learner derives the seven triads from the pictured scale,
+ * which is this lesson's own three-step process with step one drawn. This
+ * is the pass's one judgement call (scale species vs concrete scale), and
+ * the suite records the remaining fifteen text rounds as class-level
+ * rejections — eight scale-species patterns with no root in the prompt,
+ * five procedures, one definition, one count — with every pool round swept
+ * through the shared `assertNoAnswerLeak` helper.
  */
 const choices = (options: string[], correctIndex: number): AnswerSpec => ({
   kind: "choices",
@@ -234,6 +249,15 @@ export const lesson43Pool: readonly Round[] = [
       ["The third, sixth and seventh", "The first and fifth", "The second and fourth", "Only the fifth"],
       0,
     ),
+    // The question names a concrete scale — C natural minor — so the
+    // illustration is that scale, spelled by the theory core. The answer
+    // names degrees, not pitches, and a scale line marks no triad qualities:
+    // the learner derives the seven triads from the pictured scale, the
+    // lesson's three-step process with step one drawn.
+    illustration: {
+      clef: "treble",
+      notes: buildScale(parseNote("C4"), "naturalMinor").map(scientificName),
+    },
     rule: "In the C natural minor scale the third, sixth and seventh triads are major: Eb–G–Bb, Ab–C–Eb and Bb–D–F.",
   },
   {

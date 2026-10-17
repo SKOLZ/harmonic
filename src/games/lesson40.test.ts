@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import { validateRound } from "../lib/rounds/validate";
+import { assertNoAnswerLeak } from "../lib/rounds/noAnswerLeak";
 import type { PromptSpec, Round } from "../lib/rounds/types";
 import KeyboardPrompt from "../components/prompts/KeyboardPrompt";
 import StaffPrompt from "../components/prompts/StaffPrompt";
@@ -351,5 +352,135 @@ describe("lesson 40 question pool", () => {
     expect(rules).toMatch(/three half steps/);
     expect(rules).toMatch(/six half steps/);
     expect(rules).toMatch(/eight half steps/);
+  });
+});
+
+describe("lesson 40 companion illustrations (T5d Chords pass)", () => {
+  // Chords opens with the build-drill archetype exactly once: "How is an Eb
+  // diminished triad spelled?" names the root Eb, and the derived upper
+  // tones — the very answer — stay off the page. The other eleven text
+  // rounds are this lesson's structural opposite: the four FORMULA rounds
+  // and four half-step COUNT rounds speak about triad types in general
+  // ("its root" is a class referent, never a named pitch), and the three
+  // definition rounds carry no pitch subject at all. The strict rule keeps
+  // every one of them text-only; each rejection class is recorded below.
+  const ILLUSTRATED = ["l40-text-eb-diminished-spelling"];
+  // Counts: the answers are half-step quantities and the prompt names no
+  // pitch ("its root" refers to any root), so there is no question pitch to
+  // draw — and engraving an example triad would let the learner measure its
+  // intervals off the picture (the pilot's derivability-leak class).
+  const COUNT = [
+    "l40-text-major-half-steps",
+    "l40-text-minor-half-steps",
+    "l40-text-augmented-half-steps",
+    "l40-text-diminished-half-steps",
+  ];
+  // Class-level formulas: "Which pair of intervals builds a major triad from
+  // its root?" asks about every major triad; no prompt names a concrete
+  // pitch, and drawing an example would invent a subject the question never
+  // names — option (b), which the user declined.
+  const FORMULA = [
+    "l40-text-major-formula",
+    "l40-text-minor-formula",
+    "l40-text-augmented-formula",
+    "l40-text-diminished-formula",
+  ];
+  // Definitions and vocabulary: a chord's note count, the root's name, and
+  // the triad's tone list are class-level subjects with no pitch to draw.
+  const DEFINITION = [
+    "l40-text-chord-definition",
+    "l40-text-chord-root",
+    "l40-text-triad-tones",
+  ];
+
+  function illustratedRounds(): Round[] {
+    return lesson40Pool.filter((round) => round.illustration !== undefined);
+  }
+
+  it("accounts for every text round: one illustrated, eleven classified rejections", () => {
+    const textIds = lesson40Pool
+      .filter((round) => round.prompt.kind === "text")
+      .map((round) => round.id)
+      .sort();
+    expect(textIds).toHaveLength(12);
+    expect(textIds).toEqual([...ILLUSTRATED, ...COUNT, ...FORMULA, ...DEFINITION].sort());
+  });
+
+  it("illustrates exactly the Eb diminished spelling drill", () => {
+    expect(illustratedRounds().map((round) => round.id).sort()).toEqual(ILLUSTRATED);
+  });
+
+  it("attaches the illustration only to a text-prompt round", () => {
+    for (const round of illustratedRounds()) {
+      expect(round.prompt.kind).toBe("text");
+    }
+  });
+
+  it("engraves the question's root alone — never the derived triad", () => {
+    // The question's pitch is Eb; the answer is the spelled triad
+    // Eb–Gb–Bbb. Only Eb goes on the page: the diminished upper tones are
+    // exactly the fact the learner has to build from the root.
+    expect(roundById("l40-text-eb-diminished-spelling").illustration).toEqual({
+      clef: "treble",
+      notes: ["Eb4"],
+    });
+  });
+
+  it("pins the illustrated root to the root its own prompt names", () => {
+    const prompt = roundById("l40-text-eb-diminished-spelling").prompt;
+    expect(prompt.kind).toBe("text");
+    expect((prompt as Extract<PromptSpec, { kind: "text" }>).text).toContain("Eb diminished");
+    // The derived tones stay off the page: the answer is the full spelling.
+    expect(answerOf("l40-text-eb-diminished-spelling")).toBe("Eb–Gb–Bbb");
+  });
+
+  it("keeps the four half-step rounds text-only: counts have no question pitch", () => {
+    expect(COUNT).toHaveLength(4);
+    for (const id of COUNT) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the four formula rounds text-only: class subjects, no named pitch", () => {
+    expect(FORMULA).toHaveLength(4);
+    for (const id of FORMULA) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the three definition rounds text-only: no pitch subject to draw", () => {
+    expect(DEFINITION).toHaveLength(3);
+    for (const id of DEFINITION) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("passes the shared no-leak assertion for every pool round", () => {
+    for (const round of lesson40Pool) {
+      expect(() => assertNoAnswerLeak(round), round.id).not.toThrow();
+    }
+  });
+
+  it("engraves every illustration through the real Staff renderer", () => {
+    // Triangulation: the slot speaks the staff-prompt shape, so each
+    // illustration has to survive the actual engraver, not just the type.
+    for (const round of illustratedRounds()) {
+      const host = document.createElement("div");
+      document.body.appendChild(host);
+      const dispose = render(
+        () => StaffPrompt({ prompt: { kind: "staff", ...round.illustration! } }),
+        host,
+      );
+      cleanups.push(() => {
+        dispose();
+        host.remove();
+      });
+      const svg = host.querySelector("svg");
+      expect(svg, `illustration ${round.id} did not engrave`).not.toBeNull();
+      expect(svg!.querySelectorAll("path").length).toBeGreaterThanOrEqual(5);
+    }
   });
 });

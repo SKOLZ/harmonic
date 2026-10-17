@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import { validateRound } from "../lib/rounds/validate";
+import { assertNoAnswerLeak } from "../lib/rounds/noAnswerLeak";
 import type { PromptSpec, Round } from "../lib/rounds/types";
 import StaffPrompt from "../components/prompts/StaffPrompt";
 import {
@@ -233,5 +234,69 @@ describe("lesson 51 question pool", () => {
     expect(inversions.has("rootPosition")).toBe(true);
     expect(inversions.has("first")).toBe(true);
     expect(inversions.has("second")).toBe(true);
+  });
+});
+
+describe("lesson 51 companion illustrations (T5d Diatonic pass)", () => {
+  // Zero yield for Voicing Chords — the section's sharpest self-revealing
+  // class. Three rounds name the F major triad and ask which tone is lowest
+  // in a POSED voicing ("In a root-position voicing of the F major triad,
+  // which chord tone is lowest?"): the only faithful engraving — that very
+  // voicing — puts the answer's own tone at the bottom, so the picture IS
+  // the answer (lesson 24's first-sharp precedent: the single answer pitch
+  // on the page is the reveal). The three definition rounds name no chord
+  // at all, and the root-order round is the arrangement PROCEDURE, which
+  // the parent's strict rule keeps permanently text-only.
+  const DEFINITION = [
+    "l51-text-voicing-def",
+    "l51-text-first-def",
+    "l51-text-second-lowest",
+  ];
+  // Self-revealing: the posed voicing's lowest note IS the answer.
+  const SELF_REVEALING = [
+    "l51-text-root-lowest",
+    "l51-text-first-lowest",
+    "l51-text-second-def",
+  ];
+  const PROCEDURE = ["l51-text-root-order"];
+
+  it("accounts for every text round: all seven are classified rejections", () => {
+    const textIds = lesson51Pool
+      .filter((round) => round.prompt.kind === "text")
+      .map((round) => round.id)
+      .sort();
+    expect(textIds).toHaveLength(7);
+    expect(textIds).toEqual([...DEFINITION, ...SELF_REVEALING, ...PROCEDURE].sort());
+  });
+
+  it("has zero companion illustrations across the whole pool", () => {
+    for (const round of lesson51Pool) {
+      expect(round.illustration, round.id).toBeUndefined();
+    }
+  });
+
+  it("keeps the three definition rounds text-only: no chord named, no pitch", () => {
+    for (const id of DEFINITION) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the three posed-voicing rounds text-only: the engraving is the answer", () => {
+    for (const id of SELF_REVEALING) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the arrangement round text-only: a procedure, not a pitch", () => {
+    expect(roundById("l51-text-root-order").prompt.kind).toBe("text");
+    expect(roundById("l51-text-root-order").illustration).toBeUndefined();
+  });
+
+  it("passes the shared no-leak assertion for every pool round", () => {
+    for (const round of lesson51Pool) {
+      expect(() => assertNoAnswerLeak(round), round.id).not.toThrow();
+    }
   });
 });

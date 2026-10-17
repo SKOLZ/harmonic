@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import { validateRound } from "../lib/rounds/validate";
+import { assertNoAnswerLeak } from "../lib/rounds/noAnswerLeak";
 import type { PromptSpec, Round } from "../lib/rounds/types";
 import KeyboardPrompt from "../components/prompts/KeyboardPrompt";
 import StaffPrompt from "../components/prompts/StaffPrompt";
@@ -524,5 +525,89 @@ describe("lesson 46 question pool", () => {
       /Therefore, it is a (major|minor|dominant|half-diminished|minor-major|fully-diminished) seventh chord\./,
     );
     expect(rules).toMatch(/Therefore, it is an augmented-major seventh chord\./);
+  });
+});
+
+describe("lesson 46 companion illustrations (T5d Diatonic pass)", () => {
+  // Zero yield for Diatonic Seventh Chords. Six major-scale PATTERN rounds
+  // and four harmonic/melodic PATTERN rounds ask about the scale SPECIES
+  // ("of a major scale", "of harmonic minor") with no root in the prompt —
+  // engraving C would invent the very subject the question never names,
+  // option (b) the user declined. The one round that names C natural minor
+  // (l46-text-nm-i) asks for the quality of its FIRST CHORD: the only
+  // faithful engraving (C–Eb–G–Bb) displays exactly the quality the answer
+  // names, so it joins the self-revealing class. One count round and five
+  // procedure rounds complete the rejections, class by class below.
+  const COUNT = ["l46-text-definition"];
+  const PROCEDURE = [
+    "l46-text-process-1",
+    "l46-text-process-2",
+    "l46-text-process-3",
+    "l46-text-harmonic-build",
+    "l46-text-melodic-build",
+  ];
+  // Patterns: no root is ever named in these prompts — the question is
+  // about every scale of the species, never a concrete one.
+  const PATTERN = [
+    "l46-text-major-14",
+    "l46-text-major-236",
+    "l46-text-major-5",
+    "l46-text-major-7",
+    "l46-text-recap-first",
+    "l46-text-recap-23",
+    "l46-text-harmonic-i",
+    "l46-text-harmonic-iii",
+    "l46-text-harmonic-vii",
+    "l46-text-melodic-iv",
+  ];
+  // Self-revealing: the C natural minor first chord — the engraving that
+  // shows the question's pitches shows the quality the answer names.
+  const SELF_REVEALING = ["l46-text-nm-i"];
+
+  it("accounts for every text round: all seventeen are classified rejections", () => {
+    const textIds = lesson46Pool
+      .filter((round) => round.prompt.kind === "text")
+      .map((round) => round.id)
+      .sort();
+    expect(textIds).toHaveLength(17);
+    expect(textIds).toEqual([...COUNT, ...PROCEDURE, ...PATTERN, ...SELF_REVEALING].sort());
+  });
+
+  it("has zero companion illustrations across the whole pool", () => {
+    for (const round of lesson46Pool) {
+      expect(round.illustration, round.id).toBeUndefined();
+    }
+  });
+
+  it("keeps the count round text-only: a count, no pitch subject", () => {
+    expect(roundById("l46-text-definition").prompt.kind).toBe("text");
+    expect(roundById("l46-text-definition").illustration).toBeUndefined();
+  });
+
+  it("keeps the five procedure rounds text-only: methods, not pitches", () => {
+    expect(PROCEDURE).toHaveLength(5);
+    for (const id of PROCEDURE) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the ten pattern rounds text-only: scale species, no root named", () => {
+    expect(PATTERN).toHaveLength(10);
+    for (const id of PATTERN) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the C natural minor first-chord round text-only: the engraving is the answer", () => {
+    expect(roundById("l46-text-nm-i").prompt.kind).toBe("text");
+    expect(roundById("l46-text-nm-i").illustration).toBeUndefined();
+  });
+
+  it("passes the shared no-leak assertion for every pool round", () => {
+    for (const round of lesson46Pool) {
+      expect(() => assertNoAnswerLeak(round), round.id).not.toThrow();
+    }
   });
 });

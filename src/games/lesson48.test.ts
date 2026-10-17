@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import { validateRound } from "../lib/rounds/validate";
+import { assertNoAnswerLeak } from "../lib/rounds/noAnswerLeak";
 import type { PromptSpec, Round } from "../lib/rounds/types";
 import KeyboardPrompt from "../components/prompts/KeyboardPrompt";
 import StaffPrompt from "../components/prompts/StaffPrompt";
@@ -343,5 +344,82 @@ describe("lesson 48 question pool", () => {
     expect(rules).toMatch(/plus, capital 'M', and a 7/);
     expect(rules).toMatch(/plus and a 7/);
     expect(rules).toMatch(/combined with/);
+  });
+});
+
+describe("lesson 48 companion illustrations (T5d Chords pass)", () => {
+  // Zero yield for More Seventh Chords: the same structural reason as
+  // lesson 45, with three more type-definition rounds. Every formula round
+  // is class-level ("Which pair of parts combines to form a minor-major
+  // seventh chord?" — every such chord, no pitch named); the abbreviation
+  // rounds state the type symbols; the three NAME rounds define chord
+  // TYPES ("Which seventh chord is a minor triad topped by a major
+  // seventh?"), and the distinction round compares two types. No text round
+  // names a pitch, so a companion staff would have to invent the subject.
+  const CONTEXT = ["l48-text-occurrence"];
+  const COUNT = ["l48-text-count"];
+  const FORMULA = ["l48-text-mm-formula", "l48-text-am-formula", "l48-text-aug-formula"];
+  const ABBREVIATION = [
+    "l48-text-mm-abbrev",
+    "l48-text-am-abbrev",
+    "l48-text-aug-abbrev",
+  ];
+  const TYPE_DEFINITION = [
+    "l48-text-mm-name",
+    "l48-text-am-name",
+    "l48-text-aug-name",
+    "l48-text-distinction",
+  ];
+
+  it("accounts for every text round: all twelve are classified rejections", () => {
+    const textIds = lesson48Pool
+      .filter((round) => round.prompt.kind === "text")
+      .map((round) => round.id)
+      .sort();
+    expect(textIds).toHaveLength(12);
+    expect(textIds).toEqual(
+      [...CONTEXT, ...COUNT, ...FORMULA, ...ABBREVIATION, ...TYPE_DEFINITION].sort(),
+    );
+  });
+
+  it("has zero companion illustrations across the whole pool", () => {
+    for (const round of lesson48Pool) {
+      expect(round.illustration, round.id).toBeUndefined();
+    }
+  });
+
+  it("keeps the occurrence and count rounds text-only: no named pitch", () => {
+    for (const id of [...CONTEXT, ...COUNT]) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the three formula rounds text-only: chord types, no named pitch", () => {
+    for (const id of FORMULA) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the three abbreviation rounds text-only: chord-type symbols", () => {
+    for (const id of ABBREVIATION) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the four type-definition rounds text-only: class-level subjects", () => {
+    expect(TYPE_DEFINITION).toHaveLength(4);
+    for (const id of TYPE_DEFINITION) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("passes the shared no-leak assertion for every pool round", () => {
+    for (const round of lesson48Pool) {
+      expect(() => assertNoAnswerLeak(round), round.id).not.toThrow();
+    }
   });
 });

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import { validateRound } from "../lib/rounds/validate";
+import { assertNoAnswerLeak } from "../lib/rounds/noAnswerLeak";
 import type { PromptSpec, Round } from "../lib/rounds/types";
 import KeyboardPrompt from "../components/prompts/KeyboardPrompt";
 import StaffPrompt from "../components/prompts/StaffPrompt";
@@ -443,6 +444,109 @@ describe("lesson 44 question pool", () => {
       expect(roundById(id).rule, `numeral for ${id}`).toContain(
         `Its numeral is ${romanNumeral(expected.quality, expected.degree)}.`,
       );
+    }
+  });
+});
+
+describe("lesson 44 companion illustrations (T5d Diatonic pass)", () => {
+  // Zero yield for Roman Numeral Analysis: Triads. The nine NUMERAL rounds
+  // name a scale, but the question's subject is one worked TRIAD ("Which
+  // numeral identifies the first triad of the C major scale?" — C–E–G),
+  // and the engraving of that very triad displays the quality that
+  // determines the numeral — the answer is what you would draw, the pilot's
+  // self-revealing class. The four STYLE rounds and the two identification
+  // rounds state the numeral SYSTEM itself, which the site policy list
+  // keeps permanently text-only; the inversion-figure rounds are that
+  // system's vocabulary. Every rejection class is recorded below.
+  const DEFINITION = ["l44-text-identify", "l44-text-styles"];
+  const FIRST_DEGREE = ["l44-text-first-uses"];
+  // Styles: "Which numeral style represents an augmented triad?" is the
+  // numeral system itself — class-level, no pitch subject.
+  const STYLE = [
+    "l44-text-major-style",
+    "l44-text-minor-style",
+    "l44-text-aug-style",
+    "l44-text-dim-style",
+  ];
+  // Numerals: the prompt names a scale, but the subject is its one worked
+  // triad, whose engraving IS the quality-style answer ("identify the
+  // quality shown"). Text-only by the parent's strict rule — an
+  // illustration here would display the numeral the learner must name.
+  const NUMERAL = [
+    "l44-text-major-i",
+    "l44-text-major-ii",
+    "l44-text-major-vii",
+    "l44-text-nm-i",
+    "l44-text-nm-ii",
+    "l44-text-hm-iii",
+    "l44-text-hm-v",
+    "l44-text-mm-vi",
+    "l44-text-mm-ii",
+  ];
+  // Inversion symbols: figure vocabulary ("the small 6 and 4"), the
+  // numeral system's own notation — class-level, no pitch subject.
+  const INVERSION_FIGURE = [
+    "l44-text-first-inv-reason",
+    "l44-text-second-inv",
+    "l44-text-first-inv-63",
+  ];
+
+  it("accounts for every text round: all nineteen are classified rejections", () => {
+    const textIds = lesson44Pool
+      .filter((round) => round.prompt.kind === "text")
+      .map((round) => round.id)
+      .sort();
+    expect(textIds).toHaveLength(19);
+    expect(textIds).toEqual(
+      [...DEFINITION, ...FIRST_DEGREE, ...STYLE, ...NUMERAL, ...INVERSION_FIGURE].sort(),
+    );
+  });
+
+  it("has zero companion illustrations across the whole pool", () => {
+    for (const round of lesson44Pool) {
+      expect(round.illustration, round.id).toBeUndefined();
+    }
+  });
+
+  it("keeps the two identification rounds text-only: the numeral system itself", () => {
+    for (const id of DEFINITION) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the first-uses round text-only: system vocabulary", () => {
+    expect(roundById("l44-text-first-uses").prompt.kind).toBe("text");
+    expect(roundById("l44-text-first-uses").illustration).toBeUndefined();
+  });
+
+  it("keeps the four style rounds text-only: numeral styles, no pitch subject", () => {
+    expect(STYLE).toHaveLength(4);
+    for (const id of STYLE) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the nine numeral rounds text-only: the engraving would be the answer", () => {
+    expect(NUMERAL).toHaveLength(9);
+    for (const id of NUMERAL) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the three inversion-figure rounds text-only: figure vocabulary", () => {
+    expect(INVERSION_FIGURE).toHaveLength(3);
+    for (const id of INVERSION_FIGURE) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("passes the shared no-leak assertion for every pool round", () => {
+    for (const round of lesson44Pool) {
+      expect(() => assertNoAnswerLeak(round), round.id).not.toThrow();
     }
   });
 });

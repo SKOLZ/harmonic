@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import { validateRound } from "../lib/rounds/validate";
+import { assertNoAnswerLeak } from "../lib/rounds/noAnswerLeak";
 import type { PromptSpec, Round } from "../lib/rounds/types";
 import KeyboardPrompt from "../components/prompts/KeyboardPrompt";
 import StaffPrompt from "../components/prompts/StaffPrompt";
@@ -365,5 +366,74 @@ describe("lesson 45 question pool", () => {
     expect(rules).toMatch(/abbreviated with a slashed circle and a 7/);
     expect(rules).toMatch(/abbreviated with an open circle and a 7/);
     expect(rules).toMatch(/combined with/);
+  });
+});
+
+describe("lesson 45 companion illustrations (T5d Chords pass)", () => {
+  // Zero yield for Seventh Chords: chord-type DEFINITIONS end to end. Every
+  // formula round is class-level ("Which pair of parts combines to form a
+  // dominant seventh chord?" — every dominant seventh, no pitch named), the
+  // abbreviation rounds state the chord-type symbols, and the two definition
+  // rounds carry no pitch subject at all. There is no question pitch in any
+  // text round, so there is nothing a staff illustration could engrave
+  // without inventing a subject (option (b), which the user declined).
+  const DEFINITION = ["l45-text-definition", "l45-text-count"];
+  const FORMULA = [
+    "l45-text-dom-formula",
+    "l45-text-maj-formula",
+    "l45-text-min-formula",
+    "l45-text-hd-formula",
+    "l45-text-dim-formula",
+  ];
+  const ABBREVIATION = [
+    "l45-text-dom-abbrev",
+    "l45-text-maj-abbrev",
+    "l45-text-min-abbrev",
+    "l45-text-hd-abbrev",
+    "l45-text-dim-abbrev",
+  ];
+
+  it("accounts for every text round: all twelve are classified rejections", () => {
+    const textIds = lesson45Pool
+      .filter((round) => round.prompt.kind === "text")
+      .map((round) => round.id)
+      .sort();
+    expect(textIds).toHaveLength(12);
+    expect(textIds).toEqual([...DEFINITION, ...FORMULA, ...ABBREVIATION].sort());
+  });
+
+  it("has zero companion illustrations across the whole pool", () => {
+    for (const round of lesson45Pool) {
+      expect(round.illustration, round.id).toBeUndefined();
+    }
+  });
+
+  it("keeps the two definition rounds text-only: no pitch subject to draw", () => {
+    for (const id of DEFINITION) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the five formula rounds text-only: chord types, no named pitch", () => {
+    expect(FORMULA).toHaveLength(5);
+    for (const id of FORMULA) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the five abbreviation rounds text-only: chord-type symbols", () => {
+    expect(ABBREVIATION).toHaveLength(5);
+    for (const id of ABBREVIATION) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("passes the shared no-leak assertion for every pool round", () => {
+    for (const round of lesson45Pool) {
+      expect(() => assertNoAnswerLeak(round), round.id).not.toThrow();
+    }
   });
 });
