@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import { validateRound } from "../lib/rounds/validate";
+import { assertNoAnswerLeak } from "../lib/rounds/noAnswerLeak";
 import type { PromptSpec, Round } from "../lib/rounds/types";
 import StaffPrompt from "../components/prompts/StaffPrompt";
 import {
@@ -463,6 +464,133 @@ describe("lesson 122 question pool", () => {
         `Staff notation, treble clef, 4 accidentals, ${prompt.notes.length} notes`,
       );
       expect(label).not.toMatch(/[A-G][#b]/);
+    }
+  });
+});
+
+describe("lesson 122 companion illustrations (T5e Progressions/Neapolitan pass)", () => {
+  // Two of eight text rounds qualify. "How is the D major triad in measure 50
+  // identified?" names a concrete triad by root, so the illustration engraves
+  // its root D alone — the lesson-40 root-alone shape — and the answer (the
+  // Neapolitan-sixth identification) stays off the page. "Why is D–F#–A a
+  // Neapolitan in C# minor?" names the full triad, so the illustration engraves
+  // that triad verbatim as one stacked chord; the answer is the REASON (D is
+  // the lowered second degree of C# minor), which a bare D-major triad on the
+  // staff does not state. The other six rounds are class-level, procedural, or
+  // self-revealing: the key-signature round would be answered by engraving the
+  // signature, the lowest-note round by engraving measure 49's chord (which
+  // contains B#, the answer), and the measure-51 round by engraving its chord
+  // (which IS "a C# minor triad").
+  const ILLUSTRATED = ["l122-text-m50-identify", "l122-text-why-neapolitan"];
+  const FACT = ["l122-text-measures"];
+  const SELF_REVEALING = ["l122-text-key", "l122-text-lowest-49", "l122-text-m51"];
+  const PROCEDURE = ["l122-text-why-reveal"];
+  const NO_NAMED_PITCH = ["l122-text-missing-50"];
+
+  function illustratedRounds(): Round[] {
+    return lesson122Pool.filter((round) => round.illustration !== undefined);
+  }
+
+  it("accounts for every text round: two illustrated, six classified rejections", () => {
+    const textIds = lesson122Pool
+      .filter((round) => round.prompt.kind === "text")
+      .map((round) => round.id)
+      .sort();
+    expect(textIds).toHaveLength(8);
+    expect(textIds).toEqual(
+      [...ILLUSTRATED, ...FACT, ...SELF_REVEALING, ...PROCEDURE, ...NO_NAMED_PITCH].sort(),
+    );
+  });
+
+  it("illustrates exactly the two named-subject rounds", () => {
+    expect(
+      illustratedRounds()
+        .map((round) => round.id)
+        .sort(),
+    ).toEqual(ILLUSTRATED);
+  });
+
+  it("attaches illustrations only to text-prompt rounds", () => {
+    for (const round of illustratedRounds()) {
+      expect(round.prompt.kind).toBe("text");
+    }
+  });
+
+  it("engraves the D major triad's root alone for the identification round", () => {
+    // The question names the D major triad by root; the answer is its
+    // identification ("the Neapolitan sixth chord in C# minor"). Only the root
+    // D goes on the page — the identification is the learner's analysis work.
+    expect(roundById("l122-text-m50-identify").illustration).toEqual({
+      clef: "treble",
+      notes: ["D4"],
+    });
+    const prompt = roundById("l122-text-m50-identify").prompt as Extract<
+      PromptSpec,
+      { kind: "text" }
+    >;
+    expect(prompt.text).toContain("D major triad");
+    expect(answerOf("l122-text-m50-identify")).toBe("The Neapolitan sixth chord in C# minor");
+  });
+
+  it("engraves the named D–F#–A triad verbatim for the why-round — the answer is prose", () => {
+    // The question names the full triad D–F#–A; the illustration engraves those
+    // pitches as one stacked chord. The answer is the reason the triad is
+    // Neapolitan — "D is the lowered second degree of C# minor" — which a bare
+    // D-major triad on the staff does not display.
+    expect(roundById("l122-text-why-neapolitan").illustration).toEqual({
+      clef: "treble",
+      notes: ["D4", "F#4", "A4"],
+      simultaneous: true,
+    });
+    const prompt = roundById("l122-text-why-neapolitan").prompt as Extract<
+      PromptSpec,
+      { kind: "text" }
+    >;
+    expect(prompt.text).toContain("D–F#–A");
+    expect(answerOf("l122-text-why-neapolitan")).toBe(
+      "D is the lowered second degree of C# minor",
+    );
+  });
+
+  it("keeps the measures fact round text-only: no pitch subject to draw", () => {
+    expect(roundById("l122-text-measures").prompt.kind).toBe("text");
+    expect(roundById("l122-text-measures").illustration).toBeUndefined();
+  });
+
+  it("keeps the three self-revealing rounds text-only: the engraving would be the answer", () => {
+    // The key-signature round's answer is the key; engraving the signature (or
+    // a C# minor scale) displays it. The lowest-note round's answer is B#;
+    // engraving measure 49's chord contains B#. The measure-51 round's answer
+    // is "a C# minor triad"; engraving that chord IS the answer.
+    for (const id of SELF_REVEALING) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the why-reveal round text-only: a procedure, not a pitch", () => {
+    expect(roundById("l122-text-why-reveal").prompt.kind).toBe("text");
+    expect(roundById("l122-text-why-reveal").illustration).toBeUndefined();
+  });
+
+  it("keeps the missing-fifth round text-only: the question names no pitch", () => {
+    // The question asks which chord tone measure 50's second half LACKS; it
+    // names no pitch, so any engraving would import the chord's tones from the
+    // analysis — a subject the question itself never states.
+    expect(roundById("l122-text-missing-50").prompt.kind).toBe("text");
+    expect(roundById("l122-text-missing-50").illustration).toBeUndefined();
+  });
+
+  it("passes the shared no-leak assertion for every pool round", () => {
+    for (const round of lesson122Pool) {
+      expect(() => assertNoAnswerLeak(round), round.id).not.toThrow();
+    }
+  });
+
+  it("engraves every illustration through the real Staff renderer", () => {
+    for (const round of illustratedRounds()) {
+      const host = engrave(round.id, { kind: "staff", ...round.illustration! });
+      expect(host.querySelectorAll("path").length).toBeGreaterThanOrEqual(5);
     }
   });
 });

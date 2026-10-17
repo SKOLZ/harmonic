@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import { validateRound } from "../lib/rounds/validate";
+import { assertNoAnswerLeak } from "../lib/rounds/noAnswerLeak";
 import type { PromptSpec, Round } from "../lib/rounds/types";
 import StaffPrompt from "../components/prompts/StaffPrompt";
 import {
@@ -252,5 +253,58 @@ describe("lesson 57 question pool", () => {
     expect(rules).toMatch(/circle progression from VII/);
     expect(rules).toMatch(/do not have to be followed strictly/);
     expect(rules).toMatch(/not banned from using it/);
+  });
+});
+
+describe("lesson 57 companion illustrations (T5e Progressions/Neapolitan pass)", () => {
+  // Zero yield. Twelve rounds are numeral-chart questions: the goal of a
+  // progression, the strongest approach to a given roman-numeral chord, which
+  // circle progression leads to ii/vi, which chords are dominants or
+  // predominants, and the minor chart's approach to III — every subject is a
+  // roman-numeral CLASS, never a concrete pitch. The example round is
+  // self-revealing: it asks for the finished progression from the lesson's
+  // earlier example, so engraving that progression would BE the answer. The
+  // final round asks whether the charts are strict rules — pure prose.
+  const NUMERAL_CHART = [
+    "l57-text-goal",
+    "l57-text-strongest-i",
+    "l57-text-strongest-v",
+    "l57-text-strongest-vii",
+    "l57-text-strongest-iv",
+    "l57-text-to-ii",
+    "l57-text-to-vi",
+    "l57-text-to-iii",
+    "l57-text-i-anywhere",
+    "l57-text-dominants",
+    "l57-text-predominants",
+    "l57-text-minor-iii",
+  ];
+  const SELF_REVEALING = ["l57-text-example"];
+  const PROSE = ["l57-text-not-strict"];
+
+  it("accounts for every text round as a classified rejection", () => {
+    const textIds = lesson57Pool
+      .filter((round) => round.prompt.kind === "text")
+      .map((round) => round.id)
+      .sort();
+    expect(textIds).toHaveLength(14);
+    expect(textIds).toEqual([...NUMERAL_CHART, ...SELF_REVEALING, ...PROSE].sort());
+  });
+
+  it("keeps every text round text-only: no round names a concrete pitch to draw", () => {
+    expect(
+      lesson57Pool.filter((round) => round.illustration !== undefined),
+    ).toEqual([]);
+  });
+
+  it("keeps the example round text-only: the engraving would be the answer", () => {
+    expect(roundById("l57-text-example").prompt.kind).toBe("text");
+    expect(roundById("l57-text-example").illustration).toBeUndefined();
+  });
+
+  it("passes the shared no-leak assertion for every pool round", () => {
+    for (const round of lesson57Pool) {
+      expect(() => assertNoAnswerLeak(round), round.id).not.toThrow();
+    }
   });
 });

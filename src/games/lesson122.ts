@@ -284,6 +284,9 @@ const TEXT_ROUNDS: readonly Round[] = [
       "The IV chord in first inversion",
       "An augmented sixth chord",
     ]),
+    // Root-alone (the lesson-40 shape): the question names the triad by root,
+    // so D goes on the page and the identification stays the learner's work.
+    illustration: { clef: "treble", notes: ["D4"] },
     rule:
       "The first half of measure 50 holds D–F#–A with F# in the bass: " +
       "the Neapolitan sixth chord in C# minor.",
@@ -297,6 +300,10 @@ const TEXT_ROUNDS: readonly Round[] = [
       "A is the dominant of C# minor",
       "F# is the mediant of C# minor",
     ]),
+    // The question names the full triad D–F#–A, so the engraving draws those
+    // pitches as one stacked chord; the answer is the reason (prose), which a
+    // bare D-major triad on the staff does not display.
+    illustration: { clef: "treble", notes: ["D4", "F#4", "A4"], simultaneous: true },
     rule:
       "In C# minor the second scale degree is D#; lowered one half step it becomes D, " +
       "so a D major triad there is the Neapolitan sixth.",

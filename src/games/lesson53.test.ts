@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import { validateRound } from "../lib/rounds/validate";
+import { assertNoAnswerLeak } from "../lib/rounds/noAnswerLeak";
 import type { PromptSpec, Round } from "../lib/rounds/types";
 import StaffPrompt from "../components/prompts/StaffPrompt";
 import { letterIndex, parseNote } from "../lib/theory";
@@ -299,5 +300,52 @@ describe("lesson 53 question pool", () => {
     expect(rules).toMatch(/two nonharmonic tones in succession/);
     expect(rules).toMatch(/double neighboring tones or a neighbor group/);
     expect(rules).toMatch(/composers may choose to use others/);
+  });
+});
+
+describe("lesson 53 companion illustrations (T5e Progressions/Neapolitan pass)", () => {
+  // Zero yield: no text round here names a concrete pitch for the engraving to
+  // draw. The three definition rounds ask what a nonharmonic tone, a step, and
+  // a skip are — interval-class subjects, drawn for no particular key. The
+  // eleven type-behavior rounds ask how a tone type is approached, continued,
+  // resolved, or accented in general; each names a tone TYPE (passing tone,
+  // anticipation, escape tone, appoggiatura, suspension, retardation, changing
+  // tone), never a pitch. The two vocabulary rounds ask what changing tones are
+  // also called and what the lesson says beyond the named ones — prose.
+  const DEFINITION = ["l53-text-def", "l53-text-step", "l53-text-skip"];
+  const TYPE_BEHAVIOR = [
+    "l53-text-pt",
+    "l53-text-apt",
+    "l53-text-ant",
+    "l53-text-ant-accent",
+    "l53-text-et",
+    "l53-text-app",
+    "l53-text-app-accent",
+    "l53-text-sus",
+    "l53-text-ret",
+    "l53-text-accent-sus",
+    "l53-text-ct",
+  ];
+  const VOCABULARY = ["l53-text-ct-alias", "l53-text-others"];
+
+  it("accounts for every text round as a classified rejection", () => {
+    const textIds = lesson53Pool
+      .filter((round) => round.prompt.kind === "text")
+      .map((round) => round.id)
+      .sort();
+    expect(textIds).toHaveLength(16);
+    expect(textIds).toEqual([...DEFINITION, ...TYPE_BEHAVIOR, ...VOCABULARY].sort());
+  });
+
+  it("keeps every text round text-only: no round names a concrete pitch to draw", () => {
+    expect(
+      lesson53Pool.filter((round) => round.illustration !== undefined),
+    ).toEqual([]);
+  });
+
+  it("passes the shared no-leak assertion for every pool round", () => {
+    for (const round of lesson53Pool) {
+      expect(() => assertNoAnswerLeak(round), round.id).not.toThrow();
+    }
   });
 });

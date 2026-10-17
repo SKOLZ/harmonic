@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import { validateRound } from "../lib/rounds/validate";
+import { assertNoAnswerLeak } from "../lib/rounds/noAnswerLeak";
 import type { PromptSpec, Round } from "../lib/rounds/types";
 import StaffPrompt from "../components/prompts/StaffPrompt";
 import {
@@ -344,6 +345,39 @@ describe("lesson 60 question pool", () => {
       expect(label, `staff round ${id}`).toContain("Staff notation, treble clef");
       expect(label, `staff round ${id}`).toContain(`${prompt.notes.length} notes`);
       expect(label).not.toMatch(/[A-G][#b]/);
+    }
+  });
+});
+
+describe("lesson 60 companion illustrations (T5e Progressions/Neapolitan pass)", () => {
+  // Zero yield: every text round is history or prose. The six rounds ask why
+  // first inversion was introduced, what a composer may do instead of changing
+  // the upper voices, what held early composers back, why first inversion won
+  // out, how often a diminished triad appears in second inversion, and whether
+  // preferring first inversion is a strict rule. None names a concrete pitch —
+  // the subjects are compositional practices and historical reasons.
+  const PROCEDURE = ["l60-text-smooth-bass", "l60-text-repeat-chord"];
+  const HISTORY = ["l60-text-early-composers", "l60-text-prefer-first"];
+  const PROSE = ["l60-text-dim-second-rare", "l60-text-not-strict"];
+
+  it("accounts for every text round as a classified rejection", () => {
+    const textIds = lesson60Pool
+      .filter((round) => round.prompt.kind === "text")
+      .map((round) => round.id)
+      .sort();
+    expect(textIds).toHaveLength(6);
+    expect(textIds).toEqual([...PROCEDURE, ...HISTORY, ...PROSE].sort());
+  });
+
+  it("keeps every text round text-only: no round names a concrete pitch to draw", () => {
+    expect(
+      lesson60Pool.filter((round) => round.illustration !== undefined),
+    ).toEqual([]);
+  });
+
+  it("passes the shared no-leak assertion for every pool round", () => {
+    for (const round of lesson60Pool) {
+      expect(() => assertNoAnswerLeak(round), round.id).not.toThrow();
     }
   });
 });

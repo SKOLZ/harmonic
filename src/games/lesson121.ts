@@ -277,6 +277,9 @@ const TEXT_ROUNDS: readonly Round[] = [
       "The sixth scale degree",
       "The seventh scale degree",
     ]),
+    // F is the question's named pitch; the answer — a degree NAME derived
+    // from the C-minor scale in the learner's head — stays off the page.
+    illustration: { clef: "treble", notes: ["F4"] },
     rule:
       "In C minor the Neapolitan sixth's bass is F — the fourth scale degree, " +
       "the same bass as the iv chord.",

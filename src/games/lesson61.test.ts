@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import { validateRound } from "../lib/rounds/validate";
+import { assertNoAnswerLeak } from "../lib/rounds/noAnswerLeak";
 import type { PromptSpec, Round } from "../lib/rounds/types";
 import StaffPrompt from "../components/prompts/StaffPrompt";
 import {
@@ -260,6 +261,45 @@ describe("lesson 61 question pool", () => {
       expect(label, `staff round ${id}`).toContain("Staff notation, treble clef");
       expect(label, `staff round ${id}`).toContain(`${prompt.notes.length} notes`);
       expect(label).not.toMatch(/[A-G][#b]/);
+    }
+  });
+});
+
+describe("lesson 61 companion illustrations (T5e Progressions/Neapolitan pass)", () => {
+  // Zero yield: the second-inversion round classifies a chord TYPE by its
+  // behavior in a progression, never by concrete pitches. One round counts
+  // the situations, two name the type by vocabulary (passing/pedal six-four),
+  // one defines the cadential six-four, one asks how else its notes may be
+  // analyzed, one asks where the passing six-four sits in a chart (a position
+  // among roman-numeral classes), and one asks why it is worth writing at a
+  // phrase end. No round names a pitch to engrave.
+  const COUNT = ["l61-text-three-situations"];
+  const VOCABULARY = ["l61-text-passing", "l61-text-pedal"];
+  const CLASS_DEFINITION = ["l61-text-cadential-def"];
+  const PROCEDURE = ["l61-text-alternate"];
+  const CLASS_POSITION = ["l61-text-chart"];
+  const PROSE = ["l61-text-cadence-stronger"];
+
+  it("accounts for every text round as a classified rejection", () => {
+    const textIds = lesson61Pool
+      .filter((round) => round.prompt.kind === "text")
+      .map((round) => round.id)
+      .sort();
+    expect(textIds).toHaveLength(7);
+    expect(textIds).toEqual(
+      [...COUNT, ...VOCABULARY, ...CLASS_DEFINITION, ...PROCEDURE, ...CLASS_POSITION, ...PROSE].sort(),
+    );
+  });
+
+  it("keeps every text round text-only: no round names a concrete pitch to draw", () => {
+    expect(
+      lesson61Pool.filter((round) => round.illustration !== undefined),
+    ).toEqual([]);
+  });
+
+  it("passes the shared no-leak assertion for every pool round", () => {
+    for (const round of lesson61Pool) {
+      expect(() => assertNoAnswerLeak(round), round.id).not.toThrow();
     }
   });
 });

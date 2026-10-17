@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import { validateRound } from "../lib/rounds/validate";
+import { assertNoAnswerLeak } from "../lib/rounds/noAnswerLeak";
 import type { PromptSpec, Round } from "../lib/rounds/types";
 import StaffPrompt from "../components/prompts/StaffPrompt";
 import {
@@ -395,6 +396,156 @@ describe("lesson 120 question pool", () => {
         `Staff notation, treble clef, ${prompt.notes.length} notes`,
       );
       expect(label).not.toMatch(/[A-G][#b]/);
+    }
+  });
+});
+
+describe("lesson 120 companion illustrations (T5e Progressions/Neapolitan pass)", () => {
+  // The Neapolitan building drills are this pass's densest section: six of the
+  // twelve text rounds name a concrete subject and keep the derived answer off
+  // the page. The three scale-degree rounds ("In C minor, what is the second
+  // scale degree?") are the lesson-21 starting-root archetype — the tonic named
+  // by the key goes on the page, and the degree the learner counts stays off.
+  // The Ab lowering round names Bb (the degree to lower) and keeps Bbb — the
+  // lowered answer — off. The two conclusion rounds name a concrete key and
+  // draw its tonic, the anchor of the lesson's own three-step Neapolitan
+  // process; the derived chord ("F major", "Bbb major") is prose the learner
+  // builds from the anchor, never a glyph on the page. The remaining six rounds
+  // are class-level: three definition rounds and the three procedural step
+  // rounds, none of which names a pitch to draw.
+  const DEGREE = ["l120-text-degree-a", "l120-text-degree-c", "l120-text-degree-e"];
+  const LOWERING = ["l120-text-lower-ab"];
+  const CONCLUSION = ["l120-text-concl-ab", "l120-text-concl-e"];
+  const DEFINITION = ["l120-text-chord-kind", "l120-text-scales", "l120-text-special-note"];
+  const PROCEDURE = ["l120-text-step1", "l120-text-step2", "l120-text-step3"];
+  const ILLUSTRATED = [...DEGREE, ...LOWERING, ...CONCLUSION].sort();
+
+  function illustratedRounds(): Round[] {
+    return lesson120Pool.filter((round) => round.illustration !== undefined);
+  }
+
+  it("accounts for every text round: six illustrated, six classified rejections", () => {
+    const textIds = lesson120Pool
+      .filter((round) => round.prompt.kind === "text")
+      .map((round) => round.id)
+      .sort();
+    expect(textIds).toHaveLength(12);
+    expect(textIds).toEqual([...ILLUSTRATED, ...DEFINITION, ...PROCEDURE].sort());
+  });
+
+  it("illustrates exactly the six named-subject rounds", () => {
+    expect(
+      illustratedRounds()
+        .map((round) => round.id)
+        .sort(),
+    ).toEqual(ILLUSTRATED);
+  });
+
+  it("attaches illustrations only to text-prompt rounds", () => {
+    for (const round of illustratedRounds()) {
+      expect(round.prompt.kind).toBe("text");
+    }
+  });
+
+  it("engraves each degree round's tonic alone — never the degree the learner counts", () => {
+    // The question's pitch is the key's tonic; the answer is the second scale
+    // degree (D, F#, B). The tonic alone goes on the page — the learner counts
+    // the degree from the drawn anchor and never reads it off the picture.
+    expect(roundById("l120-text-degree-c").illustration).toEqual({
+      clef: "treble",
+      notes: ["C4"],
+    });
+    expect(roundById("l120-text-degree-e").illustration).toEqual({
+      clef: "treble",
+      notes: ["E4"],
+    });
+    expect(roundById("l120-text-degree-a").illustration).toEqual({
+      clef: "treble",
+      notes: ["A4"],
+    });
+  });
+
+  it("keeps every degree answer off the page: the tonic is drawn, the degree is answered", () => {
+    expect(answerOf("l120-text-degree-c")).toBe("D");
+    expect(answerOf("l120-text-degree-e")).toBe("F#");
+    expect(answerOf("l120-text-degree-a")).toBe("B");
+  });
+
+  it("engraves the Ab lowering round's Bb alone — never the lowered Bbb", () => {
+    // The question names Bb (the second degree to lower); the answer is Bbb.
+    // Bb goes on the page — lowering it one half step is the learner's work.
+    expect(roundById("l120-text-lower-ab").illustration).toEqual({
+      clef: "treble",
+      notes: ["Bb4"],
+    });
+    expect(answerOf("l120-text-lower-ab")).toBe("Bbb");
+  });
+
+  it("engraves each conclusion round's key tonic alone — never the derived chord", () => {
+    // The question names a concrete key; its tonic is the anchor of the
+    // three-step Neapolitan process (find the second degree, lower it, build a
+    // major triad). The derived chord — "F major", "Bbb major" — is prose the
+    // learner builds from the tonic, never a glyph on the page.
+    expect(roundById("l120-text-concl-e").illustration).toEqual({
+      clef: "treble",
+      notes: ["E4"],
+    });
+    expect(roundById("l120-text-concl-ab").illustration).toEqual({
+      clef: "treble",
+      notes: ["Ab4"],
+    });
+  });
+
+  it("pins every drawn anchor to the subject its own prompt names", () => {
+    // Each illustrated round must name the subject the engraving draws: the
+    // degree and conclusion rounds name the key whose tonic is drawn, and the
+    // lowering round names Bb as the degree to lower. A drawn note that its own
+    // prompt never mentions would be an invented subject.
+    const keyed: Record<string, string> = {
+      "l120-text-degree-c": "C minor",
+      "l120-text-degree-e": "E minor",
+      "l120-text-degree-a": "A major",
+      "l120-text-concl-e": "E minor",
+      "l120-text-concl-ab": "Ab major",
+    };
+    for (const [id, key] of Object.entries(keyed)) {
+      const prompt = roundById(id).prompt;
+      expect(prompt.kind, id).toBe("text");
+      expect((prompt as Extract<PromptSpec, { kind: "text" }>).text, id).toContain(key);
+      expect(roundById(id).illustration!.notes, id).toEqual([`${key.split(" ")[0]}4`]);
+    }
+    const lower = roundById("l120-text-lower-ab").prompt as Extract<
+      PromptSpec,
+      { kind: "text" }
+    >;
+    expect(lower.text).toContain("Bb");
+    expect(roundById("l120-text-lower-ab").illustration!.notes).toEqual(["Bb4"]);
+  });
+
+  it("keeps the three definition rounds text-only: class subjects, no named pitch", () => {
+    for (const id of DEFINITION) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the three procedural step rounds text-only: methods, not pitches", () => {
+    for (const id of PROCEDURE) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("passes the shared no-leak assertion for every pool round", () => {
+    for (const round of lesson120Pool) {
+      expect(() => assertNoAnswerLeak(round), round.id).not.toThrow();
+    }
+  });
+
+  it("engraves every illustration through the real Staff renderer", () => {
+    for (const round of illustratedRounds()) {
+      const host = engrave(round.id, { kind: "staff", ...round.illustration! });
+      expect(host.querySelectorAll("path").length).toBeGreaterThanOrEqual(5);
     }
   });
 });

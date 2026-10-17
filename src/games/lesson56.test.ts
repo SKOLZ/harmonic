@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import { validateRound } from "../lib/rounds/validate";
+import { assertNoAnswerLeak } from "../lib/rounds/noAnswerLeak";
 import type { PromptSpec, Round } from "../lib/rounds/types";
 import StaffPrompt from "../components/prompts/StaffPrompt";
 import {
@@ -315,5 +316,57 @@ describe("lesson 56 question pool", () => {
     expect(rules).toMatch(/the root is not the lowest note/);
     expect(rules).toMatch(/classified as up a sixth/);
     expect(rules).toMatch(/down a third|up a second|down a fourth|up a fourth/);
+  });
+});
+
+describe("lesson 56 companion illustrations (T5e Progressions/Neapolitan pass)", () => {
+  // Zero yield. The two definition rounds ("What is root motion?", "When does
+  // a circle progression occur?") name no pitch — a circle progression is a
+  // roman-numeral phenomenon. The six numeral-chain rounds (pair choices, the
+  // major/minor chains from I/i, and the iv/ii° steps) are answered with
+  // roman-numeral strings, never concrete pitches. The inverted-root round is
+  // a definition. The one round that names concrete pitches — "The root motion
+  // from C to A is down a third; how else can the same root motion be
+  // classified?" — is a derivability rejection: engraving C and A would make
+  // the answer ("up a sixth", interval inversion) readable off the staff, the
+  // same counting-leak class as the pilot's counting rounds.
+  const DEFINITION = ["l56-text-root-motion", "l56-text-circle-def", "l56-text-inverted-root"];
+  const NUMERAL_CHAIN = [
+    "l56-text-circle-pair-1",
+    "l56-text-circle-pair-2",
+    "l56-text-major-chain",
+    "l56-text-minor-chain",
+    "l56-text-minor-iv",
+    "l56-text-minor-iio",
+  ];
+  const DERIVABILITY = ["l56-text-upsixth"];
+
+  it("accounts for every text round as a classified rejection", () => {
+    const textIds = lesson56Pool
+      .filter((round) => round.prompt.kind === "text")
+      .map((round) => round.id)
+      .sort();
+    expect(textIds).toHaveLength(10);
+    expect(textIds).toEqual([...DEFINITION, ...NUMERAL_CHAIN, ...DERIVABILITY].sort());
+  });
+
+  it("keeps every text round text-only: no round names a concrete pitch to draw", () => {
+    expect(
+      lesson56Pool.filter((round) => round.illustration !== undefined),
+    ).toEqual([]);
+  });
+
+  it("keeps the C-to-A root-motion round text-only: the interval is readable off the staff", () => {
+    // Engraving C and A would put a sixth between two glyphs — the answer the
+    // learner is asked to produce by interval inversion.
+    expect(roundById("l56-text-upsixth").prompt.kind).toBe("text");
+    expect(roundById("l56-text-upsixth").illustration).toBeUndefined();
+    expect(answerOf("l56-text-upsixth")).toBe("Up a sixth");
+  });
+
+  it("passes the shared no-leak assertion for every pool round", () => {
+    for (const round of lesson56Pool) {
+      expect(() => assertNoAnswerLeak(round), round.id).not.toThrow();
+    }
   });
 });

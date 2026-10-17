@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import { validateRound } from "../lib/rounds/validate";
+import { assertNoAnswerLeak } from "../lib/rounds/noAnswerLeak";
 import type { PromptSpec, Round } from "../lib/rounds/types";
 import StaffPrompt from "../components/prompts/StaffPrompt";
 import {
@@ -447,6 +448,109 @@ describe("lesson 121 question pool", () => {
         `Staff notation, treble clef, ${prompt.notes.length} notes`,
       );
       expect(label).not.toMatch(/[A-G][#b]/);
+    }
+  });
+});
+
+describe("lesson 121 companion illustrations (T5e Progressions/Neapolitan pass)", () => {
+  // One of nine text rounds qualifies: "In C minor, which scale degree is the
+  // Neapolitan sixth's bass note, F?" names the concrete pitch F — the bass
+  // being classified — so the illustration engraves F alone. The answer, "the
+  // fourth scale degree", is a degree NAME derived from the C-minor scale in
+  // the learner's head; a lone F on the staff marks no scale position, so
+  // nothing on the page reads out the answer. (Engraving the C-minor scale
+  // instead would put F on the fourth glyph — the counting-leak class — so the
+  // anchor is the note itself, never the scale.) The other eight rounds are
+  // class-level or example-referencing: which inversion is used, what it is
+  // called, which functions it takes, which chords it shares a bass with, and
+  // which chord it replaces "in the example" — none names a pitch to draw.
+  const ILLUSTRATED = ["l121-text-bass-degree"];
+  const CLASS_INVERSION = ["l121-text-inversion", "l121-text-name", "l121-text-others"];
+  const CLASS_FUNCTION = ["l121-text-function", "l121-text-substitute"];
+  const CLASS_BASS = ["l121-text-bass-share"];
+  const EXAMPLE_REFERENCE = ["l121-text-replace-ii", "l121-text-replace-iv"];
+
+  function illustratedRounds(): Round[] {
+    return lesson121Pool.filter((round) => round.illustration !== undefined);
+  }
+
+  it("accounts for every text round: one illustrated, eight classified rejections", () => {
+    const textIds = lesson121Pool
+      .filter((round) => round.prompt.kind === "text")
+      .map((round) => round.id)
+      .sort();
+    expect(textIds).toHaveLength(9);
+    expect(textIds).toEqual(
+      [...ILLUSTRATED, ...CLASS_INVERSION, ...CLASS_FUNCTION, ...CLASS_BASS, ...EXAMPLE_REFERENCE].sort(),
+    );
+  });
+
+  it("illustrates exactly the bass-degree round", () => {
+    expect(
+      illustratedRounds()
+        .map((round) => round.id)
+        .sort(),
+    ).toEqual(ILLUSTRATED);
+  });
+
+  it("attaches the illustration only to a text-prompt round", () => {
+    for (const round of illustratedRounds()) {
+      expect(round.prompt.kind).toBe("text");
+    }
+  });
+
+  it("engraves the bass note F alone — the question's named pitch, never a scale", () => {
+    // The question names F as the note being classified; the answer is the
+    // degree NAME "fourth". F goes on the page — the C-minor scale does not,
+    // because its fourth glyph would be F itself (the counting-leak class).
+    expect(roundById("l121-text-bass-degree").illustration).toEqual({
+      clef: "treble",
+      notes: ["F4"],
+    });
+    const prompt = roundById("l121-text-bass-degree").prompt as Extract<
+      PromptSpec,
+      { kind: "text" }
+    >;
+    expect(prompt.text).toContain("F");
+    expect(answerOf("l121-text-bass-degree")).toBe("The fourth scale degree");
+  });
+
+  it("keeps the three inversion rounds text-only: class subjects, no named pitch", () => {
+    for (const id of CLASS_INVERSION) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the two function rounds text-only: class subjects, no named pitch", () => {
+    for (const id of CLASS_FUNCTION) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the shared-bass round text-only: the bass is a class referent, not a pitch", () => {
+    expect(roundById("l121-text-bass-share").prompt.kind).toBe("text");
+    expect(roundById("l121-text-bass-share").illustration).toBeUndefined();
+  });
+
+  it("keeps the two example-reference rounds text-only: the question names no pitch", () => {
+    for (const id of EXAMPLE_REFERENCE) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("passes the shared no-leak assertion for every pool round", () => {
+    for (const round of lesson121Pool) {
+      expect(() => assertNoAnswerLeak(round), round.id).not.toThrow();
+    }
+  });
+
+  it("engraves the illustration through the real Staff renderer", () => {
+    for (const round of illustratedRounds()) {
+      const host = engrave(round.id, { kind: "staff", ...round.illustration! });
+      expect(host.querySelectorAll("path").length).toBeGreaterThanOrEqual(5);
     }
   });
 });

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import { validateRound } from "../lib/rounds/validate";
+import { assertNoAnswerLeak } from "../lib/rounds/noAnswerLeak";
 import type { PromptSpec, Round } from "../lib/rounds/types";
 import StaffPrompt from "../components/prompts/StaffPrompt";
 import {
@@ -393,6 +394,64 @@ describe("lesson 62 question pool", () => {
         `Staff notation, treble clef, 1 accidental, ${prompt.notes.length} notes`,
       );
       expect(label).not.toMatch(/[A-G][#b]/);
+    }
+  });
+});
+
+describe("lesson 62 companion illustrations (T5e Progressions/Neapolitan pass)", () => {
+  // Zero yield. The key round asks which two keys a one-flat signature allows
+  // — the subject is the signature's class of keys, no pitch named. The
+  // conclude round is self-revealing: its prompt already states "F–A–C, an F
+  // major triad that is I in F major", so engraving that triad would merely
+  // picture the stated analysis — the answer follows from the prompt's own
+  // words. The escape-tone round names E, but the answer is a tone TYPE and
+  // the full escape-tone figure would invent the chord and the stepwise
+  // approach the question never supplies. The remaining four rounds (first
+  // step of analysis, repeating an analysis symbol, handling the second chord,
+  // the confirming resolution pattern) are procedures over the worked example;
+  // none names a pitch to draw.
+  const CLASS = ["l62-text-key", "l62-text-fifth-omitted"];
+  const SELF_REVEALING = ["l62-text-conclude"];
+  const CLASS_DEFINITION = ["l62-text-escape"];
+  const PROCEDURE = [
+    "l62-text-first-step",
+    "l62-text-repeat",
+    "l62-text-skip-first",
+    "l62-text-resolve",
+  ];
+
+  it("accounts for every text round as a classified rejection", () => {
+    const textIds = lesson62Pool
+      .filter((round) => round.prompt.kind === "text")
+      .map((round) => round.id)
+      .sort();
+    expect(textIds).toHaveLength(8);
+    expect(textIds).toEqual(
+      [...CLASS, ...SELF_REVEALING, ...CLASS_DEFINITION, ...PROCEDURE].sort(),
+    );
+  });
+
+  it("keeps every text round text-only: no round names a concrete pitch to draw", () => {
+    expect(
+      lesson62Pool.filter((round) => round.illustration !== undefined),
+    ).toEqual([]);
+  });
+
+  it("keeps the conclude round text-only: the prompt already states the analysis", () => {
+    expect(roundById("l62-text-conclude").prompt.kind).toBe("text");
+    expect(roundById("l62-text-conclude").illustration).toBeUndefined();
+  });
+
+  it("keeps the escape-tone round text-only: the full figure would invent pitches", () => {
+    // E is incidental to the prose; the escape-tone shape needs a chord and a
+    // stepwise approach the question never names.
+    expect(roundById("l62-text-escape").prompt.kind).toBe("text");
+    expect(roundById("l62-text-escape").illustration).toBeUndefined();
+  });
+
+  it("passes the shared no-leak assertion for every pool round", () => {
+    for (const round of lesson62Pool) {
+      expect(() => assertNoAnswerLeak(round), round.id).not.toThrow();
     }
   });
 });

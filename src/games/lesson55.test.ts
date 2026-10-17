@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import { validateRound } from "../lib/rounds/validate";
+import { assertNoAnswerLeak } from "../lib/rounds/noAnswerLeak";
 import type { PromptSpec, Round } from "../lib/rounds/types";
 import StaffPrompt from "../components/prompts/StaffPrompt";
 import { buildTriad, letterIndex, parseNote, scientificName } from "../lib/theory";
@@ -281,5 +282,55 @@ describe("lesson 55 question pool", () => {
     expect(rules).toMatch(/IV \(or iv\) going to I/);
     expect(rules).toMatch(/chord other than I \(or i\)/);
     expect(rules).toMatch(/used in place of an authentic cadence/);
+  });
+});
+
+describe("lesson 55 companion illustrations (T5e Progressions/Neapolitan pass)", () => {
+  // Zero yield: cadences are defined and classified by roman-numeral BEHAVIOR
+  // ("any chord going to V", "V or vii° going to I", "IV going to I"), never
+  // by concrete named pitches. Three definition rounds ask what a phrase, a
+  // cadence, and an imperfect authentic cadence are. Six cadence-class rounds
+  // ask which cadence a described roman-numeral motion IS — the subject is the
+  // motion class, drawn for no particular key. Four PAC rounds count and list
+  // the perfect-authentic requirements in prose, and the vocabulary round asks
+  // how many other kinds exist. No round names a pitch to engrave.
+  const DEFINITION = ["l55-text-phrase", "l55-text-cadence", "l55-text-iac"];
+  const CADENCE_CLASS = [
+    "l55-text-hc",
+    "l55-text-incomplete",
+    "l55-text-ac",
+    "l55-text-pc",
+    "l55-text-dc",
+    "l55-text-dc-replace",
+  ];
+  const PAC_PROCEDURE = [
+    "l55-text-pac-count",
+    "l55-text-pac-first",
+    "l55-text-pac-second",
+    "l55-text-pac-third",
+  ];
+  const VOCABULARY = ["l55-text-two-kinds"];
+
+  it("accounts for every text round as a classified rejection", () => {
+    const textIds = lesson55Pool
+      .filter((round) => round.prompt.kind === "text")
+      .map((round) => round.id)
+      .sort();
+    expect(textIds).toHaveLength(14);
+    expect(textIds).toEqual(
+      [...DEFINITION, ...CADENCE_CLASS, ...PAC_PROCEDURE, ...VOCABULARY].sort(),
+    );
+  });
+
+  it("keeps every text round text-only: no round names a concrete pitch to draw", () => {
+    expect(
+      lesson55Pool.filter((round) => round.illustration !== undefined),
+    ).toEqual([]);
+  });
+
+  it("passes the shared no-leak assertion for every pool round", () => {
+    for (const round of lesson55Pool) {
+      expect(() => assertNoAnswerLeak(round), round.id).not.toThrow();
+    }
   });
 });

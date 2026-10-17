@@ -252,18 +252,23 @@ const TEXT_ROUNDS: readonly Round[] = [
     id: "l120-text-degree-c",
     prompt: { kind: "text", text: "In C minor, what is the second scale degree?" },
     answer: answerChoices("D", ["C", "D", "E", "F"]),
+    // The question's pitch is the tonic named by the key; the degree the
+    // learner counts stays off the page (the lesson-21 starting-root shape).
+    illustration: { clef: "treble", notes: ["C4"] },
     rule: "In C minor, the second scale degree is D.",
   },
   {
     id: "l120-text-degree-e",
     prompt: { kind: "text", text: "In E minor, what is the second scale degree?" },
     answer: answerChoices("F#", ["F#", "E", "G", "D"]),
+    illustration: { clef: "treble", notes: ["E4"] },
     rule: "In E minor, the second scale degree is F#.",
   },
   {
     id: "l120-text-degree-a",
     prompt: { kind: "text", text: "In A major, what is the second scale degree?" },
     answer: answerChoices("B", ["G", "A", "B", "C"]),
+    illustration: { clef: "treble", notes: ["A4"] },
     rule: "In A major, the second scale degree is B.",
   },
   {
@@ -273,6 +278,9 @@ const TEXT_ROUNDS: readonly Round[] = [
       text: "In Ab major the second scale degree is Bb. What is it lowered to?",
     },
     answer: answerChoices("Bbb", ["A", "Bb", "Bbb", "B"]),
+    // Bb — the degree to lower — is the question's named pitch; the lowered
+    // answer Bbb stays off the page.
+    illustration: { clef: "treble", notes: ["Bb4"] },
     rule:
       "In Ab major the second scale degree is Bb; lowering it one half step gives Bbb, " +
       "and the major triad on Bbb spells Bbb–Db–Fb.",
@@ -281,12 +289,16 @@ const TEXT_ROUNDS: readonly Round[] = [
     id: "l120-text-concl-e",
     prompt: { kind: "text", text: "Which chord is the Neapolitan of E minor?" },
     answer: answerChoices("F major", ["F major", "Ab major", "G major", "F minor"]),
+    // The named key's tonic anchors the lesson's three-step process; the
+    // derived chord ("F major") is prose the learner builds, never a glyph.
+    illustration: { clef: "treble", notes: ["E4"] },
     rule: "Thus, an F major chord is the Neapolitan of E minor.",
   },
   {
     id: "l120-text-concl-ab",
     prompt: { kind: "text", text: "Which chord is the Neapolitan of Ab major?" },
     answer: answerChoices("Bbb major", ["Fb major", "Db major", "Bbb major", "Bb major"]),
+    illustration: { clef: "treble", notes: ["Ab4"] },
     rule: "Thus, a Bbb major chord is the Neapolitan of Ab major.",
   },
 ];
