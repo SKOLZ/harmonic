@@ -68,8 +68,8 @@ feature request dressed up as polish.
 | T2 | Staff SVG fixes: bottom clipping and detached note stems | writer | **done** |
 | T3 | Streak-of-10 mechanic + countdown timer on lesson questions | writer | **done** |
 | T4 | Endless "guess the note" practice mode with timer | writer | **done** |
-| T5 | Guiding staff illustrations on concrete-pitch text rounds | writer | **in progress** (T5a model + pilot done) |
-| T6 | Visual overhaul: answer controls + whole site | writer | pending |
+| T5 | Guiding staff illustrations on concrete-pitch text rounds | writer | **done** (5 batches T5a–T5e; 19 illustrations / 440 text rounds, 4.3%) |
+| T6 | Visual overhaul: answer controls + whole site | writer | **in progress** |
 
 ### Route rationale
 - T1 is independent and unblocks every later link surface.
