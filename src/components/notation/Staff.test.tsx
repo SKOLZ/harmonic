@@ -1,6 +1,6 @@
 import { createSignal, type JSX } from "solid-js";
 import { render } from "solid-js/web";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { parseNote } from "../../lib/theory";
 import Staff from "./Staff";
 
@@ -48,6 +48,27 @@ function staveNoteGroups(host: HTMLElement): Element[] {
 
 function noteheadGroups(host: HTMLElement): Element[] {
   return svgGroups(host, "vf-notehead");
+}
+
+/**
+ * The minimum of FontFaceSet Staff consults before engraving. happy-dom has
+ * no `document.fonts` at all, so tests that need the browser's async font
+ * state install this stand-in and get a restore function that removes it
+ * again.
+ */
+interface FontsStub {
+  check(font: string): boolean;
+  load(font: string): Promise<unknown>;
+}
+
+function stubFonts(stub: FontsStub): () => void {
+  const doc = document as { fonts?: FontsStub };
+  const previous = doc.fonts;
+  doc.fonts = stub;
+  return () => {
+    if (previous === undefined) delete doc.fonts;
+    else doc.fonts = previous;
+  };
 }
 
 describe("Staff", () => {
@@ -184,5 +205,81 @@ describe("Staff", () => {
     const glyphs = (head: Element) => head.querySelectorAll("text").length;
     expect(glyphs(heads[1])).toBeGreaterThan(glyphs(heads[0]));
     expect(glyphs(heads[1])).toBeGreaterThan(glyphs(heads[2]));
+  });
+
+  it("defers the first draw until the vexflow music fonts resolve", async () => {
+    let releaseFonts!: () => void;
+    const fontsReady = new Promise<void>((resolve) => {
+      releaseFonts = resolve;
+    });
+    const restore = stubFonts({ check: () => false, load: () => fontsReady });
+    try {
+      const host = mount(() => <Staff notes={[parseNote("C4")]} />);
+      // The music faces are not ready, so engraving must wait: canvas
+      // measureText would otherwise bake fallback-font glyph widths into the
+      // stem/clef geometry (the detached-stem defect).
+      expect(host.querySelector("svg")).toBeNull();
+
+      releaseFonts();
+      await vi.waitFor(() => expect(host.querySelector("svg")).not.toBeNull());
+      expect(host.querySelectorAll("svg")).toHaveLength(1);
+    } finally {
+      restore();
+    }
+  });
+
+  it("draws synchronously when the music fonts are already available", () => {
+    const load = vi.fn(() => Promise.resolve([]));
+    const restore = stubFonts({ check: () => true, load });
+    try {
+      const host = mount(() => <Staff notes={[parseNote("C4")]} />);
+      expect(host.querySelector("svg")).not.toBeNull();
+      // Nothing to wait for; a second pass would only risk flicker.
+      expect(load).not.toHaveBeenCalled();
+    } finally {
+      restore();
+    }
+  });
+
+  it("discards a font-deferred draw that newer props supersede", async () => {
+    let releaseFonts!: () => void;
+    const fontsReady = new Promise<void>((resolve) => {
+      releaseFonts = resolve;
+    });
+    const restore = stubFonts({ check: () => false, load: () => fontsReady });
+    try {
+      const [notes, setNotes] = createSignal([parseNote("C4")]);
+      const host = mount(() => <Staff notes={notes()} />);
+      // Props change while the first draw is still waiting on the faces.
+      setNotes([parseNote("D4"), parseNote("E4")]);
+
+      releaseFonts();
+      await vi.waitFor(() => expect(host.querySelector("svg")).not.toBeNull());
+
+      // Only the latest request is engraved — two slots, not the stale one.
+      expect(host.querySelectorAll("svg")).toHaveLength(1);
+      expect(staveNoteGroups(host)).toHaveLength(2);
+    } finally {
+      restore();
+    }
+  });
+
+  it("keeps the svg's inline size in step with the fitted viewport", () => {
+    // height is a MINIMUM: the ledger-line C4 and the treble clef push the
+    // content past 60px, and every size channel must grow together. An inline
+    // svg height left behind by renderer.resize() would win over the height
+    // attribute and silently scale the taller viewBox down.
+    const host = mount(() => (
+      <Staff notes={[parseNote("C4"), parseNote("C5")]} height={60} />
+    ));
+    const svg = host.querySelector("svg");
+    expect(svg).not.toBeNull();
+    const fitted = Number(svg!.getAttribute("height"));
+    expect(fitted).toBeGreaterThan(60);
+    expect(svg!.style.height).toBe(`${fitted}px`);
+    expect(svg!.style.width).toBe(`${svg!.getAttribute("width")}px`);
+    // Staff's own sized div is the svg's parent, not the mount wrapper.
+    const sized = svg!.parentElement as HTMLDivElement;
+    expect(sized.style.height).toBe(`${fitted}px`);
   });
 });

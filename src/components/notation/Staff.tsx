@@ -42,6 +42,66 @@ const STAVE_Y = 40;
 /** One staff space (VexFlow's STAVE_LINE_DISTANCE) of breathing room. */
 const STAFF_SPACE = 10;
 
+/**
+ * vexflow's two bundled text faces, at any size: `document.fonts.check`/
+ * `load` match on family, and canvas `measureText` resolves them at whatever
+ * size the engraving asks for.
+ *
+ * Both matter because VexFlow measures glyphs (clefs, key signatures,
+ * noteheads) with canvas text metrics WHILE it lays out. Drawing before the
+ * faces finish loading bakes fallback-metric geometry into the SVG — most
+ * visibly a stem path whose x no longer lines up with the notehead glyph,
+ * which the browser repaints in place once Bravura arrives but the stem path
+ * cannot follow. The next full redraw (e.g. the practice timer expiring) is
+ * what "fixes" the picture, so the first draw must wait for the faces.
+ */
+const MUSIC_FONT_FACES = ["12px Bravura", "12px Academico"];
+
+/**
+ * Upper bound on waiting for the faces before engraving anyway. They ship
+ * inside the bundle as data URLs, so this is pure local decode time; the
+ * timeout only exists so a pathological font environment degrades to
+ * fallback metrics (the old behaviour) instead of a blank staff.
+ */
+const FONT_WAIT_TIMEOUT_MS = 2000;
+
+/** The subset of FontFaceSet Staff consults before engraving. */
+interface FontFaceSetLike {
+  check(font: string): boolean;
+  load(font: string): Promise<unknown>;
+}
+
+function musicFontFaceSet(): FontFaceSetLike | undefined {
+  return (document as { fonts?: FontFaceSetLike }).fonts;
+}
+
+/**
+ * True when engraving can run synchronously: either the environment has no
+ * FontFace set at all (happy-dom in tests, where vexflow's own font loading
+ * is a no-op) or the bundled music faces are already resolved.
+ */
+function musicFontsReady(): boolean {
+  const fonts = musicFontFaceSet();
+  if (fonts === undefined) return true;
+  return MUSIC_FONT_FACES.every((face) => fonts.check(face));
+}
+
+/** Wait (bounded) for the bundled faces. Never rejects. */
+function whenMusicFontsReady(): Promise<void> {
+  const fonts = musicFontFaceSet();
+  if (fonts === undefined || musicFontsReady()) return Promise.resolve();
+  const loads = Promise.all(
+    MUSIC_FONT_FACES.map((face) => fonts.load(face).catch(() => undefined)),
+  );
+  return new Promise((resolve) => {
+    const timer = setTimeout(resolve, FONT_WAIT_TIMEOUT_MS);
+    void loads.then(() => {
+      clearTimeout(timer);
+      resolve();
+    });
+  });
+}
+
 export default function Staff(props: StaffProps) {
   let container!: HTMLDivElement;
 
@@ -57,6 +117,11 @@ export default function Staff(props: StaffProps) {
     props,
   );
 
+  // Monotonic draw ticket: while a font-deferred draw waits for the music
+  // faces, a props change starts a newer ticket and the waiting draw must not
+  // apply its stale spec over the newer one.
+  let drawSeq = 0;
+
   createEffect(() => {
     const spec = buildNotationSpec({
       notes: resolved.notes,
@@ -65,7 +130,17 @@ export default function Staff(props: StaffProps) {
       duration: resolved.duration,
       simultaneous: resolved.simultaneous,
     });
-    drawStaff(container, spec, resolved.width, resolved.height);
+    const width = resolved.width;
+    const height = resolved.height;
+    const seq = ++drawSeq;
+    if (musicFontsReady()) {
+      drawStaff(container, spec, width, height);
+      return;
+    }
+    void whenMusicFontsReady().then(() => {
+      if (seq !== drawSeq) return;
+      drawStaff(container, spec, width, height);
+    });
   });
 
   return (
@@ -216,8 +291,8 @@ function textGlyphInk(text: Element): { top: number; bottom: number } {
  * `height` stays the MINIMUM box: a caller that asks for 120px and draws a
  * small treble measure still gets 120px; a caller that draws a ledger-line C4
  * (whose notehead and stem reach y=130) gets a taller box so nothing is cut.
- * The `viewBox` height, the SVG's `height` attribute, and the container's CSS
- * height are kept identical so layout and clipping agree.
+ * The `viewBox` height, the SVG's `height` attribute and inline style, and
+ * the container's CSS height are kept identical so layout and clipping agree.
  */
 function fitViewportToContent(
   container: HTMLDivElement,
@@ -236,6 +311,13 @@ function fitViewportToContent(
   svg.setAttribute("viewBox", `0 ${top} ${width} ${height}`);
   svg.setAttribute("height", String(height));
   svg.setAttribute("width", String(width));
+  // renderer.resize() left an inline CSS width/height on the element, and CSS
+  // wins over the height attribute. Keep the inline pair in step with the
+  // fitted box, or a content-driven height (ledger lines pushing past the
+  // minimum) would render at the stale canvas height and be scaled down by
+  // preserveAspectRatio.
+  svg.style.width = `${width}px`;
+  svg.style.height = `${height}px`;
   container.style.height = `${height}px`;
 }
 
