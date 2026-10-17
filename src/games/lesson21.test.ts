@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import { validateRound } from "../lib/rounds/validate";
+import { assertNoAnswerLeak } from "../lib/rounds/noAnswerLeak";
 import type { PromptSpec, Round } from "../lib/rounds/types";
 import StaffPrompt from "../components/prompts/StaffPrompt";
 import { createRng } from "./rng";
@@ -181,5 +182,152 @@ describe("lesson 21 question pool", () => {
     expect(rules).toMatch(/half step below the tonic/);
     expect(rules).toMatch(/seven distinct notes/);
     expect(rules).toMatch(/start on the first note and follow the formula/);
+  });
+});
+
+describe("lesson 21 companion illustrations (T5c Scales pass)", () => {
+  // The strict no-leak rule applied to The Major Scale's eleven text rounds:
+  // exactly two qualify, and both are the lesson's upward-building drills —
+  // "Starting from G, which note is the second degree of G major?" shows the
+  // G the learner builds from, never the A the learner must find (the T5a/T5b
+  // archetype: the question's root on the page, the derived answer off it).
+  // The other nine are rejected class by class below, each reason recorded
+  // round by round so the decision survives with the code.
+  const ILLUSTRATED = [
+    "l21-text-f-major-fourth",
+    "l21-text-g-major-second",
+  ];
+  // Counts: the answer is a quantity, so there is no question pitch to draw —
+  // and engraving the named scale would let the learner count the answer off
+  // the picture (the pilot's counting-leak class).
+  const COUNT = [
+    "l21-text-half-step-count",
+    "l21-text-seven-notes",
+    "l21-text-eb-major-flats",
+    "l21-text-d-major-sharps",
+  ];
+  // Class-level subjects and definitions: the question is about the scale
+  // species ("every major scale") or the method itself, and names no concrete
+  // pitch — engraving an example would invent a subject the question never
+  // names, which the user's strict decision explicitly declined to do.
+  const CLASS_LEVEL = [
+    "l21-text-what-is-a-scale",
+    "l21-text-major-formula",
+    "l21-text-half-step-degrees",
+    "l21-text-build-any-major",
+  ];
+  // Self-revealing: the only faithful engraving of the named subject displays
+  // the answer outright.
+  const SELF_REVEALING = ["l21-text-c-major-accidentals"];
+
+  function illustratedRounds(): Round[] {
+    return lesson21Pool.filter((round) => round.illustration !== undefined);
+  }
+
+  it("accounts for every text round: two illustrated, nine classified rejections", () => {
+    const textIds = lesson21Pool
+      .filter((round) => round.prompt.kind === "text")
+      .map((round) => round.id)
+      .sort();
+    expect(textIds).toHaveLength(11);
+    expect(textIds).toEqual([...ILLUSTRATED, ...COUNT, ...CLASS_LEVEL, ...SELF_REVEALING].sort());
+  });
+
+  it("illustrates exactly the two starting-root drills", () => {
+    expect(illustratedRounds().map((round) => round.id).sort()).toEqual(ILLUSTRATED);
+  });
+
+  it("attaches illustrations only to text-prompt rounds", () => {
+    for (const round of illustratedRounds()) {
+      expect(round.prompt.kind).toBe("text");
+    }
+  });
+
+  it("engraves the question's root alone — never the degree the learner must build", () => {
+    expect(roundById("l21-text-g-major-second").illustration).toEqual({
+      clef: "treble",
+      notes: ["G4"],
+    });
+    expect(roundById("l21-text-f-major-fourth").illustration).toEqual({
+      clef: "treble",
+      notes: ["F4"],
+    });
+  });
+
+  it("matches each illustrated root to the root its own prompt names", () => {
+    // The illustration must be the question's own starting pitch, pinned to
+    // the prompt's wording so the two cannot drift apart: the picture is G
+    // because the question says "Starting from G", not because a test
+    // decided G looked right.
+    const fromG = roundById("l21-text-g-major-second").prompt;
+    expect(fromG.kind).toBe("text");
+    expect((fromG as Extract<PromptSpec, { kind: "text" }>).text).toContain("Starting from G");
+    const fromF = roundById("l21-text-f-major-fourth").prompt;
+    expect(fromF.kind).toBe("text");
+    expect((fromF as Extract<PromptSpec, { kind: "text" }>).text).toContain("Starting from F");
+    // The answers stay off the page: G is not A, F is not Bb.
+    expect(answerOf("l21-text-g-major-second")).toBe("A");
+    expect(answerOf("l21-text-f-major-fourth")).toBe("Bb");
+  });
+
+  it("keeps the four count rounds text-only: a count has no question pitch to draw", () => {
+    expect(COUNT).toHaveLength(4);
+    for (const id of COUNT) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the definitional and class-level rounds text-only: no prompt names a pitch", () => {
+    // The sharpest call here is l21-text-half-step-degrees: it asks where the
+    // half steps of "every major scale" fall. lesson20's pilot illustrated the
+    // analogous pair question with a neutral C-major staff — the pilot's one
+    // stretch (lesson 33's suite records it as such) — but the strict rule
+    // this pass runs under gates on concrete named pitches and bans drawing
+    // an example the question never names, so it stays text-only here.
+    expect(CLASS_LEVEL).toHaveLength(4);
+    for (const id of CLASS_LEVEL) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the C-major accidentals round text-only: a faithful engraving displays the answer", () => {
+    // "Which accidentals does C major need?" answers "None — every note is a
+    // natural". The only faithful picture of the named subject is C major
+    // itself, and a staff of plain naturals shows exactly the absence the
+    // learner is asked to state — the self-revealing class. A bare C would
+    // not depict the accidental question at all, so no honest illustration
+    // exists for this round.
+    expect(SELF_REVEALING).toEqual(["l21-text-c-major-accidentals"]);
+    for (const id of SELF_REVEALING) {
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("passes the shared no-leak assertion for every pool round", () => {
+    for (const round of lesson21Pool) {
+      expect(() => assertNoAnswerLeak(round), round.id).not.toThrow();
+    }
+  });
+
+  it("engraves every illustration through the real Staff renderer", () => {
+    // Triangulation: the slot speaks the staff-prompt shape, so each
+    // illustration has to survive the actual engraver, not just the type.
+    for (const round of illustratedRounds()) {
+      const host = document.createElement("div");
+      document.body.appendChild(host);
+      const dispose = render(
+        () => StaffPrompt({ prompt: { kind: "staff", ...round.illustration! } }),
+        host,
+      );
+      cleanups.push(() => {
+        dispose();
+        host.remove();
+      });
+      const svg = host.querySelector("svg");
+      expect(svg, `illustration ${round.id} did not engrave`).not.toBeNull();
+      expect(svg!.querySelectorAll("path").length).toBeGreaterThanOrEqual(5);
+    }
   });
 });

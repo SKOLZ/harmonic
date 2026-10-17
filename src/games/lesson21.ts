@@ -31,6 +31,19 @@ import type { LessonModule } from "./types";
  * cannot drift apart. Scale content stays on the staff (not the keyboard) so
  * the pool is 11 `staff` rounds + 11 `text` rounds = 22: any draw of 12 must
  * include at least one of each kind — the mix is structural, not luck.
+ *
+ * Companion illustrations (T5c Scales pass): exactly the two starting-root
+ * text rounds carry an `illustration` — "Starting from G, which note is the
+ * second degree of G major?" engraves G alone, never A; the F fourth-degree
+ * round engraves F alone, never Bb. That is the T5a/T5b archetype twice:
+ * the question names a concrete root, and the degree the learner builds is
+ * kept off the page. The remaining nine text rounds are rejected by class:
+ * four counts (a quantity has no question pitch to draw), four definitions
+ * and method rounds (class-level subjects — no prompt names a concrete
+ * pitch), and the C-major accidentals round, whose only faithful engraving
+ * (C major in plain naturals) displays the very "None" the learner must
+ * state. Each rejection reason is recorded in the suite, and every pool
+ * round is swept through the shared `assertNoAnswerLeak` helper there.
  */
 const choices = (options: string[], correctIndex: number): AnswerSpec => ({
   kind: "choices",
@@ -181,12 +194,20 @@ export const lesson21Pool: readonly Round[] = [
     id: "l21-text-g-major-second",
     prompt: { kind: "text", text: "Starting from G, which note is the second degree of G major?" },
     answer: choices(["Ab", "A", "F#", "B"], 1),
+    // The question's pitch is G; the answer is A. The illustration engraves G
+    // alone — the learner applies the formula to the root on the page and
+    // never reads the second degree off the picture.
+    illustration: { clef: "treble", notes: ["G4"] },
     rule: "The first step of the formula is a whole step, so G major begins on G and rises a whole step to A.",
   },
   {
     id: "l21-text-f-major-fourth",
     prompt: { kind: "text", text: "Starting from F, which note is the fourth degree of F major?" },
     answer: choices(["B", "A", "Bb", "C"], 2),
+    // The question's pitch is F; the answer is Bb. F alone goes on the page —
+    // the flat is the half step the third formula step produces, and drawing
+    // it would hand the learner the answer.
+    illustration: { clef: "treble", notes: ["F4"] },
     rule: "The third step of the formula is a half step, so F major's fourth degree is Bb, a half step above A.",
   },
   {

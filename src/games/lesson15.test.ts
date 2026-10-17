@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import { validateRound } from "../lib/rounds/validate";
+import { assertNoAnswerLeak } from "../lib/rounds/noAnswerLeak";
 import type { PromptSpec } from "../lib/rounds/types";
 import StaffPrompt from "../components/prompts/StaffPrompt";
 import { createRng } from "./rng";
@@ -119,5 +120,73 @@ describe("lesson 15 question pool", () => {
     expect(rules).toMatch(/belongs to 3\/4/);
     expect(rules).toMatch(/dotted note/);
     expect(rules).toMatch(/four beats/);
+  });
+});
+
+describe("lesson 15 companion illustrations (T5c Rhythm pass)", () => {
+  // Zero yield for Rhythm and Meter's first lesson — and that is the correct
+  // outcome of the strict rule, not a gap in the sweep. All eleven text
+  // rounds classify time signatures or define meter vocabulary ("2/2 and 2/8
+  // are also…", "What does the term simple mean…"), and not one prompt names
+  // a pitch: there is no question subject the rule allows the writer to
+  // engrave. Inventing a staff here would mean either drawing an example the
+  // question never names or drawing a measure whose contents let the learner
+  // count the answer off the page — both banned by the T5 decision. Every
+  // rejection reason is recorded round by round below, and the whole pool is
+  // swept through the shared no-leak helper.
+  const DEFINITION = [
+    "l15-text-duple-triple-quadruple-meaning",
+    "l15-text-simple-meaning",
+    "l15-text-compound-dotted-beat",
+  ];
+  const CLASSIFICATION = [
+    "l15-text-22-28-simple-duple",
+    "l15-text-44-why-quadruple",
+    "l15-text-simple-top-number",
+    "l15-text-six-on-top",
+    "l15-text-68-not-simple-triple",
+    "l15-text-98-compound-triple",
+    "l15-text-42-48-simple-quadruple",
+  ];
+  const COUNT = ["l15-text-compound-division"];
+
+  function reject(id: string): void {
+    const round = lesson15Pool.find((candidate) => candidate.id === id);
+    expect(round, `round ${id} is missing from the pool`).toBeDefined();
+    expect(round!.illustration, id).toBeUndefined();
+  }
+
+  it("accounts for every text round in the rejection table", () => {
+    const textIds = lesson15Pool
+      .filter((round) => round.prompt.kind === "text")
+      .map((round) => round.id)
+      .sort();
+    expect(textIds).toHaveLength(11);
+    expect(textIds).toEqual([...DEFINITION, ...CLASSIFICATION, ...COUNT].sort());
+  });
+
+  it("keeps the classification rounds text-only: a time signature names no pitch", () => {
+    expect(CLASSIFICATION).toHaveLength(7);
+    for (const id of CLASSIFICATION) reject(id);
+  });
+
+  it("keeps the definitional rounds text-only — the beat's note VALUE is not a pitch", () => {
+    // compound-dotted-beat is the one round whose wording could be mistaken
+    // for a pitch question ("What kind of note is the beat…"); it asks about
+    // note VALUES (dotted quarter, whole, eighth), which no staff can carry
+    // without also drawing a measure the learner counts.
+    expect(DEFINITION).toHaveLength(3);
+    for (const id of DEFINITION) reject(id);
+  });
+
+  it("keeps the division-count round text-only: counts stay text-only", () => {
+    expect(COUNT).toEqual(["l15-text-compound-division"]);
+    for (const id of COUNT) reject(id);
+  });
+
+  it("passes the shared no-leak assertion for every pool round", () => {
+    for (const round of lesson15Pool) {
+      expect(() => assertNoAnswerLeak(round), round.id).not.toThrow();
+    }
   });
 });

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import { validateRound } from "../lib/rounds/validate";
+import { assertNoAnswerLeak } from "../lib/rounds/noAnswerLeak";
 import type { PromptSpec, Round } from "../lib/rounds/types";
 import StaffPrompt from "../components/prompts/StaffPrompt";
 import { createRng } from "./rng";
@@ -162,5 +163,94 @@ describe("lesson 25 question pool", () => {
     expect(rules).toMatch(/seven values must be memorized|memorize seven|seven values/);
     expect(rules).toMatch(/30 different key signatures|30 key signatures/);
     expect(rules).toMatch(/enharmonic equivalent of Ab/);
+  });
+});
+
+describe("lesson 25 companion illustrations (T5c Scales pass)", () => {
+  // Zero yield for Key Signature Calculation. The four "E has 4, what is
+  // Eb?" rounds are the section's closest candidates — they name concrete
+  // keys — but the question is arithmetic on signed accidental COUNTS, and
+  // the strict rule keeps counts text-only: the picture would have to carry
+  // the calculation, not a pitch. Worse, engraving the named keys is
+  // actively misleading here: Eb4 drawn with its own flat shows ONE flat,
+  // while the answer is −3 (three in the signature) — the drawn accidental
+  // is the pitch's, not the key's, so the picture contradicts the question
+  // instead of guiding it. Recorded class by class below; the whole pool is
+  // swept through the shared no-leak helper.
+  const COUNT = ["l25-text-thirty-signatures", "l25-text-memorize-seven"];
+  const DEFINITION = ["l25-text-flats-sign", "l25-text-parallel-minor"];
+  // The answer is a seven-entry value table — a class-level subject spanning
+  // seven keys, none of which the question asks the learner to look at.
+  const VALUE_TABLE = ["l25-text-seven-values"];
+  // Signed-count arithmetic: C→Cb, C→C#, E→Eb, F→F#, and the two-step
+  // C# minor walk. Answers are numbers or accidental counts, never a pitch
+  // the engraving could safely show.
+  const CALCULATION = [
+    "l25-text-cb-calc",
+    "l25-text-cs-calc",
+    "l25-text-eb-calc",
+    "l25-text-fs-calc",
+    "l25-text-cs-minor",
+  ];
+  // G# major's scale is the answer: drawn faithfully it displays the double
+  // sharp the question asks the learner to recognize as the reason.
+  const SELF_REVEALING = ["l25-text-gs-theoretical"];
+
+  it("accounts for every text round in the rejection table", () => {
+    const textIds = lesson25Pool
+      .filter((round) => round.prompt.kind === "text")
+      .map((round) => round.id)
+      .sort();
+    expect(textIds).toHaveLength(11);
+    expect(textIds).toEqual(
+      [...COUNT, ...DEFINITION, ...VALUE_TABLE, ...CALCULATION, ...SELF_REVEALING].sort(),
+    );
+  });
+
+  it("keeps the two headline counts text-only: counts stay text-only", () => {
+    expect(COUNT).toHaveLength(2);
+    for (const id of COUNT) {
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the definition rounds text-only: class subjects, no named pitch", () => {
+    expect(DEFINITION).toHaveLength(2);
+    for (const id of DEFINITION) {
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the value-table round text-only: a seven-key table is not a question pitch", () => {
+    expect(VALUE_TABLE).toEqual(["l25-text-seven-values"]);
+    for (const id of VALUE_TABLE) {
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps all five calculation rounds text-only: arithmetic on counts, and a misleading engraving", () => {
+    // The closest misses of the whole seven-lesson sweep: these prompts DO
+    // name concrete keys (C and Cb, E and Eb…), so they clear the subject
+    // gate — but what they ask for is a numeric value, which no note can
+    // carry, and the obvious engraving (the key's own pitches) shows an
+    // accidental that belongs to the pitch rather than to the signature.
+    expect(CALCULATION).toHaveLength(5);
+    for (const id of CALCULATION) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the theoretical-key round text-only: its faithful engraving is the answer", () => {
+    expect(SELF_REVEALING).toEqual(["l25-text-gs-theoretical"]);
+    for (const id of SELF_REVEALING) {
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("passes the shared no-leak assertion for every pool round", () => {
+    for (const round of lesson25Pool) {
+      expect(() => assertNoAnswerLeak(round), round.id).not.toThrow();
+    }
   });
 });

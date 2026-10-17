@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import { validateRound } from "../lib/rounds/validate";
+import { assertNoAnswerLeak } from "../lib/rounds/noAnswerLeak";
 import type { PromptSpec, Round } from "../lib/rounds/types";
 import StaffPrompt from "../components/prompts/StaffPrompt";
 import { createRng } from "./rng";
@@ -193,5 +194,86 @@ describe("lesson 22 question pool", () => {
     expect(rules).toMatch(/five sharps/);
     expect(rules).toMatch(/three flats/);
     expect(rules).toMatch(/no notes with accidentals/);
+  });
+});
+
+describe("lesson 22 companion illustrations (T5c Scales pass)", () => {
+  // Zero yield for The Minor Scales — every text round is a count, a
+  // definition, a conversion procedure, or a spelling recall, and the strict
+  // rule excludes each class. The section's structural reason is worth
+  // stating: the interesting pitches here ARE the answers. "How is C
+  // harmonic minor spelled?" has no question pitch distinct from its
+  // answer — the only faithful engraving of the named subject is the answer
+  // spelled out on the staff. Each class is recorded below rather than
+  // guessed round by round later, and the pool is swept through the shared
+  // no-leak helper.
+  const COUNT = [
+    "l22-text-three-variations",
+    "l22-text-gs-sharps",
+    "l22-text-c-flats",
+  ];
+  const DEFINITION = [
+    "l22-text-natural-formula",
+    "l22-text-melodic-ascending",
+    "l22-text-descending-natural",
+  ];
+  const PROCEDURE = ["l22-text-to-harmonic", "l22-text-to-melodic"];
+  // Self-revealing: engraving the named scale either IS the answer (the two
+  // spelling rounds) or displays the very property asked for (A natural
+  // minor drawn plain shows the "no accidentals" the question points at —
+  // and its prompt names no pitch to begin with).
+  const SELF_REVEALING = [
+    "l22-text-no-accidentals",
+    "l22-text-c-harmonic-spelling",
+    "l22-text-c-melodic-spelling",
+  ];
+
+  it("accounts for every text round in the rejection table", () => {
+    const textIds = lesson22Pool
+      .filter((round) => round.prompt.kind === "text")
+      .map((round) => round.id)
+      .sort();
+    expect(textIds).toHaveLength(11);
+    expect(textIds).toEqual(
+      [...COUNT, ...DEFINITION, ...PROCEDURE, ...SELF_REVEALING].sort(),
+    );
+  });
+
+  it("keeps the three count rounds text-only: counts stay text-only", () => {
+    expect(COUNT).toHaveLength(3);
+    for (const id of COUNT) {
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the definition rounds text-only: class subjects, no named pitch", () => {
+    expect(DEFINITION).toHaveLength(3);
+    for (const id of DEFINITION) {
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the conversion-procedure rounds text-only: methods, not pitches", () => {
+    expect(PROCEDURE).toHaveLength(2);
+    for (const id of PROCEDURE) {
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the three self-revealing rounds text-only: the picture would be the answer", () => {
+    // The two spelling rounds answer with the note list itself, so any
+    // engraving of the named scale puts the answer on the page; the
+    // no-accidentals round would show its own answer the same way.
+    expect(SELF_REVEALING).toHaveLength(3);
+    for (const id of SELF_REVEALING) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("passes the shared no-leak assertion for every pool round", () => {
+    for (const round of lesson22Pool) {
+      expect(() => assertNoAnswerLeak(round), round.id).not.toThrow();
+    }
   });
 });

@@ -24,14 +24,14 @@ import type { LessonModule } from "./types";
  * The pool is 11 `staff` rounds + 11 `text` rounds = 22, so any draw of 12
  * must include at least one of each kind: the mix is structural, not luck.
  *
- * Companion illustrations (T5 pilot): exactly two text rounds carry an
- * `illustration` — the ones whose subject is a concrete pitch and whose
+ * Companion illustrations (T5 pilot): exactly one text round carries an
+ * `illustration` — the one whose subject is a concrete pitch and whose
  * answer the picture does not reveal. "Which note is enharmonic with C#?"
- * shows C# (the question's pitch), never Db (the answer). The major-scale
- * pair question shows the C major scale in plain naturals, so no pair is
- * privileged by the engraving — the half-step knowledge stays with the
- * learner. Every other text round here is conceptual, or its picture would
- * leak the answer (counting rounds, rest glyphs, line identification).
+ * shows C# (the question's pitch), never Db (the answer). Every other text
+ * round is conceptual and stays text-only under the strict no-leak rule —
+ * a class-level subject (the major scale, an interval class) is not the
+ * question's own pitch — or its picture would leak the answer (counting
+ * rounds, rest glyphs, line identification).
  */
 const choices = (options: string[], correctIndex: number): AnswerSpec => ({
   kind: "choices",
@@ -200,14 +200,10 @@ export const lesson20Pool: readonly Round[] = [
       text: "In the major scale, which pair of letter names is always a half step?",
     },
     answer: choices(["E-F", "C-D", "F-G", "G-A"], 0),
-    // The question's subject is the major scale itself; the engraving shows
-    // its notes in plain naturals, so every letter sits equally and the
-    // picture cannot point at the E-F answer.
-    illustration: {
-      clef: "treble",
-      notes: ["C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5"],
-      duration: "q",
-    },
+    // No illustration: the subject is the major scale as a class, not a
+    // concrete named pitch. Under the strict no-leak rule a class-level
+    // subject stays text-only; a C major engraving would invent a subject
+    // the question never names.
     rule: "The major scale's half steps fall between E and F and between B and C; every other step is a whole step.",
   },
   {

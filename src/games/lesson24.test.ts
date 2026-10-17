@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import { validateRound } from "../lib/rounds/validate";
+import { assertNoAnswerLeak } from "../lib/rounds/noAnswerLeak";
 import type { PromptSpec, Round } from "../lib/rounds/types";
 import StaffPrompt from "../components/prompts/StaffPrompt";
 import { createRng } from "./rng";
@@ -160,5 +161,88 @@ describe("lesson 24 question pool", () => {
     expect(rules).toMatch(/E major has four sharps/);
     expect(rules).toMatch(/Db major has five flats/);
     expect(rules).toMatch(/C minor has three flats/);
+  });
+});
+
+describe("lesson 24 companion illustrations (T5c Scales pass)", () => {
+  // Zero yield for Key Signatures — the tightest section of the seven, and
+  // instructive: its two order rounds are the only text rounds in the whole
+  // sweep whose SUBJECT is concrete named pitches (F#, C#, G#… / Bb, Eb,
+  // Ab…), and they are still rejected, because those pitches are also the
+  // ANSWER — engraving the order puts the correct option on the staff for
+  // the learner to read back. The first-sharp and fifth-flat rounds fail
+  // the same way in miniature: the prompt names no pitch, and the only
+  // pitch available to draw (F#, Gb) is the answer itself. The rest are
+  // definitions, counts, and mnemonics. Recorded class by class below;
+  // every pool round is swept through the shared no-leak helper.
+  const DEFINITION = ["l24-text-definition", "l24-text-opposite-order"];
+  // The answer IS the pitch list: any engraving of it is the answer.
+  const ORDER_LIST = ["l24-text-order-of-sharps", "l24-text-order-of-flats"];
+  const MNEMONIC = ["l24-text-flat-mnemonic", "l24-text-sharp-mnemonic"];
+  const COUNT = [
+    "l24-text-a-major-sharps",
+    "l24-text-e-major-sharps",
+    "l24-text-db-major-flats",
+  ];
+  // The prompt names no pitch; the answer is a pitch, so drawing it would
+  // engrave the answer — the mirror of the order rounds.
+  const ORDER_ELEMENT = ["l24-text-first-sharp", "l24-text-fifth-flat"];
+
+  it("accounts for every text round in the rejection table", () => {
+    const textIds = lesson24Pool
+      .filter((round) => round.prompt.kind === "text")
+      .map((round) => round.id)
+      .sort();
+    expect(textIds).toHaveLength(11);
+    expect(textIds).toEqual(
+      [...DEFINITION, ...ORDER_LIST, ...MNEMONIC, ...COUNT, ...ORDER_ELEMENT].sort(),
+    );
+  });
+
+  it("keeps the definition rounds text-only: definitions, no named pitch", () => {
+    expect(DEFINITION).toHaveLength(2);
+    for (const id of DEFINITION) {
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps both order rounds text-only: the pitches ARE the answer", () => {
+    expect(ORDER_LIST).toHaveLength(2);
+    for (const id of ORDER_LIST) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the mnemonic rounds text-only: prose answers, no subject to draw", () => {
+    expect(MNEMONIC).toHaveLength(2);
+    for (const id of MNEMONIC) {
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the three sharp/flat count rounds text-only: counts stay text-only", () => {
+    expect(COUNT).toHaveLength(3);
+    for (const id of COUNT) {
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the two order-element rounds text-only: the only drawable pitch is the answer", () => {
+    // "Which accidental is the first sharp…?" names no pitch in its prompt;
+    // F# is the correct option, so engraving it hands over the answer, and
+    // engraving anything else would invent a subject the question never
+    // named. Same shape for the fifth flat (Gb).
+    expect(ORDER_ELEMENT).toHaveLength(2);
+    for (const id of ORDER_ELEMENT) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("passes the shared no-leak assertion for every pool round", () => {
+    for (const round of lesson24Pool) {
+      expect(() => assertNoAnswerLeak(round), round.id).not.toThrow();
+    }
   });
 });

@@ -109,16 +109,15 @@ describe("lesson 20 companion illustrations (T5 pilot)", () => {
     return lesson20Pool.filter((round) => round.illustration !== undefined);
   }
 
-  it("illustrates exactly the two concrete-pitch text rounds", () => {
+  it("illustrates exactly the one concrete-pitch text round", () => {
     // The pilot rule: text rounds about concrete pitches get the companion
-    // staff; conceptual rounds stay text-only. On The Basics only these two
-    // qualify — every other text round is conceptual, or its illustration
-    // would draw the answer (counting, line-identification, rest glyphs).
+    // staff; conceptual rounds stay text-only. Under the strict no-leak
+    // rule only the enharmonic round qualifies — its subject is C#, the
+    // question's own pitch. Class-level subjects (the major-scale pair
+    // round) stay text-only; the others would draw the answer (counting,
+    // line-identification, rest glyphs).
     const ids = illustratedRounds().map((round) => round.id).sort();
-    expect(ids).toEqual([
-      "l20-text-enharmonic-cs-db",
-      "l20-text-major-scale-half-steps",
-    ]);
+    expect(ids).toEqual(["l20-text-enharmonic-cs-db"]);
   });
 
   it("attaches illustrations only to text-prompt rounds", () => {
@@ -127,21 +126,10 @@ describe("lesson 20 companion illustrations (T5 pilot)", () => {
     }
   });
 
-  it("engraves the question's pitches: C# for the enharmonic round, the scale for the pair round", () => {
+  it("engraves the question's pitches: C# for the enharmonic round", () => {
     const enharmonic = lesson20Pool.find((round) => round.id === "l20-text-enharmonic-cs-db")!;
     // The question names C#; the answer is Db. The illustration shows C# only.
     expect(enharmonic.illustration).toEqual({ clef: "treble", notes: ["C#4"] });
-
-    const scale = lesson20Pool.find(
-      (round) => round.id === "l20-text-major-scale-half-steps",
-    )!;
-    // The C major scale, unaltered: every letter equally placed, so no pair
-    // is privileged by the engraving.
-    expect(scale.illustration).toEqual({
-      clef: "treble",
-      notes: ["C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5"],
-      duration: "q",
-    });
   });
 
   it("never engraves the correct answer as an illustration note", () => {
@@ -155,15 +143,6 @@ describe("lesson 20 companion illustrations (T5 pilot)", () => {
         const spelled = `${letter}${accidental === 0 ? "" : accidental > 0 ? "#".repeat(accidental) : "b".repeat(-accidental)}`;
         expect(spelled).not.toBe(correct);
       }
-    }
-  });
-
-  it("marks no half-step pair in the scale illustration: every tone is natural", () => {
-    const scale = lesson20Pool.find(
-      (round) => round.id === "l20-text-major-scale-half-steps",
-    )!;
-    for (const name of scale.illustration!.notes) {
-      expect(parseNote(name).accidental).toBe(0);
     }
   });
 

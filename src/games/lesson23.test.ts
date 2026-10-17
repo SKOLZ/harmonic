@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { render } from "solid-js/web";
 import { validateRound } from "../lib/rounds/validate";
+import { assertNoAnswerLeak } from "../lib/rounds/noAnswerLeak";
 import type { PromptSpec, Round } from "../lib/rounds/types";
 import StaffPrompt from "../components/prompts/StaffPrompt";
 import { createRng } from "./rng";
@@ -187,5 +188,64 @@ describe("lesson 23 question pool", () => {
     expect(rules).toMatch(/caret/);
     expect(rules).toMatch(/Latin for/);
     expect(rules).toMatch(/generic fifth/);
+  });
+});
+
+describe("lesson 23 companion illustrations (T5c Scales pass)", () => {
+  // Zero yield for Scale Degrees, and the reason is uniform: every text
+  // round asks about the degree VOCABULARY of scales in general — "Which
+  // note of a scale is the tonic?", "What does super mean?" — and not one
+  // prompt names a concrete scale or pitch. To draw any of these the writer
+  // would have to pick an example scale the question never mentions, which
+  // the strict rule bans outright ("do not invent a subject the question
+  // never names" — the same gate that turned down lesson 33's inversion
+  // rounds in T5b). The staff rounds already carry the concrete-scale
+  // versions of these questions. Recorded class by class below, and the
+  // pool is swept through the shared no-leak helper.
+  const DEGREE_VOCABULARY = [
+    "l23-text-what-is-a-scale-degree",
+    "l23-text-tonic",
+    "l23-text-dominant",
+    "l23-text-subdominant",
+    "l23-text-super",
+    "l23-text-leading-tone",
+    "l23-text-subtonic",
+    "l23-text-caret",
+  ];
+  const REASONING = [
+    "l23-text-why-subdominant",
+    "l23-text-why-mediant",
+    "l23-text-why-submediant",
+  ];
+
+  it("accounts for every text round in the rejection table", () => {
+    const textIds = lesson23Pool
+      .filter((round) => round.prompt.kind === "text")
+      .map((round) => round.id)
+      .sort();
+    expect(textIds).toHaveLength(11);
+    expect(textIds).toEqual([...DEGREE_VOCABULARY, ...REASONING].sort());
+  });
+
+  it("keeps the degree-vocabulary rounds text-only: class subject, no scale named", () => {
+    expect(DEGREE_VOCABULARY).toHaveLength(8);
+    for (const id of DEGREE_VOCABULARY) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("keeps the three 'why this name' rounds text-only: definitions about any scale", () => {
+    expect(REASONING).toHaveLength(3);
+    for (const id of REASONING) {
+      expect(roundById(id).prompt.kind, id).toBe("text");
+      expect(roundById(id).illustration, id).toBeUndefined();
+    }
+  });
+
+  it("passes the shared no-leak assertion for every pool round", () => {
+    for (const round of lesson23Pool) {
+      expect(() => assertNoAnswerLeak(round), round.id).not.toThrow();
+    }
   });
 });
