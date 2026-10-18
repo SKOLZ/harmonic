@@ -132,5 +132,7 @@ surface to those two files.
 
 | Task | Evidence | Tier | Commit |
 | --- | --- | --- | --- |
-| T1 | _backfill at T1_ | | |
-| T2 | _backfill at T2_ | | |
+| T1 | RED on the new width contract (footer lacked `max-width: 42rem`) → GREEN. `npm test`: 1424 passed (92 files). `npm run typecheck`: exit 0. Three matching `42rem` caps on `main`, `.app-shell__nav`, `.app-shell__footer`; the `main.lessons, main.practice-hub` override removed. | medium / under budget — no review | 941d632 |
+| T2 | RED 6 failed / 8 passed across the two brand suites → GREEN 14 passed. Invariant suites untouched (203 passed). `npm test`: **1427 passed (92 files)**, up 3. `npm run typecheck`: exit 0. No `<svg>` remains in `src/components/brand/`. | medium (6 paths, 190 lines) / under budget — no review | 8fde788 |
+
+## Status: COMPLETE
