@@ -418,13 +418,17 @@ a {
   font-family: var(--font-display);
   font-optical-sizing: auto;
   font-weight: 600;
-  letter-spacing: -0.01em;
+  /* Positive tracking, not the usual display tightening: the notehead
+     replacing the "o" is wider than the letter's advance was, so the
+     word needs room or the note presses into the "m" and the "n". */
+  letter-spacing: 0.04em;
   line-height: 1.05;
   /* The two framing rules: 1px ink hairlines — the weight of a staff
-     rule, not the weight of a border — with a breath of air so they never
-     collide with the ascenders. */
+     rule, not the weight of a border. The air is tight on purpose, so
+     the rules read as staff lines the text belongs between rather than
+     a box drawn around it. */
   border-block: 1px solid var(--ink);
-  padding-block: 0.1em;
+  padding-block: 0.05em;
 }
 
 /* The "o" slot: a real "o", transparent. It keeps the display face's own
@@ -443,7 +447,12 @@ a {
 .brand-wordmark__glyph {
   position: absolute;
   left: 50%;
-  top: 50%;
+  /* The "o" occupies only the x-height and sits on the baseline, so its
+     visual centre is well below the centre of the inline span's em box.
+     Centering on the span's own midpoint therefore put the note above the
+     letter it replaces; it seats lower to sit on the letter instead. This
+     is the knob to nudge if the note ever rides high or low again. */
+  top: 58%;
   height: 1.3em;
   transform: translate(-50%, -50%);
   pointer-events: none;

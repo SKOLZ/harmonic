@@ -117,3 +117,22 @@ every failure has argued for: at 20px, fewer strokes read as cleaner.
 | T1 | RED 19 failed / 44 passed — every failure a pinned retired contract (old viewBox, stem rect, no ledger, BrandMark still under the wordmark, 3 marks on Home) → GREEN 63 passed. `npm test`: **1438 passed (93 files)**, up 3. `npm run typecheck`: clean. `npm run build`: passed. Zero `<rect>` remains in the brand. Invariant suites untouched. | RDD off (global) — no review; ordinary checks green | ad3f6f5 |
 
 ## Status: COMPLETE
+
+## Tuning follow-up
+
+Visual review of the ledger wordmark found three positioning faults, all fixed
+in one pass:
+
+- **The note rode too high.** The glyph was centred on the "o" span's em box,
+  but a lowercase "o" occupies only the x-height and sits on the baseline, so
+  its visual centre is well below the em-box centre. It now seats at `top: 58%`.
+- **The framing rules sat too far from the text.** `padding-block` halved from
+  `0.1em` to `0.05em`, so the rules read as staff lines the text belongs
+  between rather than a box drawn around it.
+- **The notehead crowded its neighbours.** It is wider than an "o" advance, so
+  the name's tracking went from `-0.01em` to positive `0.04em`.
+
+All three values are pinned. Note for future edits: the `block()` helper
+extracts comments along with declarations, so a negative assertion like
+`not.toContain("top: 50%")` will match a comment that mentions that string —
+keep prose out of the values you assert against.

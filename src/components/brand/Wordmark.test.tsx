@@ -103,6 +103,27 @@ describe("Wordmark", () => {
     const name = block("\\.brand-wordmark__name");
     expect(name, "the name has a declaration block").not.toBe("");
     expect(name).toContain("border-block: 1px solid var(--ink)");
+    // The air is deliberately tight — the rules read as staff lines that
+    // belong to the text, not as a border box drawn around it.
+    expect(name).toContain("padding-block: 0.05em");
+  });
+
+  it("seats the note on the x-height and gives the o room to fit", () => {
+    // Two fixes for the same complaint: the note rode too high, and the
+    // notehead is wider than an "o" advance, so it crowded its neighbours.
+    const glyph = block("\\.brand-wordmark__glyph");
+    expect(glyph, "the glyph has a declaration block").not.toBe("");
+
+    // A lowercase "o" occupies only the x-height and sits on the baseline,
+    // so its visual centre is well below the em box's centre. Centering on
+    // `top: 50%` therefore placed the note above the letter it replaces.
+    expect(glyph).not.toContain("top: 50%");
+    expect(glyph).toContain("top: 58%");
+
+    // Positive tracking, because the notehead needs more advance than the
+    // letter did — without it the note presses into the "m" and the "n".
+    const name = block("\\.brand-wordmark__name");
+    expect(name).toContain("letter-spacing: 0.04em");
   });
 
   it("crosses the o with a ledger line on the shared stemless glyph", () => {
