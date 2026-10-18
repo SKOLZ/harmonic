@@ -260,10 +260,12 @@ describe("Lessons: the list page is its own route, separate from the landing", (
   it("renders no practice link — practice is a landing door, not a lesson row", async () => {
     // Migrated from Home's practice-link test: the practice entry still must
     // not sit inside the catalog's rows or counts; it has moved further away,
-    // to `/`, rather than onto this page.
+    // to `/`, rather than onto this page. Scoped to the page's own main — the
+    // global navbar's /practice link frames every route and is not this
+    // page's, the same scope the "Home" back-link test below uses.
     const host = await mountLessons();
 
-    expect(host.querySelector('a[href="/practice"]')).toBeNull();
+    expect(host.querySelector('main.lessons a[href="/practice"]')).toBeNull();
     expect(rows(host)).toHaveLength(catalog.length);
     expect(sectionTitles(host)).toEqual(
       [...new Set(catalog.map((entry) => entry.section))],

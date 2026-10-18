@@ -94,10 +94,14 @@ describe("Home: the landing page", () => {
     const host = await mountHome();
 
     // The catalog's rows live on /lessons now: `/` carries no per-lesson
-    // links at all, so the two doors are the page's only anchors.
-    expect(host.querySelectorAll('a[href^="/lesson/"]')).toHaveLength(0);
-    expect(host.querySelectorAll(".lessons__lesson")).toHaveLength(0);
-    expect(host.querySelectorAll("a")).toHaveLength(2);
+    // links at all, so the two doors are the page's only anchors. Scoped to
+    // `.home` — the page's own container — because the global navbar frames
+    // every route and contributes its own anchors outside the page.
+    const home = host.querySelector(".home");
+    expect(home).not.toBeNull();
+    expect(home!.querySelectorAll('a[href^="/lesson/"]')).toHaveLength(0);
+    expect(home!.querySelectorAll(".lessons__lesson")).toHaveLength(0);
+    expect(home!.querySelectorAll("a")).toHaveLength(2);
     expect(doors(host).some((door) => door.closest(".lessons__lesson") !== null)).toBe(false);
   });
 });

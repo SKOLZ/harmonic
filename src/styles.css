@@ -121,6 +121,60 @@ a {
   outline-offset: 2px;
 }
 
+/* ---------- App shell (T1) ---------- */
+
+/* The global frame: navbar above the routed page, quiet footer below.
+   Plain infrastructure by design — a black hairline under the nav, existing
+   tokens only. The brand task owns the identity; this frame must not spend
+   the boldness before it lands. The shell's inner measure matches `main`'s
+   42rem so the nav, the page, and the footer share one edge. */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* The hairline spans the full width; the nav inside it keeps the page
+   measure, so the rule reads as structure rather than as a text underline. */
+.app-shell__header {
+  border-bottom: 1px solid var(--line);
+}
+
+.app-shell__nav {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 0.75rem 1.25rem;
+}
+
+/* The two destinations as an unstyled row: default list markers would
+   out-decorate a bar whose whole job is to stay quiet. */
+.app-shell__menu {
+  display: flex;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.app-shell__footer {
+  display: flex;
+  gap: 1rem;
+  max-width: 42rem;
+  margin: auto auto 0;
+  padding: 1.5rem 1.25rem 2rem;
+  font-size: var(--text-sm);
+}
+
+/* Quiet: the footer's links step back from the page's ink without leaving
+   the ink scale. */
+.app-shell__footer a {
+  color: var(--ink-600);
+}
+
 /* ---------- Home (landing) ---------- */
 
 /* Masthead: title + lede, closed by a thick black rule so the doors below
