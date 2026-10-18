@@ -61,8 +61,26 @@ and put the gold in a single dot after the name.**
 
 | # | Task | Route | Status |
 | --- | --- | --- | --- |
-| T1 | One centered column across every surface | parent (inline) | done | 941d632 |
-| T2 | A gold dot replaces the drawn notehead | writer | pending | _backfill at T2_ |
+| T1 | One centered column across every surface | parent (inline) | done |
+| T2 | A gold dot replaces the drawn notehead | writer | done |
+
+T1 evidence: RED on the new width contract (footer lacked `max-width: 42rem`),
+then GREEN. `npm test`: 1424 passed (92 files). `npm run typecheck`: exit 0.
+Three matching `42rem` caps now sit on `main`, `.app-shell__nav`, and
+`.app-shell__footer`; the `main.lessons, main.practice-hub` override is gone.
+Assessed `medium`, `under_budget` — no review.
+
+T2 evidence: RED 6 failed / 8 passed across the two brand suites, then GREEN
+14 passed. Invariant suites untouched and green (203 passed). `npm test`:
+**1427 passed (92 files)**, up 3. `npm run typecheck`: exit 0. No `<svg>` remains
+in `src/components/brand/`. Assessed `medium` (6 paths, 190 lines),
+`under_budget` — no review.
+
+T2 note: `.brand-mark__notehead` survives as a class alias on the dot because
+`AppShell.test.tsx:137,149` and `Home.test.tsx:101` — outside the writer's edit
+surface — query it on both the 1-rule and 5-rule marks. The alias is itself
+pinned by a test. Dropping the name is a possible follow-up that widens the
+surface to those two files.
 
 ### Route rationale
 - T1 is a mechanical revert of caps that were wrongly removed, plus test

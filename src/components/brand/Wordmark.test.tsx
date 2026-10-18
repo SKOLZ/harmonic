@@ -51,7 +51,8 @@ describe("Wordmark", () => {
 
     expect(mark).not.toBeNull();
     expect(mark!.querySelectorAll(".brand-mark__rule")).toHaveLength(1);
-    expect(mark!.querySelectorAll(".brand-mark__notehead")).toHaveLength(1);
+    expect(mark!.querySelectorAll(".brand-mark__dot")).toHaveLength(1);
+    expect(mark!.querySelector("svg")).toBeNull();
     expect(mark!.getAttribute("aria-hidden")).toBe("true");
   });
 

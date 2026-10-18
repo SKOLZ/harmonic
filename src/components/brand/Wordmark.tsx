@@ -7,7 +7,8 @@ export interface WordmarkProps {
 
 /**
  * The wordmark: "Harmonic" in Fraunces, resting on a staff rule that carries
- * the mark's notehead — the name on a line, the way a title sits on a score.
+ * the mark's gold dot — the name on a line, the way a title sits on a score.
+ * The name carries the brand; the dot only carries the colour.
  *
  * One component, so the navbar's home link, the footer's brand block, and
  * any future brand surface say exactly the same thing. The accessible text

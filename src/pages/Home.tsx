@@ -11,7 +11,7 @@ import BrandMark from "../components/brand/BrandMark";
  * links as a finished one.
  *
  * The staff below the explanation is the product's one full five-line staff:
- * the hero's rule, carrying the single ochre notehead, drawn once and
+ * the hero's rule, carrying the single gold dot, drawn once and
  * nowhere else. The doors read as two adjacent piano keys inside one frame:
  * a white key (Lessons) and a black key (Practice, filled with the ink the
  * app already uses for primary controls).
@@ -27,7 +27,7 @@ export default function Home() {
         </p>
       </header>
 
-      {/* The memorable element, at staff scale: five rules, one notehead. */}
+      {/* The memorable element, at staff scale: five rules, one gold dot. */}
       <BrandMark lines={5} class="home__staff" />
 
       <div class="home__doors">

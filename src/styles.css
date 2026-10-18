@@ -64,7 +64,7 @@
        · neutral information — the "Locked" stamps, which stay supplementary
          to the word "Locked" and the row's aria-disabled, never a
          replacement for either, so the lock survives without colour;
-       · the mark's notehead — the brand's one chromatic element;
+       · the mark's dot — the brand's one chromatic element;
        · the interactive accent — a text link turns gold under the cursor.
      One value can honestly serve all three precisely because none of them is
      a verdict. `--gold-bg` is the wash that sits behind the stamps. */
@@ -313,28 +313,27 @@ a {
 /* The mark itself. Three lengths describe it at any size, so a context
    scales the whole thing by changing one of them (the hero changes only
    font-size): the rule stays a hairline of ink, the space between rules and
-   the notehead grow together so the note keeps fitting its space, the way a
-   notehead does on a real staff.
+   the dot's diameter grow together so the dot keeps fitting its space, the
+   way a head does on a real staff.
 
    The defaults are declared before the landing's styles below, which is
    what lets `.home__staff` re-scale them by being the later rule. */
 .brand-mark {
   --brand-mark-rule: 1.5px;
   --brand-mark-space: 0.45em;
-  --brand-mark-note: 0.5em;
+  --brand-mark-dot: 0.6em;
 
-  /* Rules stack from the centre, so the middle rule — the one the note
-     sits on, for one line or five — is always the vertical centre of the
-     box, and the note can centre its head on it with `top: 50%` plus the
-     transform that lands the head's own centre (not the stem-inclusive
-     box's) on the rule. */
+  /* Rules stack from the centre, so the middle rule — the one the dot sits
+     on, for one line or five — is always the vertical centre of the box,
+     and the dot centres on it with `top: 50%` plus the translate that lands
+     its own centre on the rule. */
   position: relative;
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: var(--brand-mark-space);
-  /* Half the notehead plus half a rule of air, so the note never clips. */
-  padding-block: calc(var(--brand-mark-note) / 2 + var(--brand-mark-rule) / 2);
+  /* Half the dot plus half a rule of air, so the dot never clips. */
+  padding-block: calc(var(--brand-mark-dot) / 2 + var(--brand-mark-rule) / 2);
 }
 
 /* Staff lines: structural ink, the same black the masthead rules use. */
@@ -344,23 +343,25 @@ a {
   background: var(--ink);
 }
 
-/* The one warm colour in the product, on the shape that first carried it.
-   `fill` is inherited, so the notehead path and its stem pick it up with
-   no fill of their own. Gold now also marks neutral info and link hover,
-   but the mark is still the only place it is a *form* rather than an edge
-   or a word. The box is taller than the head because it carries the stem;
-   the head's centre sits at 70% of the viewBox height, so the translate
-   puts the head — not the stem-inclusive box — on the rule. */
-.brand-mark__notehead {
+/* The one warm colour in the product, on the shape that carries it: a
+   circle, rendered in CSS rather than drawn. Two noteheads were rejected in
+   visual review for the same reason both times — a small drawn glyph has
+   nowhere to hide — so the mark's entire geometry is now `border-radius:
+   50%` on a square box: the one shape that cannot look strange at any size.
+   Gold also marks neutral info and link hover, but the mark is still the
+   only place it is a *form* rather than an edge or a word. The box is
+   square and measured in em, so `translateY(-50%)` lands its centre on the
+   rule; the inset leaves a whole dot of rule running past it, the way a
+   staff runs past its last note to the barline. */
+.brand-mark__dot {
   position: absolute;
   top: 50%;
-  /* Inset so the rule runs on past the note, the way a staff runs past its
-     last notehead to the barline. */
-  right: calc(var(--brand-mark-note) * 0.6);
-  width: calc(var(--brand-mark-note) * 2);
-  height: calc(var(--brand-mark-note) * 2.5);
-  transform: translateY(-70%);
-  fill: var(--gold);
+  right: var(--brand-mark-dot);
+  width: var(--brand-mark-dot);
+  height: var(--brand-mark-dot);
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: var(--gold);
 }
 
 /* The wordmark: the name on a line. `max-content` keeps the rule the name's
@@ -409,7 +410,7 @@ a {
   color: var(--ink-600);
 }
 
-/* The single memorable element: the full staff, carrying the notehead,
+/* The single memorable element: the full staff, carrying the gold dot,
    closing the hero above the doors. Scaled from the mark's defaults by
    font-size alone — everything the mark measures, it measures in em. */
 .home__staff {
