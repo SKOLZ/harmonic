@@ -124,6 +124,6 @@ the point of change — otherwise the next reader will "simplify" it away.
 | Task | Evidence | Tier | Commit |
 | --- | --- | --- | --- |
 | T1 | RED on `width: 100%` for all three surfaces → GREEN. `npm test`: 1427 passed (92 files). `npm run typecheck`: exit 0. | medium / under budget — no review | 6ee3bfb |
-| T2 | RED 20 failed / 34 passed across 5 brand and shell files → GREEN 60 passed. `npm test`: **1435 passed (93 files)**, up 8. `npm run typecheck`: clean. Invariant suites untouched. `--brand-mark-dot` and `.brand-mark__dot` deleted and pinned negatively so they cannot return. | RDD off (global) — no review; ordinary checks green | _backfill at T2_ |
+| T2 | RED 20 failed / 34 passed across 5 brand and shell files → GREEN 60 passed. `npm test`: **1435 passed (93 files)**, up 8. `npm run typecheck`: clean. Invariant suites untouched. `--brand-mark-dot` and `.brand-mark__dot` deleted and pinned negatively so they cannot return. | RDD off (global) — no review; ordinary checks green | efabc2a |
 
 ## Status: COMPLETE
