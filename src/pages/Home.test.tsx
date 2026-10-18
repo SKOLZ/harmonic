@@ -226,8 +226,9 @@ describe("Home: App route resolution", () => {
     expect(fullStaffs, "a second staff would turn the signature into wallpaper").toHaveLength(1);
     expect(fullStaffs[0]!.closest(".home"), "the staff is the hero's rule").not.toBeNull();
 
-    // The shell keeps the single-rule companion: navbar wordmark and footer
-    // wordmark, both one rule carrying one notehead.
-    expect(marks.filter((mark) => ruleCount(mark) === 1)).toHaveLength(2);
+    // The wordmark is its own mark now — framed by two hairline rules, with
+    // no companion beneath the name — so the hero's staff is the whole
+    // page's only BrandMark instance.
+    expect(marks).toHaveLength(1);
   });
 });

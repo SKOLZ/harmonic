@@ -3,11 +3,12 @@ import NoteGlyph from "./NoteGlyph";
 
 export interface BrandMarkProps {
   /**
-   * Staff rules to draw. `1` is the mark as the wordmark's companion — a
-   * note resting on a rule, the seed of a staff. `5` is the same mark at
-   * staff scale, and it exists for exactly one place in the product: the
-   * hero's rule on the landing page. Repeating the five-line staff in the
-   * navbar or the footer would turn a signature into wallpaper.
+   * Staff rules to draw. `5` is the mark at staff scale — the hero's rule
+   * on the landing page, and the only full staff in the product;
+   * repeating the five-line staff would turn a signature into wallpaper.
+   * The single-rule companion that used to ride under the wordmark is
+   * retired: the wordmark is now framed by its own two hairline rules and
+   * seats no mark beneath the name.
    */
   lines?: number;
   /** Extra class for the context that sizes it, e.g. `.home__staff`. */
@@ -15,18 +16,19 @@ export interface BrandMarkProps {
 }
 
 /**
- * The brand mark: one gold note resting on a staff rule.
+ * The brand mark: staff rules carrying one gold note — the hero's rule.
  *
- * The note is the shared `NoteGlyph` — tilted notehead, thin stem, one
- * viewBox — the same shape the wordmark seats in its "o", so the two
- * brand seats carry one drawing at two sizes. Three earlier forms were
- * rejected in visual review (a symmetric ellipse, an asymmetric two-arc
- * path, then a CSS circle that solved "cannot look strange" by giving up
- * flexibility); the SVG glyph is what buys the flexibility back without
- * inviting geometry back in. The wordmark's name carries the brand; the
- * note only carries the gold, painted from the token's own name
- * (`--gold`) so a retheme of any status colour cannot retheme the logo.
- * The rules stay structural ink.
+ * The note is the shared `NoteGlyph` — tilted notehead, no stem, no
+ * ledger, one viewBox — the same shape the wordmark seats in its "o"
+ * (there wearing its ledger line), so the two brand seats carry one
+ * drawing at two sizes. Three earlier forms were rejected in visual
+ * review (a symmetric ellipse, an asymmetric two-arc path, then a CSS
+ * circle that solved "cannot look strange" by giving up flexibility); the
+ * SVG glyph is what buys the flexibility back without inviting geometry
+ * back in. The wordmark's name carries the brand; the note only carries
+ * the gold, painted from the token's own name (`--gold`) so a retheme of
+ * any status colour cannot retheme the logo. The rules stay structural
+ * ink.
  *
  * Decorative by contract: `aria-hidden`, no role, no label, no text. It
  * names no pitch, no duration, and no answer, and it adds nothing for

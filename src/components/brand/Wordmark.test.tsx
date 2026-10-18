@@ -6,13 +6,16 @@ import { afterEach, describe, expect, it } from "vitest";
 import Wordmark from "./Wordmark";
 
 /**
- * The wordmark is the name on a line: "Harm●nic" in Fraunces, where the
- * "o" is the brand's gold note and the single-rule mark is the companion
- * below. It ships inside the navbar's home link and the footer's brand
- * block, so its accessible text has to stay exactly the name — the note
- * replaces the "o" for the eye only, on a real transparent "o" that keeps
- * the letter for assistive tech and the slot's metrics. The mark below it
- * is decoration and contributes nothing.
+ * The wordmark is the name as its own mark: "Harm●nic" in Fraunces, where
+ * the "o" is the brand's gold notehead crossed by a ledger line — the
+ * notation signal for a note outside the staff — and the name is framed
+ * between two hairline rules, the two staff lines that note has escaped.
+ * Nothing sits beneath the word; the word is the mark.
+ *
+ * It ships inside the navbar's home link and the footer's brand block, so
+ * its accessible text has to stay exactly the name — the note replaces the
+ * "o" for the eye only, on a real transparent "o" that keeps the letter for
+ * assistive tech and the slot's metrics.
  */
 const cleanups: Array<() => void> = [];
 
@@ -44,7 +47,7 @@ describe("Wordmark", () => {
     const host = mount(() => <Wordmark />);
 
     expect(host.querySelector(".brand-wordmark__name")?.textContent?.trim()).toBe("Harmonic");
-    // The note and the mark are aria-hidden decoration: nothing else is readable.
+    // The note is aria-hidden decoration: nothing else is readable.
     expect(host.textContent?.trim()).toBe("Harmonic");
   });
 
@@ -86,15 +89,38 @@ describe("Wordmark", () => {
     expect(name).not.toContain("var(--font-ui)");
   });
 
-  it("composes the name with the single-rule mark carrying the gold note", () => {
+  it("frames the name between two hairline staff rules and renders no mark beneath", () => {
     const host = mount(() => <Wordmark />);
-    const mark = host.querySelector(".brand-mark");
 
-    expect(mark).not.toBeNull();
-    expect(mark!.querySelectorAll(".brand-mark__rule")).toHaveLength(1);
-    expect(mark!.querySelectorAll(".brand-mark__glyph")).toHaveLength(1);
-    expect(mark!.querySelectorAll("svg")).toHaveLength(1);
-    expect(mark!.getAttribute("aria-hidden")).toBe("true");
+    // The wordmark is its own mark now: the old companion BrandMark under
+    // the name is gone — the name must not sit on a staff with a note on it.
+    expect(host.querySelector(".brand-mark")).toBeNull();
+    expect(host.querySelectorAll(".brand-mark__rule")).toHaveLength(0);
+
+    // The two framing rules are the staff lines the note escaped: CSS
+    // borders on the name, 1px ink hairlines — the weight of a staff rule,
+    // not the weight of a border — pinned as declarations.
+    const name = block("\\.brand-wordmark__name");
+    expect(name, "the name has a declaration block").not.toBe("");
+    expect(name).toContain("border-block: 1px solid var(--ink)");
+  });
+
+  it("crosses the o with a ledger line on the shared stemless glyph", () => {
+    const host = mount(() => <Wordmark />);
+    const glyph = host.querySelector(".brand-wordmark__glyph");
+
+    expect(glyph, "the o seats the shared glyph").not.toBeNull();
+    expect(glyph!.querySelectorAll("ellipse")).toHaveLength(1);
+    const ledgers = glyph!.querySelectorAll("line");
+    expect(ledgers).toHaveLength(1);
+    // Horizontal, through the notehead's centre: the ledger line of a note
+    // that has gone outside the two rules the name is framed by.
+    expect(ledgers[0]!.getAttribute("y1")).toBe("10");
+    expect(ledgers[0]!.getAttribute("y2")).toBe("10");
+    // No stem: the shared form is head plus optional ledger, nothing else.
+    expect(glyph!.querySelectorAll("rect")).toHaveLength(0);
+    // The glyph is decorative beside the real "o": aria-hidden, no label.
+    expect(glyph!.getAttribute("aria-hidden")).toBe("true");
   });
 
   it("takes an extra class for the surface it lands on", () => {

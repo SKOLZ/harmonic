@@ -6,13 +6,14 @@ import { afterEach, describe, expect, it } from "vitest";
 import BrandMark from "./BrandMark";
 
 /**
- * The mark is the brand's one memorable element: a gold note — the shared
- * NoteGlyph — resting on a staff rule. Three forms were rejected in visual
- * review (a symmetric ellipse, an asymmetric two-arc path, a CSS circle)
- * before the glyph earned its place, so the geometry budget stays fixed:
- * one svg, one tilted notehead, one stem, one viewBox — the same shape at
- * wordmark scale and at hero scale. The wordmark carries the name; the
- * note carries the gold.
+ * The mark is the brand's staff at hero scale: ink rules carrying the
+ * shared NoteGlyph — a tilted notehead, no stem, no ledger — resting on
+ * the middle rule. Three forms were rejected in visual review (a symmetric
+ * ellipse, an asymmetric two-arc path, a CSS circle) before the glyph
+ * earned its place, so the geometry budget stays fixed: one svg, one
+ * tilted notehead, one viewBox — the same shape the wordmark seats in its
+ * ledger-crossed "o". The wordmark carries the name; the note carries the
+ * gold.
  *
  * These tests pin the shape of that restraint, plus the width contract:
  * one rule by default, five only when a caller asks for the full staff.
@@ -48,7 +49,7 @@ function block(selector: string): string {
 }
 
 describe("BrandMark", () => {
-  it("renders one staff rule carrying one gold note — the mark at wordmark scale", () => {
+  it("renders one staff rule carrying one gold note — the mark's minimal form", () => {
     const host = mount(() => <BrandMark />);
     const mark = host.querySelector(".brand-mark")!;
 
@@ -56,7 +57,7 @@ describe("BrandMark", () => {
     expect(mark.querySelectorAll(".brand-mark__glyph")).toHaveLength(1);
   });
 
-  it("seats the shared note glyph: one svg, one notehead, one stem, nothing else", () => {
+  it("seats the shared note glyph: one svg, one notehead, no stem, no ledger", () => {
     const host = mount(() => <BrandMark lines={5} />);
     const mark = host.querySelector(".brand-mark")!;
 
@@ -67,8 +68,12 @@ describe("BrandMark", () => {
     expect(svg, "the mark carries the glyph").not.toBeNull();
     expect(mark.querySelectorAll("svg")).toHaveLength(1);
     expect(svg.querySelectorAll("ellipse")).toHaveLength(1);
-    expect(svg.querySelectorAll("rect")).toHaveLength(1);
-    expect(svg.querySelectorAll("path, circle, line, polygon, polyline, text")).toHaveLength(0);
+    // The hero's note sits ON its staff, so it wears no ledger line — the
+    // ledger is the wordmark-o's escape mark — and the stem is gone from
+    // the shared form for good.
+    expect(svg.querySelectorAll("line")).toHaveLength(0);
+    expect(svg.querySelectorAll("rect")).toHaveLength(0);
+    expect(svg.querySelectorAll("path, circle, polygon, polyline, text")).toHaveLength(0);
     expect(svg.textContent).toBe("");
   });
 
@@ -143,13 +148,16 @@ describe("BrandMark: the colour contract", () => {
     expect(glyph).toContain("translateY(-50%)");
   });
 
-  it("retires the CSS dot entirely — no token, no class, no reference", () => {
-    // The circle that briefly replaced the drawn heads is gone: the glyph
-    // is the mark's only form, so nothing may keep the old geometry alive.
+  it("retires the CSS dot and the stem entirely — no tokens, no classes, no references", () => {
+    // The circle that briefly replaced the drawn heads is gone, and the
+    // stem went with the fourth logo iteration: the glyph is the mark's
+    // only form, so nothing may keep the old geometries alive.
     const css = styles();
 
     expect(css).not.toMatch(/--brand-mark-dot/);
     expect(block("\\.brand-mark__dot")).toBe("");
+    expect(css).not.toMatch(/note-glyph__stem/);
+    expect(block("\\.note-glyph__stem")).toBe("");
   });
 
   it("draws the rules in the app's structural ink", () => {

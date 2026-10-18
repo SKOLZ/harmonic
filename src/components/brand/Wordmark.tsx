@@ -1,4 +1,3 @@
-import BrandMark from "./BrandMark";
 import NoteGlyph from "./NoteGlyph";
 
 export interface WordmarkProps {
@@ -7,9 +6,12 @@ export interface WordmarkProps {
 }
 
 /**
- * The wordmark: "Harm●nic" in Fraunces — the "o" is the brand's gold note
- * — resting on a staff rule that carries the same note again at the
- * mark's scale. The name on a line, the way a title sits on a score.
+ * The wordmark: "Harm●nic" in Fraunces — the "o" is the brand's gold
+ * notehead, crossed by a ledger line — framed between two hairline rules,
+ * the two staff lines the note has escaped. The name and the mark are one
+ * object: nothing sits beneath the word, because the word is the mark. The
+ * framing rules are CSS borders on the name (`.brand-wordmark__name`), so
+ * the markup stays the name and the note.
  *
  * The substitution is visual only. A real "o" keeps the slot: it is
  * painted transparent, so it holds the display face's own advance width
@@ -19,9 +21,9 @@ export interface WordmarkProps {
  *
  * One component, so the navbar's home link, the footer's brand block, and
  * any future brand surface say exactly the same thing. The accessible
- * text is the name alone: the note and the mark below it are aria-hidden
- * decoration, which is what lets the navbar's home link keep reading
- * "Harmonic" and nothing more.
+ * text is the name alone: the note is aria-hidden decoration, which is
+ * what lets the navbar's home link keep reading "Harmonic" and nothing
+ * more.
  */
 export default function Wordmark(props: WordmarkProps) {
   const classes = () => (props.class ? `brand-wordmark ${props.class}` : "brand-wordmark");
@@ -32,11 +34,10 @@ export default function Wordmark(props: WordmarkProps) {
         Harm
         <span class="brand-wordmark__o">
           o
-          <NoteGlyph class="brand-wordmark__glyph" />
+          <NoteGlyph class="brand-wordmark__glyph" ledger />
         </span>
         nic
       </span>
-      <BrandMark class="brand-wordmark__mark" />
     </span>
   );
 }
