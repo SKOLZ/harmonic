@@ -3,6 +3,7 @@ import {
   PROGRESS_STORAGE_KEY,
   createProgressStore,
   type ProgressState,
+  type ProgressStore,
   type StorageLike,
 } from "../progress/store";
 
@@ -40,26 +41,44 @@ function storageOf(state: ProgressState): StorageLike {
 }
 
 /**
- * Is `topic` available to a learner at `progress`?
+ * Is `topic` available to the learner `store` describes?
  *
  * One definition of "unlocked" for the whole app: a `{ kind: "lesson",
- * ordinal }` topic reuses the chain's own predicate —
+ * ordinal }` topic is evaluated by the chain's own predicate —
  * `store.isUnlocked(ordinal - 1, catalog)` — the same call the lesson list
  * makes, so `UNLOCK_THRESHOLD` and streak semantics are shared rather than
- * restated. An `{ kind: "open" }` topic needs no state at all.
+ * restated. An `{ kind: "open" }` topic needs no store state at all. This is
+ * the entry point the hub uses, because the app's progress store is already
+ * a `ProgressStore`.
  *
  * Ordinals are 1-based (lesson 1 = index 0), matching the `/lesson/:ordinal`
  * URLs; lesson 1 is the chain head and is always unlocked, so gating on it
  * resolves open.
+ */
+export function isTopicUnlockedWithStore(
+  topic: PracticeTopic,
+  catalog: readonly LessonEntry[],
+  store: ProgressStore,
+): boolean {
+  if (topic.unlock.kind === "open") return true;
+  return store.isUnlocked(topic.unlock.ordinal - 1, catalog);
+}
+
+/**
+ * Is `topic` available to a learner at `progress`?
+ *
+ * The state-shaped seam over {@link isTopicUnlockedWithStore}: it wraps a
+ * plain `ProgressState` in a read-only `StorageLike` and hands it to the same
+ * rule, so tests can assert gating without a browser and the verdict cannot
+ * differ from the store's — topics.test.ts pins the two entry points to each
+ * other verdict-for-verdict.
  */
 export function isTopicUnlocked(
   topic: PracticeTopic,
   catalog: readonly LessonEntry[],
   progress: ProgressState,
 ): boolean {
-  if (topic.unlock.kind === "open") return true;
-  const store = createProgressStore(storageOf(progress));
-  return store.isUnlocked(topic.unlock.ordinal - 1, catalog);
+  return isTopicUnlockedWithStore(topic, catalog, createProgressStore(storageOf(progress)));
 }
 
 /**

@@ -7,7 +7,12 @@ import {
   type ProgressState,
   type StorageLike,
 } from "../progress/store";
-import { isTopicUnlocked, practiceTopics, type PracticeTopic } from "./topics";
+import {
+  isTopicUnlocked,
+  isTopicUnlockedWithStore,
+  practiceTopics,
+  type PracticeTopic,
+} from "./topics";
 
 function stateStorage(state: ProgressState): StorageLike {
   const raw = JSON.stringify(state);
@@ -101,5 +106,31 @@ describe("practice topics: lesson-gated unlock", () => {
       const fromStore = createProgressStore(stateStorage(state)).isUnlocked(1, catalog);
       expect(isTopicUnlocked(topic, catalog, state)).toBe(fromStore);
     }
+  });
+
+  it("gives the store-shaped entry point the same verdicts as the state-shaped one", () => {
+    // The hub reads lock state through the app's live store; tests (and the
+    // state seam above) read it as a plain ProgressState. Two entry points,
+    // one rule — if they ever disagree, one of them is lying about gating.
+    const topic = gatedOn(2);
+    const states: ProgressState[] = [
+      {},
+      { [String(lessonOne.id)]: 0 },
+      { [String(lessonOne.id)]: UNLOCK_THRESHOLD - 1 },
+      { [String(lessonOne.id)]: UNLOCK_THRESHOLD },
+      { [String(lessonOne.id)]: UNLOCK_THRESHOLD + 3 },
+      { [String(lessonTwo.id)]: UNLOCK_THRESHOLD + 3 },
+    ];
+    for (const state of states) {
+      const store = createProgressStore(stateStorage(state));
+      expect(isTopicUnlockedWithStore(topic, catalog, store), JSON.stringify(state)).toBe(
+        isTopicUnlocked(topic, catalog, state),
+      );
+    }
+    // An open topic resolves open through the store path too — the hub must
+    // never render a shipped topic as locked for an empty store.
+    expect(
+      isTopicUnlockedWithStore(practiceTopics[0]!, catalog, createProgressStore(stateStorage({}))),
+    ).toBe(true);
   });
 });
