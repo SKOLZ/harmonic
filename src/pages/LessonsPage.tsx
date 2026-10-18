@@ -33,9 +33,6 @@ export default function LessonsPage() {
 
   return (
     <main class="lessons">
-      <A class="lessons__back" href="/">
-        Home
-      </A>
       <header class="lessons__header">
         <h1>Lessons</h1>
         <p class="lessons__lede">

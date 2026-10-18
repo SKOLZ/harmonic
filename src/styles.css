@@ -144,28 +144,44 @@ a {
   outline-offset: 2px;
 }
 
-/* ---------- App shell (T1) ---------- */
+/* ---------- App shell (T1 frame, T3 layout) ---------- */
 
 /* The global frame: navbar above the routed page, quiet footer below.
    Plain infrastructure by design — a black hairline under the nav, existing
    tokens only. The brand task owns the identity; this frame must not spend
-   the boldness before it lands. The shell's inner measure matches `main`'s
-   42rem so the nav, the page, and the footer share one edge. */
+   the boldness before it lands.
+
+   The shell's measure is the viewport: navbar, footer, and the two hubs all
+   reach the same edges, and the 1.25rem horizontal padding they share is the
+   line nav, page, and footer still hold together. The landing and the game
+   surfaces keep `main`'s 42rem page measure — a gameplay field wants a
+   stable, narrow width, and the homepage's measure was confirmed as right —
+   so the hubs opt out of it below rather than the page measure being
+   redefined for everyone. */
 .app-shell {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
 }
 
-/* The hairline spans the full width; the nav inside it keeps the page
-   measure, so the rule reads as structure rather than as a text underline. */
+/* The hairline spans the full width, and the nav inside it now does too —
+   the rule reads as structure rather than as a text underline. */
 .app-shell__header {
   border-bottom: 1px solid var(--line);
 }
 
+/* Cross-axis centring is the reported defect: `baseline` lined the links up
+   on the wordmark's last baseline, which does not sit on the mark's optical
+   centre, so the row never read as aligned. Centred, the wordmark and the
+   two controls share one midline.
+
+   The 42rem cap stays on purpose. The user praised that the landing's
+   content lines up with the navbar, and that alignment exists only while
+   both share this measure. What was asked to stretch is the two hubs, not
+   the bar above them. */
 .app-shell__nav {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 1rem;
   max-width: 42rem;
@@ -173,35 +189,63 @@ a {
   padding: 0.75rem 1.25rem;
 }
 
-/* The two destinations as an unstyled row: default list markers would
-   out-decorate a bar whose whole job is to stay quiet. */
+/* The two destinations as buttons: the app's primary-control material — the
+   same ink fill, on-action white, 1px ink edge, 2px radius, and
+   0.5rem 1.1rem padding that Confirm and Next use — so the bar's links read
+   as controls instead of as two more text links beside the wordmark. The
+   list stays undecorated: default markers would out-decorate a bar whose
+   whole job is to stay quiet, and `inline-block` gives the padded link a
+   real box so the row centres on it rather than on its baseline. */
 .app-shell__menu {
   display: flex;
+  align-items: center;
   gap: 1rem;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
+.app-shell__menu a {
+  display: inline-block;
+  padding: 0.5rem 1.1rem;
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  background: var(--ink);
+  color: var(--on-action);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+/* Hover lifts to the controls' own hover — the 120ms edge every primary
+   control in the product already rides. Deliberately not gold: gold on an
+   ink fill is ~2.7:1, under the 3:1 large-text floor, so the accent yields
+   to legibility here exactly as it does on the landing's ink door. */
+.app-shell__menu a:hover {
+  border-color: var(--action-hover);
+  background: var(--action-hover);
+}
+
 /* The wordmark, restyled for the brand: the name leads the bar in the
    display face, resting on the mark's staff rule. The link's own underline
-   is dropped so the rule under the name is the only line it rests on. */
+   is dropped so the rule under the name is the only line it rests on — and
+   it stays a text link, never a button: identity is not a control. */
 .app-shell__wordmark {
   color: var(--ink);
   font-size: var(--text-lg);
   text-decoration: none;
 }
 
-/* Footer: the brand block on one side, the two destinations on the other.
-   The brand's 16rem basis is what stacks them on a phone — without it a
-   320px footer squeezes the line into a four-word column beside the links. */
+/* Footer: the brand block on one side, the two destinations on the other,
+   at the shell's full measure. The brand's 16rem basis is what stacks them
+   on a phone — without it a 320px footer squeezes the line into a four-word
+   column beside the links. */
 .app-shell__footer {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem 1.5rem;
-  max-width: 42rem;
   margin: auto auto 0;
   padding: 1.5rem 1.25rem 2rem;
   font-size: var(--text-sm);
@@ -226,18 +270,43 @@ a {
   color: var(--ink-600);
 }
 
+/* The two links stack vertically: at full width a row of two reads as a
+   stray toolbar, while a column reads as the short list of ways out that it
+   is. */
 .app-shell__footer-links {
   display: flex;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 0.4rem;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 /* Quiet: the footer's links step back from the page's ink without leaving
-   the ink scale. */
+   the ink scale. No underline — the stack and the spacing are what mark
+   them as links here, not a rule under the text. */
 .app-shell__footer a {
   color: var(--ink-600);
+  text-decoration: none;
+  transition: color 120ms ease;
+}
+
+/* The pointer's arrival turns the link gold — the interactive accent, the
+   same answer the landing's white door and both hub rows give. Gold on the
+   footer's light ground is ~4.6:1, past the 4.5:1 text floor. */
+.app-shell__footer a:hover {
+  color: var(--gold);
+}
+
+/* The two hubs fill the shell's measure. `main` keeps its 42rem page measure
+   for the landing and the game surfaces (a gameplay field wants a stable,
+   narrow width), and these two pages — lists of destinations, not a reading
+   column or a playfield — opt out of it to reach the same edges the navbar
+   and the footer now define. Same 1.25rem horizontal padding as both, so
+   nav, page, and footer still share one edge. */
+main.lessons,
+main.practice-hub {
+  max-width: none;
 }
 
 /* ---------- Brand (T2) ---------- */
@@ -255,9 +324,11 @@ a {
   --brand-mark-space: 0.45em;
   --brand-mark-note: 0.5em;
 
-  /* Rules stack from the centre, so the middle rule — the one the notehead
+  /* Rules stack from the centre, so the middle rule — the one the note
      sits on, for one line or five — is always the vertical centre of the
-     box, and the notehead can centre on it with `top: 50%`. */
+     box, and the note can centre its head on it with `top: 50%` plus the
+     transform that lands the head's own centre (not the stem-inclusive
+     box's) on the rule. */
   position: relative;
   display: flex;
   flex-direction: column;
@@ -275,18 +346,21 @@ a {
 }
 
 /* The one warm colour in the product, on the shape that first carried it.
-   `fill` is inherited, so the single ellipse inside picks it up. Gold now
-   also marks neutral info and link hover, but the mark is still the only
-   place it is a *form* rather than an edge or a word. */
+   `fill` is inherited, so the notehead path and its stem pick it up with
+   no fill of their own. Gold now also marks neutral info and link hover,
+   but the mark is still the only place it is a *form* rather than an edge
+   or a word. The box is taller than the head because it carries the stem;
+   the head's centre sits at 70% of the viewBox height, so the translate
+   puts the head — not the stem-inclusive box — on the rule. */
 .brand-mark__notehead {
   position: absolute;
   top: 50%;
   /* Inset so the rule runs on past the note, the way a staff runs past its
      last notehead to the barline. */
   right: calc(var(--brand-mark-note) * 0.6);
-  width: calc(var(--brand-mark-note) * 4 / 3);
-  height: var(--brand-mark-note);
-  transform: translateY(-50%);
+  width: calc(var(--brand-mark-note) * 2);
+  height: calc(var(--brand-mark-note) * 2.5);
+  transform: translateY(-70%);
   fill: var(--gold);
 }
 
@@ -428,13 +502,10 @@ a {
 
 /* ---------- Lessons ---------- */
 
-/* Same rhythm the Home list carried before the split: a back link, then a
-   masthead whose lede quotes the threshold the streak counts score against. */
-.lessons__back {
-  display: inline-block;
-  margin-bottom: 1.25rem;
-}
-
+/* The masthead leads the page: its lede quotes the threshold the streak
+   counts score against, and the thick rule closes the header the way the
+   Home list's did before the split. There is no back link — the navbar's
+   wordmark is the way home (T3), so this page starts at its own title. */
 .lessons__header {
   padding-bottom: 1rem;
   border-bottom: 2px solid var(--ink);
@@ -534,14 +605,10 @@ a.lessons__lesson-body:hover {
 
 /* ---------- Practice hub ---------- */
 
-/* The hub is the lesson list's sibling, not a new page type: same back-link
-   rhythm, same masthead closed by a thick rule, same framed row per entry —
-   so practice and lessons teach one visual language for gated content. */
-.practice-hub__back {
-  display: inline-block;
-  margin-bottom: 1.25rem;
-}
-
+/* The hub is the lesson list's sibling, not a new page type: same masthead
+   closed by a thick rule, same framed row per entry — so practice and
+   lessons teach one visual language for gated content. No back link either:
+   the navbar's wordmark is the way home (T3). */
 .practice-hub__header {
   padding-bottom: 1rem;
   border-bottom: 2px solid var(--ink);

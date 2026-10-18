@@ -262,7 +262,7 @@ describe("Lessons: the list page is its own route, separate from the landing", (
     // not sit inside the catalog's rows or counts; it has moved further away,
     // to `/`, rather than onto this page. Scoped to the page's own main — the
     // global navbar's /practice link frames every route and is not this
-    // page's, the same scope the "Home" back-link test below uses.
+    // page's, the same scope the no-home-link test below uses.
     const host = await mountLessons();
 
     expect(host.querySelector('main.lessons a[href="/practice"]')).toBeNull();
@@ -272,12 +272,30 @@ describe("Lessons: the list page is its own route, separate from the landing", (
     );
   });
 
-  it("links back to the landing page", async () => {
+  it("has no link back to the landing page — the logo is the way home", async () => {
+    // RE-SCOPE, NOT DELETION. This test has always pinned one thing: *this
+    // page's own* link surface, read inside `main.lessons` — the same scope
+    // the practice-link test above uses, which is what keeps the shell's
+    // navbar out of it. Its old form asserted that the surface contains one
+    // anchor to `/` labelled "Home". The back link was removed by decision
+    // (the wordmark is the way home), so the identical scope now asserts the
+    // complement: zero anchors to `/`, and every anchor the page does render
+    // is a lesson.
+    //
+    // The count it guards is unchanged in intent: with an empty store the
+    // page's own links are exactly the unlocked rows — 1 anchor,
+    // /lesson/1 — and no lock-state change is implied, because the count is
+    // derived from the rendered links, never hard-coded.
     const host = await mountLessons();
 
-    const back = host.querySelector<HTMLAnchorElement>('main.lessons a[href="/"]');
-    expect(back).not.toBeNull();
-    expect(back!.textContent?.trim()).toBe("Home");
+    expect(host.querySelector('main.lessons a[href="/"]')).toBeNull();
+
+    const own = [...host.querySelectorAll<HTMLElement>("main.lessons a")];
+    // Not vacuous: the page must still link something.
+    expect(own.length).toBeGreaterThan(0);
+    for (const link of own) {
+      expect(link.getAttribute("href")).toMatch(/^\/lesson\/\d+$/);
+    }
   });
 });
 

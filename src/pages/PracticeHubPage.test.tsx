@@ -135,6 +135,30 @@ describe("Practice hub: the registry, one row per entry", () => {
       expect(link!.textContent, topic.slug).toContain(topic.title);
     }
   });
+
+  it("has no link back to the landing page — the logo is the way home", async () => {
+    // RE-SCOPE OF "THIS PAGE'S OWN LINKS". The hub's own surface is read
+    // inside `main.practice-hub`, the same scope that keeps the shell's
+    // navbar (whose wordmark *is* an a[href="/"] and must stay one) out of
+    // the count. Before this decision that surface held the Home back link
+    // as well as the topic rows; with the back link removed the count is now
+    // exactly one anchor per shipped topic — `practiceTopics.length` — and
+    // never an anchor to `/`. The assertion is pinned to the registry size
+    // rather than a literal so a future open topic widens it honestly
+    // instead of failing as a stale number.
+    window.history.pushState(null, "", "/practice");
+
+    const host = mount(() => <App />);
+    await waitFor(() => host.querySelector(".practice-hub") !== null, "practice hub");
+
+    expect(host.querySelector('main.practice-hub a[href="/"]')).toBeNull();
+
+    const own = [...host.querySelectorAll<HTMLElement>("main.practice-hub a")];
+    expect(own).toHaveLength(practiceTopics.length);
+    for (const link of own) {
+      expect(link.getAttribute("href")).toMatch(/^\/practice\/.+$/);
+    }
+  });
 });
 
 describe("Practice hub: lock state", () => {

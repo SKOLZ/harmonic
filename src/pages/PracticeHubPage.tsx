@@ -9,10 +9,12 @@ import {
 } from "../lib/practice/topics";
 
 /**
- * T3's hub: `/practice` as the sibling of `/lessons` — a back link, a
- * masthead, and one framed row per registry entry, in registry order. It
- * teaches the same visual language for gated content the lesson list does:
- * a locked topic is *shown*, never hidden, and never linked.
+ * T3's hub: `/practice` as the sibling of `/lessons` — a masthead and one
+ * framed row per registry entry, in registry order, with no link back to the
+ * landing: the navbar's wordmark is the way home, so this page opens on its
+ * own title. It teaches the same visual language for gated content the
+ * lesson list does: a locked topic is *shown*, never hidden, and never
+ * linked.
  *
  * Lock state is evaluated by the registry's own `isTopicUnlockedWithStore`,
  * so a topic opens under exactly the rule the lesson chain uses and nothing
@@ -37,9 +39,6 @@ export default function PracticeHubPage(props: PracticeHubProps) {
 
   return (
     <main class="practice-hub">
-      <A class="practice-hub__back" href="/">
-        Home
-      </A>
       <header class="practice-hub__header">
         <h1>Practice</h1>
         <p class="practice-hub__lede">

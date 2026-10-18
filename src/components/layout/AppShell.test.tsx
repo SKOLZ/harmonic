@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import type { JSX } from "solid-js";
 import { render } from "solid-js/web";
 import { afterEach, describe, expect, it } from "vitest";
@@ -154,4 +156,97 @@ describe("App shell: the brand frames every route", () => {
       expect(footer.querySelectorAll("a"), path).toHaveLength(2);
     });
   }
+});
+
+/**
+ * T3's layout contract: the navbar centres its row and dresses its two menu
+ * links as primary controls, the two hubs fill the shell's measure while the
+ * landing and the game pages keep `main`'s page measure, and the footer
+ * stacks its two links without an underline and turns them gold on hover.
+ *
+ * Layout lives in styles.css, so it is pinned the way BrandMark pins its
+ * token contract and CountdownRing pins its reduced-motion contract: read
+ * straight from the shipped stylesheet, tokens and declarations only, never a
+ * raw hex that would block retheming for ever. The structural assertions
+ * above stand unchanged — buttons change how the navbar's links look, never
+ * how many there are.
+ */
+function styles(): string {
+  return readFileSync(resolve(process.cwd(), "src/styles.css"), "utf8");
+}
+
+/** The declaration block for a selector, tolerating a comma-separated
+    neighbour (`main.lessons, main.practice-hub {`). */
+function block(selector: string): string {
+  return styles().match(new RegExp(`${selector}\\s*(?:,[^{]+)?\\{[^}]*\\}`))?.[0] ?? "";
+}
+
+describe("App shell: T3 layout contract", () => {
+  it("centres the navbar row and dresses the two menu links as primary controls", () => {
+    const nav = block("\\.app-shell__nav");
+    expect(nav, ".app-shell__nav has a declaration block").not.toBe("");
+    // The reported defect: baseline alignment pushed the links off the
+    // wordmark's centre line. The row now centres on its cross axis. The
+    // navbar's measure is asserted separately — it keeps the 42rem cap so
+    // the landing still lines up with it.
+    expect(nav).toContain("align-items: center");
+
+    // The primary-control material the product already uses for Confirm /
+    // Next: ink fill, on-action white, 2px radius, the controls' own padding.
+    const menuLink = block("\\.app-shell__menu a");
+    expect(menuLink, ".app-shell__menu a has a declaration block").not.toBe("");
+    expect(menuLink).toContain("background: var(--ink)");
+    expect(menuLink).toContain("color: var(--on-action)");
+    expect(menuLink).toContain("border-radius: 2px");
+    expect(menuLink).toContain("padding: 0.5rem 1.1rem");
+
+    // The wordmark stays a text link: no fill, no border, no control box.
+    const wordmark = block("\\.app-shell__wordmark");
+    expect(wordmark, ".app-shell__wordmark has a declaration block").not.toBe("");
+    expect(wordmark).not.toContain("background");
+    expect(wordmark).not.toContain("border");
+  });
+
+  it("keeps the navbar on the page measure, widens the footer, and lets the two hubs stretch", () => {
+    // The navbar keeps the 42rem cap deliberately: the user praised that the
+    // landing's content lines up with the navbar, so dropping the cap here
+    // would break exactly the alignment being protected. What stretches is
+    // the two hubs, and the footer the user called too narrow.
+    const nav = block("\\.app-shell__nav");
+    expect(nav, ".app-shell__nav has a declaration block").not.toBe("");
+    expect(nav).toContain("max-width: 42rem");
+    const footer = block("\\.app-shell__footer");
+    expect(footer, ".app-shell__footer has a declaration block").not.toBe("");
+    expect(footer).not.toContain("42rem");
+
+    // The two hubs opt out of main's page measure and reach the page edges,
+    // which is what "stretch to the borders" asked for.
+    const lessonsHub = block("main\\.lessons");
+    expect(lessonsHub, "the lessons hub overrides main's measure").not.toBe("");
+    expect(lessonsHub).toContain("max-width: none");
+    const practiceHub = block("main\\.practice-hub");
+    expect(practiceHub, "the practice hub overrides main's measure").not.toBe("");
+    expect(practiceHub).toContain("max-width: none");
+
+    // ...and main's own 42rem measure survives untouched for `/` and for the
+    // game surfaces (/lesson/:id, /practice/:slug), which the user did not
+    // ask to widen.
+    const pageMeasure = block("main");
+    expect(pageMeasure, "main keeps its declaration block").not.toBe("");
+    expect(pageMeasure).toContain("max-width: 42rem");
+  });
+
+  it("widens the footer, stacks its links, drops their underline, and turns them gold on hover", () => {
+    const links = block("\\.app-shell__footer-links");
+    expect(links, ".app-shell__footer-links has a declaration block").not.toBe("");
+    expect(links).toContain("flex-direction: column");
+
+    const footerLink = block("\\.app-shell__footer a");
+    expect(footerLink, "the footer link rule has a declaration block").not.toBe("");
+    expect(footerLink).toContain("text-decoration: none");
+
+    const hover = block("\\.app-shell__footer a:hover");
+    expect(hover, "the footer link hover has a declaration block").not.toBe("");
+    expect(hover).toContain("color: var(--gold)");
+  });
 });
