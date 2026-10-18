@@ -61,7 +61,7 @@ and put the gold in a single dot after the name.**
 
 | # | Task | Route | Status |
 | --- | --- | --- | --- |
-| T1 | One centered column across every surface | parent (inline) | done | _backfill at T1_ |
+| T1 | One centered column across every surface | parent (inline) | done | 941d632 |
 | T2 | A gold dot replaces the drawn notehead | writer | pending | _backfill at T2_ |
 
 ### Route rationale
