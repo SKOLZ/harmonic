@@ -123,5 +123,6 @@ the point of change — otherwise the next reader will "simplify" it away.
 
 | Task | Evidence | Tier | Commit |
 | --- | --- | --- | --- |
-| T1 | _backfill at T1_ | | |
+| T1 | RED on `width: 100%` for all three surfaces → GREEN. `npm test`: 1427 passed (92 files). `npm run typecheck`: exit 0. | medium / under budget — no review | 6ee3bfb |
+| T2 | _backfill at T2_ | | |
 | T2 | _backfill at T2_ | | |
