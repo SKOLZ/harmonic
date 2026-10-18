@@ -7,14 +7,16 @@ import BrandMark from "./BrandMark";
 
 /**
  * The mark is the brand's one memorable element: a staff rule carrying a
- * single ochre notehead. These tests pin its two shapes of restraint — one
+ * single gold notehead. These tests pin its two shapes of restraint — one
  * shape (a lone ellipse, no clef, no stem, no illustration) and one warm
- * colour (`--brand`, a token of its own so retheming the gate colour cannot
- * retheme the logo) — plus the width contract: one rule by default, five
- * only when a caller asks for the full staff.
+ * colour (`--gold`, the accent's own token, so the hue is named for what it
+ * is rather than for one of its jobs) — plus the width contract: one rule by
+ * default, five only when a caller asks for the full staff.
  *
  * Colour lives in styles.css, so the token contract is read the same way
  * CountdownRing's reduced-motion contract is: straight from the stylesheet.
+ * The contract pins the *token* and the *meaning* — never a raw hex, which
+ * would block retheming the hue for ever.
  */
 const cleanups: Array<() => void> = [];
 
@@ -83,22 +85,32 @@ describe("BrandMark", () => {
 });
 
 describe("BrandMark: the colour contract", () => {
-  it("adds --brand as the ochre under its own name, and keeps --warn on the gate", () => {
+  it("declares gold as the one warm accent, and leaves no warning hue in the palette", () => {
     const css = styles();
 
-    // Same value, separate declaration: the brand copies the ochre rather
-    // than borrowing --warn, so retheming the gate cannot retheme the logo.
-    expect(css).toMatch(/--brand:\s*#8a6a1f\s*;/);
-    expect(css).toMatch(/--warn:\s*#8a6a1f\s*;/);
-    expect(css).not.toMatch(/--brand:\s*var\(--warn\)/);
+    // Gold is named for the colour, not for a job: the notehead, the "Locked"
+    // stamps, and link hover all draw from this single declaration.
+    expect(css).toMatch(/--gold:\s*#[0-9a-f]{6}\s*;/);
+    expect(css).toMatch(/--gold-bg:\s*#[0-9a-f]{6}\s*;/);
+
+    // Status is green or red only. The warning tokens are deleted outright —
+    // not aliased, not repurposed — so no colour in the product can mean
+    // "caution" again.
+    expect(css).not.toMatch(/--warn:/);
+    expect(css).not.toMatch(/--warn-bg:/);
+
+    // The old job-named token is gone too, so the hue has exactly one name.
+    // (`--brand-mark-*` are the mark's geometry lengths, not the hue.)
+    expect(css).not.toMatch(/--brand:/);
   });
 
-  it("paints the notehead with --brand, never with the gate colour", () => {
+  it("paints the notehead with the gold token, never with a status colour", () => {
     const notehead = block("\\.brand-mark__notehead");
 
     expect(notehead, "the notehead has a declaration block").not.toBe("");
-    expect(notehead).toContain("fill: var(--brand)");
-    expect(notehead).not.toContain("var(--warn)");
+    expect(notehead).toContain("fill: var(--gold)");
+    // Verdict colours carry a meaning the mark must never assert.
+    expect(notehead).not.toMatch(/var\(--(ok|danger|warn)\)/);
   });
 
   it("draws the rules in the app's structural ink", () => {
@@ -106,6 +118,6 @@ describe("BrandMark: the colour contract", () => {
 
     expect(rule, "the staff rules have a declaration block").not.toBe("");
     expect(rule).toContain("var(--ink)");
-    expect(rule).not.toContain("var(--brand)");
+    expect(rule).not.toContain("var(--gold)");
   });
 });

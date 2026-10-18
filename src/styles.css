@@ -3,9 +3,10 @@
    controls all move together.
 
    The system is the instrument: white keys (paper surfaces), black keys
-   (structure — text, rules, borders, primary controls), and three muted ink
-   marks for status. Chroma never appears except where a verdict already has
-   words behind it. */
+   (structure — text, rules, borders, primary controls), two muted inks for
+   verdicts, and one warm hue — gold — for neutral information and for the
+   pointer's arrival. Chroma never appears except where the interface
+   already has words behind it. */
 :root {
   /* Surfaces: page ground, card stock, and the greys for hover, gated, and
      pressed states. */
@@ -41,21 +42,34 @@
   /* Secondary text on an ink fill (the landing's Practice door). */
   --on-action-muted: #cfcfcf;
 
-  /* Verdicts: three muted inks, none of them a stock success/warning/danger
-     hue. Green marks a correct answer, ochre a lesson that is still gated,
-     rose a run that came up short. */
+  /* Verdicts: two muted inks, and deliberately only two. A round in this
+     product resolves to correct or wrong, so green marks a right answer and
+     an unlocked lesson, red a run that came up short. There is no third
+     "caution" hue because there is no third outcome: a gated lesson is not a
+     failure and not a warning — it is neutral information, and it wears gold
+     below. A colour that means "be careful" would tell the learner they did
+     something wrong when all they did was not have the streak yet. */
   --ok: #45775c;
   --ok-bg: #edf2ee;
-  --warn: #8a6a1f;
-  --warn-bg: #f4efe0;
   --danger: #9c3f47;
   --danger-ink: #7c2f36;
   --danger-bg: #f7ecee;
 
-  /* Brand: the same ochre under a name of its own. `--warn` means "this
-     lesson is gated" — if the mark borrowed it, retheming the gate would
-     silently retheme the logo. Same value, separate reason. */
-  --brand: #8a6a1f;
+  /* Gold: the one warm hue, named for the colour rather than for one of its
+     jobs — it used to be split across a brand token and a warning token that
+     happened to share a value, and both names described a role, not the hue.
+
+     It carries three things, all of which mean "here is information" or
+     "here is somewhere you can go", never "caution":
+       · neutral information — the "Locked" stamps, which stay supplementary
+         to the word "Locked" and the row's aria-disabled, never a
+         replacement for either, so the lock survives without colour;
+       · the mark's notehead — the brand's one chromatic element;
+       · the interactive accent — a text link turns gold under the cursor.
+     One value can honestly serve all three precisely because none of them is
+     a verdict. `--gold-bg` is the wash that sits behind the stamps. */
+  --gold: #8a6a1f;
+  --gold-bg: #f4efe0;
 
   /* Countdown ring: the full track circle and the arc that consumes with the
      remaining time. Retheme here — the component carries no colour of its
@@ -260,8 +274,10 @@ a {
   background: var(--ink);
 }
 
-/* The one warm colour in the product, on the one shape that carries it.
-   `fill` is inherited, so the single ellipse inside picks it up. */
+/* The one warm colour in the product, on the shape that first carried it.
+   `fill` is inherited, so the single ellipse inside picks it up. Gold now
+   also marks neutral info and link hover, but the mark is still the only
+   place it is a *form* rather than an edge or a word. */
 .brand-mark__notehead {
   position: absolute;
   top: 50%;
@@ -271,7 +287,7 @@ a {
   width: calc(var(--brand-mark-note) * 4 / 3);
   height: var(--brand-mark-note);
   transform: translateY(-50%);
-  fill: var(--brand);
+  fill: var(--gold);
 }
 
 /* The wordmark: the name on a line. `max-content` keeps the rule the name's
@@ -359,11 +375,15 @@ a {
   background: var(--surface);
   color: var(--ink);
   text-decoration: none;
-  transition: background-color 120ms ease;
+  transition: background-color 120ms ease, color 120ms ease;
 }
 
+/* Hover answers in gold — the interactive accent. The white key's whole
+   surface is the target, so the tint lands on its text as well as its
+   ground, and rides the same 120ms the background already takes. */
 .home__door:hover {
   background: var(--surface-hover);
+  color: var(--gold);
 }
 
 .home__door-title {
@@ -387,8 +407,13 @@ a {
   color: var(--on-action);
 }
 
+/* The black key is the one exception to the gold hover, and it is a
+   contrast decision, not a stylistic one: `--gold` on `--ink-700` is about
+   2.7:1, under the 3:1 floor even for large text. The accent gives way to
+   legibility and the key stays white on hover. */
 .home__door--ink:hover {
   background: var(--ink-700);
+  color: var(--on-action);
 }
 
 .home__door--ink .home__door-lede {
@@ -451,12 +476,16 @@ a {
   background: var(--surface);
   color: inherit;
   text-decoration: none;
-  transition: border-color 120ms ease, background-color 120ms ease;
+  transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease;
 }
 
+/* Gold again: a link that is already answering the pointer turns its text
+   with its edge. The row stays a link, not a warning, and the hover never
+   has to be read as a verdict. */
 a.lessons__lesson-body:hover {
   border-color: var(--line-strong);
   background: var(--surface-hover);
+  color: var(--gold);
 }
 
 .lessons__lesson--locked .lessons__lesson-body {
@@ -480,14 +509,16 @@ a.lessons__lesson-body:hover {
 }
 
 /* The lock affordance: a stamped tag, so a locked row reads as gated at a
-   glance. Ochre is the only chroma on the list, and the word "Locked"
-   carries the meaning on its own. */
+   glance. The word "Locked" is the cue — it survives grayscale,
+   forced-colours mode, and a screen reader — and the gold edge and wash only
+   reinforce it. Gold here means "neutral information", not "caution": the row
+   is gated, not wrong, and the stamp must still read without its colour. */
 .lessons__lesson-lock {
   padding: 0.1rem 0.55rem;
-  border: 1px solid var(--warn);
+  border: 1px solid var(--gold);
   border-radius: 2px;
-  background: var(--warn-bg);
-  color: var(--warn);
+  background: var(--gold-bg);
+  color: var(--gold);
   font-size: var(--text-xs);
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -540,12 +571,13 @@ a.lessons__lesson-body:hover {
   background: var(--surface);
   color: inherit;
   text-decoration: none;
-  transition: border-color 120ms ease, background-color 120ms ease;
+  transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease;
 }
 
 a.practice-hub__topic-body:hover {
   border-color: var(--line-strong);
   background: var(--surface-hover);
+  color: var(--gold);
 }
 
 .practice-hub__topic--locked .practice-hub__topic-body {
@@ -583,16 +615,16 @@ a.practice-hub__topic-body:hover {
   color: var(--ink-400);
 }
 
-/* The lock affordance: the lesson list's stamped tag, same size, same ochre,
+/* The lock affordance: the lesson list's stamped tag, same size, same gold,
    so a gated row reads as gated at a glance — and the word "Locked" carries
    the meaning on its own, with or without the colour. */
 .practice-hub__topic-lock {
   flex: 0 0 auto;
   padding: 0.1rem 0.55rem;
-  border: 1px solid var(--warn);
+  border: 1px solid var(--gold);
   border-radius: 2px;
-  background: var(--warn-bg);
-  color: var(--warn);
+  background: var(--gold-bg);
+  color: var(--gold);
   font-size: var(--text-xs);
   font-weight: 700;
   letter-spacing: 0.05em;
