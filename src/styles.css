@@ -1,5 +1,5 @@
 /* The palette in one place. Every rule below draws from these tokens, so a
-   shade is changed once and the Home list, the game shell, and the round
+   shade is changed once and the lesson list, the game shell, and the round
    controls all move together.
 
    The system is the instrument: white keys (paper surfaces), black keys
@@ -38,6 +38,8 @@
   --action-hover: #2f3237;
   --action-soft: #e8e8e5;
   --on-action: #ffffff;
+  /* Secondary text on an ink fill (the landing's Practice door). */
+  --on-action-muted: #cfcfcf;
 
   /* Verdicts: three muted inks, none of them a stock success/warning/danger
      hue. Green marks a correct answer, ochre a lesson that is still gated,
@@ -119,10 +121,10 @@ a {
   outline-offset: 2px;
 }
 
-/* ---------- Home ---------- */
+/* ---------- Home (landing) ---------- */
 
-/* Masthead: title + lede, closed by a thick black rule so the first section
-   reads as content rather than as a continuation of the header. */
+/* Masthead: title + lede, closed by a thick black rule so the doors below
+   read as content rather than as a continuation of the header. */
 .home__header {
   padding-bottom: 1rem;
   border-bottom: 2px solid var(--ink);
@@ -133,9 +135,100 @@ a {
   color: var(--ink-600);
 }
 
+/* The two doors share one frame, split by a 1px ink gap the way two piano
+   keys sit in one keyboard: a white key (Lessons) and a black key (Practice,
+   filled with the same ink as the app's primary controls). Each door is a
+   single link — the whole key is the target, never a card with a nested
+   button. The gap color is the frame's ink showing through. */
+.home__doors {
+  display: grid;
+  gap: 1px;
+  margin-top: 2rem;
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  background: var(--ink);
+  overflow: hidden;
+}
+
+/* Side by side only when there is room for two keys; stacked full-width is
+   the default so a phone gets two unmissable targets. */
+@media (min-width: 40rem) {
+  .home__doors {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.home__door {
+  display: grid;
+  gap: 0.3rem;
+  padding: 1.1rem 1.2rem;
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+  transition: background-color 120ms ease;
+}
+
+.home__door:hover {
+  background: var(--surface-hover);
+}
+
+.home__door-title {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-size: var(--text-xl);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+}
+
+.home__door-lede {
+  color: var(--ink-600);
+  font-size: var(--text-md);
+}
+
+/* The black key: ink fill, white title, muted white lede — the same material
+   the app already uses for the control it most wants pressed. */
+.home__door--ink {
+  background: var(--ink);
+  color: var(--on-action);
+}
+
+.home__door--ink:hover {
+  background: var(--ink-700);
+}
+
+.home__door--ink .home__door-lede {
+  color: var(--on-action-muted);
+}
+
+/* The global ink focus ring would vanish on the ink door, so it flips to
+   the on-action white to stay visible on both keys. */
+.home__door--ink:focus-visible {
+  outline-color: var(--on-action);
+}
+
+/* ---------- Lessons ---------- */
+
+/* Same rhythm the Home list carried before the split: a back link, then a
+   masthead whose lede quotes the threshold the streak counts score against. */
+.lessons__back {
+  display: inline-block;
+  margin-bottom: 1.25rem;
+}
+
+.lessons__header {
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--ink);
+}
+
+.lessons__lede {
+  margin: 0;
+  color: var(--ink-600);
+}
+
 /* Section names are labels, not headings competing with lesson titles, so
    they keep the UI face under the display face h2 carries. */
-.home__section-title {
+.lessons__section-title {
   margin: 2rem 0 0.75rem;
   font-family: var(--font-ui);
   font-size: var(--text-xs);
@@ -145,7 +238,7 @@ a {
   color: var(--ink);
 }
 
-.home__lessons {
+.lessons__list {
   display: grid;
   gap: 0.6rem;
   margin: 0;
@@ -153,7 +246,7 @@ a {
   list-style: none;
 }
 
-.home__lesson-body {
+.lessons__lesson-body {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
@@ -167,12 +260,12 @@ a {
   transition: border-color 120ms ease, background-color 120ms ease;
 }
 
-a.home__lesson-body:hover {
+a.lessons__lesson-body:hover {
   border-color: var(--line-strong);
   background: var(--surface-hover);
 }
 
-.home__lesson--locked .home__lesson-body {
+.lessons__lesson--locked .lessons__lesson-body {
   color: var(--ink-400);
   background: var(--surface-sunken);
   border-style: dashed;
@@ -180,11 +273,11 @@ a.home__lesson-body:hover {
 }
 
 /* Long titles wrap instead of pushing the count out of the row. */
-.home__lesson-title {
+.lessons__lesson-title {
   min-width: 0;
 }
 
-.home__lesson-progress {
+.lessons__lesson-progress {
   flex: 0 0 auto;
   color: var(--ink-600);
   font-size: var(--text-sm);
@@ -193,9 +286,9 @@ a.home__lesson-body:hover {
 }
 
 /* The lock affordance: a stamped tag, so a locked row reads as gated at a
-   glance. Ochre is the only chroma on the Home list, and the word "Locked"
+   glance. Ochre is the only chroma on the list, and the word "Locked"
    carries the meaning on its own. */
-.home__lesson-lock {
+.lessons__lesson-lock {
   padding: 0.1rem 0.55rem;
   border: 1px solid var(--warn);
   border-radius: 2px;
@@ -208,7 +301,7 @@ a.home__lesson-body:hover {
   white-space: nowrap;
 }
 
-.home__lesson-meta {
+.lessons__lesson-meta {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -225,51 +318,11 @@ a.home__lesson-body:hover {
   color: var(--ink-500);
 }
 
-/* ---------- Endless practice ---------- */
-
-/* Home's practice entry. Deliberately its own block rather than a section or
-   a lesson row: it is a mode, not a lesson, so it carries no lock state, no
-   streak count, and no place in the catalog order. */
-.home__practice {
-  margin-top: 2rem;
-  padding: 1rem 1.1rem;
-  border: 1px solid var(--line);
-  border-radius: 2px;
-  background: var(--surface);
-}
-
-.home__practice-title {
-  margin: 0 0 0.25rem;
-  font-size: var(--text-xl);
-  line-height: 1.25;
-}
-
-.home__practice-lede {
-  margin: 0 0 0.75rem;
-  color: var(--ink-600);
-  font-size: var(--text-md);
-}
-
-.home__practice-link {
-  display: inline-block;
-  padding: 0.5rem 1.1rem;
-  border: 1px solid var(--ink);
-  border-radius: 2px;
-  background: var(--ink);
-  color: var(--on-action);
-  font-weight: 600;
-  text-decoration: none;
-  transition: background-color 120ms ease, border-color 120ms ease;
-}
-
-.home__practice-link:hover {
-  border-color: var(--action-hover);
-  background: var(--action-hover);
-}
-
 /* Practice is a game shell with a score instead of a streak and a run that
    never completes, so it reuses the game-shell classes and only adds the two
-   pieces of text that are its own. */
+   pieces of text that are its own. Its entry point is the landing's Practice
+   door; until T3's topic hub lands, nothing on /practice needs page styles
+   of its own. */
 .practice-shell__score {
   margin: 0;
   color: var(--ink-600);
@@ -492,7 +545,7 @@ a.home__lesson-body:hover {
 
 /* ---------- Round controls ---------- */
 
-/* Answer controls speak the same language as the Home list: white surfaces,
+/* Answer controls speak the same language as the lesson list: white surfaces,
    black borders, a 2px radius, one fill for anything the learner acts on.
    The buttons all start from one released-control base — app typeface,
    shared radius, the shell's 120ms edge transition — and then split into the
@@ -551,7 +604,7 @@ a.home__lesson-body:hover {
 }
 
 /* A revealed round locks every control structurally; visually that is the
-   same gated grey Home gives a locked lesson, never a control that vanishes.
+   same gated grey the lesson list gives a locked lesson, never a control that vanishes.
    The border steps back to the soft grey so a locked control cannot be
    mistaken for one that still answers. */
 .note-pick__confirm:disabled,

@@ -134,6 +134,20 @@ describe("App: history routing serves clean deep links", () => {
     expect(title(host)).toBe(catalog[0]!.title);
   });
 
+  it("sends the 'All lessons' back link to the lesson list, not the landing", async () => {
+    // `/` is now a two-door landing with no lesson rows, so a back link that
+    // promises "All lessons" must resolve to `/lessons`. Asserted through the
+    // history router so the href is clean rather than hash-prefixed.
+    window.history.pushState(null, "", "/lesson/1");
+
+    const host = mount(() => <App />);
+    await waitFor(() => host.querySelector(".game-shell") !== null, "lesson shell");
+
+    const back = host.querySelector(".game-page__back");
+    expect(back?.getAttribute("href")).toBe("/lessons");
+    expect(back?.textContent?.trim()).toBe("All lessons");
+  });
+
   it("renders Home from the bare pathname /", async () => {
     const host = mount(() => <App />);
 

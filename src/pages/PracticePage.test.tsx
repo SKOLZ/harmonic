@@ -46,7 +46,8 @@ describe("PracticePage", () => {
     expect(host.querySelector(".practice-page")).not.toBeNull();
     const back = host.querySelector(".practice-page a");
     expect(back?.getAttribute("href")).toBe("/");
-    expect(back?.textContent?.trim()).toBe("All lessons");
+    // Practice is not a lesson: its way out must not promise "All lessons".
+    expect(back?.textContent?.trim()).toBe("Back to home");
     // Nothing lesson-shaped: the route never resolves through the catalog.
     expect(host.querySelector(".game-page")).toBeNull();
     expect(host.textContent).not.toContain("Lesson not found");

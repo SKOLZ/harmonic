@@ -30,7 +30,7 @@ export default function GamePage() {
 
   return (
     <main class="game-page">
-      <A class="game-page__back" href="/">
+      <A class="game-page__back" href="/lessons">
         All lessons
       </A>
       <Show when={lesson()} fallback={<h1>Lesson not found</h1>}>
