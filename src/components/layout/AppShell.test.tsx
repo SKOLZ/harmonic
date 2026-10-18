@@ -207,36 +207,35 @@ describe("App shell: T3 layout contract", () => {
     expect(wordmark).not.toContain("border");
   });
 
-  it("keeps the navbar on the page measure, widens the footer, and lets the two hubs stretch", () => {
-    // The navbar keeps the 42rem cap deliberately: the user praised that the
-    // landing's content lines up with the navbar, so dropping the cap here
-    // would break exactly the alignment being protected. What stretches is
-    // the two hubs, and the footer the user called too narrow.
+  it("gives every surface the same centered measure, so nothing is an island", () => {
+    // One column, top to bottom: navbar, main, and footer all cap at 42rem
+    // and center. Below that measure `max-width` stops binding and each
+    // surface fills the viewport, which is the responsive behaviour asked
+    // for — a cap never forces a minimum width.
     const nav = block("\\.app-shell__nav");
     expect(nav, ".app-shell__nav has a declaration block").not.toBe("");
     expect(nav).toContain("max-width: 42rem");
+    expect(nav).toContain("margin: 0 auto");
+
     const footer = block("\\.app-shell__footer");
     expect(footer, ".app-shell__footer has a declaration block").not.toBe("");
-    expect(footer).not.toContain("42rem");
+    expect(footer).toContain("max-width: 42rem");
+    // The footer centers through left/right auto rather than `0 auto`, and
+    // the top auto doubles as the push that pins it to the shell's bottom.
+    expect(footer).toContain("margin: auto auto 0");
 
-    // The two hubs opt out of main's page measure and reach the page edges,
-    // which is what "stretch to the borders" asked for.
-    const lessonsHub = block("main\\.lessons");
-    expect(lessonsHub, "the lessons hub overrides main's measure").not.toBe("");
-    expect(lessonsHub).toContain("max-width: none");
-    const practiceHub = block("main\\.practice-hub");
-    expect(practiceHub, "the practice hub overrides main's measure").not.toBe("");
-    expect(practiceHub).toContain("max-width: none");
-
-    // ...and main's own 42rem measure survives untouched for `/` and for the
-    // game surfaces (/lesson/:id, /practice/:slug), which the user did not
-    // ask to widen.
     const pageMeasure = block("main");
     expect(pageMeasure, "main keeps its declaration block").not.toBe("");
     expect(pageMeasure).toContain("max-width: 42rem");
+    expect(pageMeasure).toContain("margin: 0 auto");
+
+    // The hubs carry no override of their own — they inherit main's measure.
+    // A block here would mean something opted out again and went edge-to-edge.
+    expect(block("main\\.lessons"), "the lessons hub has no width override").toBe("");
+    expect(block("main\\.practice-hub"), "the practice hub has no width override").toBe("");
   });
 
-  it("widens the footer, stacks its links, drops their underline, and turns them gold on hover", () => {
+  it("stacks the footer links, drops their underline, and turns them gold on hover", () => {
     const links = block("\\.app-shell__footer-links");
     expect(links, ".app-shell__footer-links has a declaration block").not.toBe("");
     expect(links).toContain("flex-direction: column");

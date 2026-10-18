@@ -236,16 +236,21 @@ a {
   text-decoration: none;
 }
 
-/* Footer: the brand block on one side, the two destinations on the other,
-   at the shell's full measure. The brand's 16rem basis is what stacks them
-   on a phone — without it a 320px footer squeezes the line into a four-word
-   column beside the links. */
+/* Footer: the brand block on one side, the two destinations on the other.
+   The brand's 16rem basis is what stacks them on a phone — without it a
+   320px footer squeezes the line into a four-word column beside the links.
+
+   The 42rem cap joins the navbar and main so every surface shares one
+   measure. The margin does double duty: left/right auto centers the column,
+   and the top auto pushes the footer to the bottom of the shell when the
+   page is short. */
 .app-shell__footer {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem 1.5rem;
+  max-width: 42rem;
   margin: auto auto 0;
   padding: 1.5rem 1.25rem 2rem;
   font-size: var(--text-sm);
@@ -298,16 +303,10 @@ a {
   color: var(--gold);
 }
 
-/* The two hubs fill the shell's measure. `main` keeps its 42rem page measure
-   for the landing and the game surfaces (a gameplay field wants a stable,
-   narrow width), and these two pages — lists of destinations, not a reading
-   column or a playfield — opt out of it to reach the same edges the navbar
-   and the footer now define. Same 1.25rem horizontal padding as both, so
-   nav, page, and footer still share one edge. */
-main.lessons,
-main.practice-hub {
-  max-width: none;
-}
+/* The hubs carry no width rule of their own: `main`'s 42rem measure already
+   covers them, and every surface — navbar, page, footer — shares that one
+   column so their edges line up top to bottom. A cap never forces a minimum
+   width, so below 42rem each surface simply fills the viewport. */
 
 /* ---------- Brand (T2) ---------- */
 
