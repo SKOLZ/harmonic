@@ -1,0 +1,162 @@
+# Practice topics and a two-door landing page
+
+## Objective
+
+Split practice away from the lesson chain into a topic-based area gated by lesson
+progress, and reduce the homepage to a short landing page that offers exactly two
+options: **Lessons** and **Practice**.
+
+## Problem
+
+Practice is currently a single mode entered directly from one link on the homepage.
+There is no notion of a practice *topic*, no way to gate practice content behind
+lesson progress, and the homepage doubles as the 39-row lesson list — so practice
+and lessons compete for space on the same page rather than reading as two
+different places.
+
+## Why
+
+The user wants practice to become a first-class, topic-based area: topics unlock
+as the learner progresses through the lessons, the topic that exists today is
+available from the start, and topics built later appear according to which lessons
+are unlocked. Both lessons and practice must remain reachable from the homepage,
+which should be short.
+
+**User decision (2026-10-18): the homepage is a short landing page offering
+lessons and practice as two options.** (This was one of two candidates — the
+other being a flat homepage with a practice section — and the landing-page
+shape won because more topics are expected later and the homepage currently
+carries 39 rows.)
+
+## Constraints
+
+- `UNLOCK_THRESHOLD` and the streak-of-10 mechanic are unchanged.
+- Lesson URLs and ordinal resolution (`/lesson/1`…`/lesson/39`) are unchanged.
+- The existing practice mode's behavior is unchanged — only its *entry* and
+  framing change. Its no-leak aria contract (`Staff notation, treble clef, 1 note`)
+  is load-bearing and must not name pitches.
+- Follow the T9 design system: black as structural color, ≤2px border radius
+  everywhere, Fraunces/Archivo type, muted status hues. The landing page and both
+  hubs must not reintroduce Bootstrap-era defaults.
+- Existing suite is **1356 tests / 86 files**. No regressions; the three
+  invariant suites need zero edits.
+- Delegated writers run the verification commands; the parent owns git and `odd/**`.
+
+## Scope
+
+### In
+- A practice **topic registry** with per-topic unlock conditions.
+- Unlock evaluation reusing the existing progress store.
+- `/practice` as a topic hub listing topics with lock state.
+- `/practice/:slug` running a single topic.
+- `/lessons` hosting the lesson chain list.
+- `/` reduced to a short two-option landing page.
+- Tests covering unlock gating, routing, and the landing page.
+
+### Out
+- Building new practice gameplay/topics (the user will build those later; this
+  change ships the *mechanism* and moves the existing mode in as the first topic).
+- Changing the lesson chain, streak mechanic, or any lesson content.
+- Changing the practice mode's round generation or aria contract.
+- Publishing, PR creation, or remote operations.
+
+## Task list
+
+| # | Task | Route | Status |
+| --- | --- | --- | --- |
+| T1 | Practice topic registry + lesson-based unlock model | writer | **done** |
+| T2 | Two-door landing page + move the lesson list to `/lessons` | writer | pending |
+| T3 | `/practice` topic hub + `/practice/:slug` route | writer | pending |
+
+### Route rationale
+- T1 is the data layer every later task reads; it lands first so the hub has a
+  real unlock contract to render against.
+- T2 changes the route table and the homepage; it must precede T3 so the practice
+  hub is added to a settled route structure rather than churned twice.
+- T3 wires the registry into a hub and runs a topic, so it closes the feature.
+
+## Task details
+
+### T1 — Topic registry and unlock model
+
+New module (suggested `src/lib/practice/topics.ts`) defining:
+
+```ts
+interface PracticeTopic {
+  slug: string;
+  title: string;
+  lede: string;
+  /** "open" = available from the start; "lesson" = gated on that lesson's unlock. */
+  unlock: { kind: "open" } | { kind: "lesson"; ordinal: number };
+}
+```
+
+- **Unlock semantics: a lesson-gated topic unlocks when the lesson it names is
+  unlocked**, reusing `isUnlocked(ordinal - 1, catalog)` — the same rule the
+  chain already uses, so "based on the unlocked lessons" means exactly one
+  definition of unlocked.
+- **Locked topics are SHOWN with their lock state**, mirroring the existing
+  `.home__lesson--locked` / "Locked" treatment on lessons, so practice and
+  lessons teach the same visual language for gated content.
+- The registry ships exactly one entry today: the existing note-guessing mode,
+  `kind: "open"`. Adding a later topic must be a registry entry plus its round
+  source — no structural change.
+- Gating is exercised by **fixture topics in tests** (a topic gated on a lesson
+  that is and is not unlocked), since no gated topic ships yet. An untested
+  mechanism would rot.
+
+### T2 — Two-door landing page and `/lessons`
+
+- `/` becomes a **short landing page**: masthead plus two options, *Lessons* and
+  *Practice*, each leading to its hub. No lesson rows on `/`.
+- The lesson list currently rendered by `Home.tsx` moves to a `/lessons` page,
+  preserving the section grouping, locked treatment, and per-lesson progress
+  display exactly as they behave today.
+- The landing page must be visually deliberate under the T9 system — it is the
+  first screen now, so it carries the design. Apply the `frontend-design` skill;
+  two options means two clear choices, not a card grid.
+- `Home.test.tsx` asserts today that the practice link is never gated by lesson
+  progress; that intent must survive as "neither landing option is gated".
+
+### T3 — Practice hub and topic route
+
+- `/practice` becomes the **topic hub**: one row per registry entry, showing
+  title, lede, and lock state; open topics are links, locked topics are marked
+  and not navigable (with an accessible, non-color-only lock cue).
+- `/practice/:slug` renders the topic. Unknown slug → not-found branch consistent
+  with how lessons handle an out-of-range ordinal.
+- The existing note-guessing mode is reached as the open topic; its behavior and
+  aria contract are unchanged.
+- Home's *Practice* option links to `/practice`.
+
+## Acceptance criteria
+
+1. `/` shows a short landing page with exactly two options and no lesson list.
+2. `/lessons` renders the full chain with locking and progress unchanged.
+3. `/practice` lists topics with visible lock states; `/practice/:slug` runs one.
+4. The existing note-guessing topic is available to a brand-new learner.
+5. A lesson-gated topic is locked until its lesson unlocks, and unlocks with it.
+6. Both *Lessons* and *Practice* are reachable from `/`.
+7. Every route above is covered by tests; `npm test`, `npm run typecheck`, and
+   `npm run build` all pass with no regression from 1356.
+8. No aria label names a pitch, duration, or correct answer.
+
+## Delivery
+
+- Branch `feat/music-theory-minigames`, no remote, no PR requested →
+  **`single-pr`**; existing size gates do not apply.
+- One work-unit commit per task, Conventional Commit messages, no AI attribution.
+
+## Forecast
+
+~900 authored lines across three tasks (registry + tests, page split + moved
+tests, hub + routing tests). Recorded as a forecast only; under `single-pr` the
+400-line delivery heuristic has no chain to trigger.
+
+## Progress
+
+| Task | Evidence | Tier | Commit |
+| --- | --- | --- | --- |
+| T1 | Parent spot check: `npm test` → **1365 passed (87 files)**, typecheck clean, build succeeds. New `src/lib/practice/topics.ts` exports `PracticeTopic`, `isTopicUnlocked(topic, catalog, progress)`, and `practiceTopics`. **The unlock rule is not restated anywhere** — `isTopicUnlocked` routes a plain `ProgressState` through a read-only `StorageLike` adapter into the store's **own** `isUnlocked(ordinal - 1, catalog)`, so `UNLOCK_THRESHOLD` and the streak comparison live in exactly one place. A triangulation test asserts verdict-for-verdict equality with the store across `[0, 1, THRESHOLD-1, THRESHOLD, THRESHOLD+3]`, so the adapter cannot silently diverge. **Gating is proven with fixture topics**, not shipped topics: no lesson-gated topic exists yet, and leaving the mechanism unexercised would let it rot. The registry holds **exactly one** entry (`slug: "note-guessing"`, `unlock: { kind: "open" }`), with title and lede reusing today's Home copy so T3 mirrors existing wording. RED observed as an import-resolution failure before the module existed; GREEN at 9 tests. Tier: **medium**, `under_budget`, 3 paths / 344 lines → writer self-verification. | _backfill at T2_ |
+| T2 | _backfill at T2_ | | |
+| T3 | _backfill at T3_ | | |
