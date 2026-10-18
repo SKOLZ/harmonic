@@ -114,6 +114,6 @@ every failure has argued for: at 20px, fewer strokes read as cleaner.
 
 | Task | Evidence | Tier | Commit |
 | --- | --- | --- | --- |
-| T1 | RED 19 failed / 44 passed — every failure a pinned retired contract (old viewBox, stem rect, no ledger, BrandMark still under the wordmark, 3 marks on Home) → GREEN 63 passed. `npm test`: **1438 passed (93 files)**, up 3. `npm run typecheck`: clean. `npm run build`: passed. Zero `<rect>` remains in the brand. Invariant suites untouched. | RDD off (global) — no review; ordinary checks green | _backfill at T1_ |
+| T1 | RED 19 failed / 44 passed — every failure a pinned retired contract (old viewBox, stem rect, no ledger, BrandMark still under the wordmark, 3 marks on Home) → GREEN 63 passed. `npm test`: **1438 passed (93 files)**, up 3. `npm run typecheck`: clean. `npm run build`: passed. Zero `<rect>` remains in the brand. Invariant suites untouched. | RDD off (global) — no review; ordinary checks green | ad3f6f5 |
 
 ## Status: COMPLETE
