@@ -116,6 +116,15 @@ body {
 }
 
 main {
+  /* `width: 100%` is load-bearing, not decoration. `.app-shell` is a column
+     flex container and this element carries `margin: 0 auto`; in a column
+     flex container, auto cross-axis margins override `align-items: stretch`.
+     With stretch cancelled, `width: auto` resolves to fit-content, so the
+     surface is only ever as wide as its content demands — which is why the
+     short-text hubs on /lessons and /practice read narrow. An explicit width
+     defeats that. `max-width` still centers it, and below 42rem the 100%
+     still fills the viewport, so nothing here forces a minimum width. */
+  width: 100%;
   max-width: 42rem;
   margin: 0 auto;
   padding: 2rem 1.25rem 4rem;
@@ -184,6 +193,8 @@ a {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+  /* Same fit-content trap as `main` — see the note there. */
+  width: 100%;
   max-width: 42rem;
   margin: 0 auto;
   padding: 0.75rem 1.25rem;
@@ -250,6 +261,8 @@ a {
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem 1.5rem;
+  /* Same fit-content trap as `main` — see the note there. */
+  width: 100%;
   max-width: 42rem;
   margin: auto auto 0;
   padding: 1.5rem 1.25rem 2rem;

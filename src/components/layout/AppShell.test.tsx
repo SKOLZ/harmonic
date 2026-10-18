@@ -208,17 +208,22 @@ describe("App shell: T3 layout contract", () => {
   });
 
   it("gives every surface the same centered measure, so nothing is an island", () => {
-    // One column, top to bottom: navbar, main, and footer all cap at 42rem
-    // and center. Below that measure `max-width` stops binding and each
-    // surface fills the viewport, which is the responsive behaviour asked
-    // for — a cap never forces a minimum width.
+    // The load-bearing declaration here is `width: 100%`. The shell is a
+    // column flex container, and in a column flex container auto cross-axis
+    // margins override `align-items: stretch`. With stretch cancelled, the
+    // item's `width: auto` resolves to fit-content — so a surface only ever
+    // becomes as wide as its content demands, which is why the short-text
+    // hubs read narrow. An explicit width defeats that resolution; the cap
+    // still centers it, and below 42rem it still fills the viewport.
     const nav = block("\\.app-shell__nav");
     expect(nav, ".app-shell__nav has a declaration block").not.toBe("");
+    expect(nav).toContain("width: 100%");
     expect(nav).toContain("max-width: 42rem");
     expect(nav).toContain("margin: 0 auto");
 
     const footer = block("\\.app-shell__footer");
     expect(footer, ".app-shell__footer has a declaration block").not.toBe("");
+    expect(footer).toContain("width: 100%");
     expect(footer).toContain("max-width: 42rem");
     // The footer centers through left/right auto rather than `0 auto`, and
     // the top auto doubles as the push that pins it to the shell's bottom.
@@ -226,6 +231,7 @@ describe("App shell: T3 layout contract", () => {
 
     const pageMeasure = block("main");
     expect(pageMeasure, "main keeps its declaration block").not.toBe("");
+    expect(pageMeasure).toContain("width: 100%");
     expect(pageMeasure).toContain("max-width: 42rem");
     expect(pageMeasure).toContain("margin: 0 auto");
 
