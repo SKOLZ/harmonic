@@ -7,11 +7,12 @@ import BrandMark from "./BrandMark";
 
 /**
  * The mark is the brand's one memorable element: a staff rule carrying a
- * single gold notehead. These tests pin its two shapes of restraint — one
- * shape (a lone ellipse, no clef, no stem, no illustration) and one warm
- * colour (`--gold`, the accent's own token, so the hue is named for what it
- * is rather than for one of its jobs) — plus the width contract: one rule by
- * default, five only when a caller asks for the full staff.
+ * single gold note. These tests pin its two shapes of restraint — one note
+ * and nothing else (an asymmetric notehead and its stem: no clef, no flag,
+ * no beam, no second glyph) and one warm colour (`--gold`, the accent's own
+ * token, so the hue is named for what it is rather than for one of its
+ * jobs) — plus the width contract: one rule by default, five only when a
+ * caller asks for the full staff.
  *
  * Colour lives in styles.css, so the token contract is read the same way
  * CountdownRing's reduced-motion contract is: straight from the stylesheet.
@@ -44,18 +45,21 @@ function block(selector: string): string {
 }
 
 describe("BrandMark", () => {
-  it("draws one staff rule carrying one notehead — the mark at wordmark scale", () => {
+  it("draws one staff rule carrying one note — the mark at wordmark scale", () => {
     const host = mount(() => <BrandMark />);
     const mark = host.querySelector(".brand-mark")!;
 
     expect(mark.querySelectorAll(".brand-mark__rule")).toHaveLength(1);
     expect(mark.querySelectorAll(".brand-mark__notehead")).toHaveLength(1);
 
-    // One shape: the notehead is a single tilted ellipse. No stem, no clef,
-    // no staff lines beyond the one rule it sits on — nothing illustrated.
+    // One note and nothing else: an asymmetric notehead (a path — two arcs
+    // of different curvature meeting at the tips, the way an engraver cuts
+    // a notehead, never a symmetric ellipse) plus its stem. No clef, no
+    // flag, no beam, no second glyph.
     const notehead = mark.querySelector(".brand-mark__notehead")!;
-    expect(notehead.querySelectorAll("*")).toHaveLength(1);
-    expect(notehead.querySelector("ellipse")).not.toBeNull();
+    expect(notehead.querySelectorAll("path")).toHaveLength(1);
+    expect(notehead.querySelectorAll("rect")).toHaveLength(1);
+    expect(notehead.querySelectorAll("*")).toHaveLength(2);
   });
 
   it("draws the full five-line staff only when a caller asks for lines={5}", () => {

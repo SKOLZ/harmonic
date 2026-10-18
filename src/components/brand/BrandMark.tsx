@@ -14,14 +14,19 @@ export interface BrandMarkProps {
 }
 
 /**
- * The brand mark: one ochre notehead sitting on a staff rule.
+ * The brand mark: one gold note sitting on a staff rule.
  *
  * The geometry is borrowed from notation rather than illustrated — the rule
- * is a staff line, the notehead is a single ellipse tilted like a real
- * notehead (one shape), and the only colour it carries is `--brand`, the
- * app's one warm hue under its own name so a retheme of the gate colour
- * cannot retheme the logo. The rules stay structural ink; everything around
- * the mark keeps the existing hairline.
+ * is a staff line, the notehead is an asymmetric path (two arcs of
+ * different curvature meeting at the tips, fuller at the lower left and
+ * tapering toward the upper right, the way an engraver cuts a notehead),
+ * and its stem is one thin rectangle rising from the right edge. That
+ * asymmetry plus the stem is what makes the shape read as a note at a
+ * glance; a symmetric oval on a rule reads as a bullet on a line. The only
+ * colour either shape carries is `--gold`, the app's one warm hue under its
+ * own name so a retheme of any status colour cannot retheme the logo. The
+ * rules stay structural ink; everything around the mark keeps the existing
+ * hairline.
  *
  * Decorative by contract: `aria-hidden`, no role, no label, no text. It
  * names no pitch, no duration, and no answer, and it adds nothing for
@@ -38,9 +43,12 @@ export default function BrandMark(props: BrandMarkProps) {
   return (
     <span class={classes()} aria-hidden="true">
       <For each={rules()}>{() => <span class="brand-mark__rule" />}</For>
-      <svg class="brand-mark__notehead" viewBox="0 0 16 12">
-        {/* One shape: a notehead's tilted ellipse, sized to sit on the rule. */}
-        <ellipse cx="8" cy="6" rx="7" ry="4.6" transform="rotate(-20 8 6)" />
+      <svg class="brand-mark__notehead" viewBox="0 0 16 20">
+        {/* One note, two shapes: the notehead's asymmetric head — two arcs
+            of different curvature meeting at the tips, fatter at the lower
+            left — and its stem, one thin rectangle off the right edge. */}
+        <path d="M3.2 15.9 C4.88 10.76 8.08 9.56 12.8 12.1 C12.9 18.8 1.77 18.8 3.2 15.9 Z" />
+        <rect x="11.7" y="3.5" width="1.1" height="9.5" />
       </svg>
     </span>
   );
