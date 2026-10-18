@@ -134,7 +134,7 @@ describe("App shell: the brand frames every route", () => {
       const mark = wordmark.querySelector(".brand-mark");
       expect(mark, path).not.toBeNull();
       expect(mark!.querySelectorAll(".brand-mark__rule"), path).toHaveLength(1);
-      expect(mark!.querySelectorAll(".brand-mark__notehead"), path).toHaveLength(1);
+      expect(mark!.querySelectorAll(".brand-mark__glyph"), path).toHaveLength(1);
       expect(mark!.getAttribute("aria-hidden"), path).toBe("true");
     });
 
@@ -146,7 +146,7 @@ describe("App shell: the brand frames every route", () => {
         "Harmonic",
       );
       expect(footer.querySelector(".brand-mark__rule"), path).not.toBeNull();
-      expect(footer.querySelector(".brand-mark__notehead"), path).not.toBeNull();
+      expect(footer.querySelector(".brand-mark__glyph"), path).not.toBeNull();
 
       const line = footer.querySelector(".app-shell__footer-line");
       expect(line, path).not.toBeNull();

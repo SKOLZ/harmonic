@@ -6,19 +6,16 @@ import { afterEach, describe, expect, it } from "vitest";
 import BrandMark from "./BrandMark";
 
 /**
- * The mark is the brand's one memorable element: a gold dot resting on a
- * staff rule. Two drawn noteheads were rejected in visual review — first a
- * symmetric ellipse, then an asymmetric two-arc path — for the same reason
- * both times: a small drawn glyph has nowhere to hide. So the mark draws
- * nothing. The wordmark carries the brand, and the gold lives in one
- * circle rendered in CSS — the one shape that cannot look strange at any
- * size.
+ * The mark is the brand's one memorable element: a gold note — the shared
+ * NoteGlyph — resting on a staff rule. Three forms were rejected in visual
+ * review (a symmetric ellipse, an asymmetric two-arc path, a CSS circle)
+ * before the glyph earned its place, so the geometry budget stays fixed:
+ * one svg, one tilted notehead, one stem, one viewBox — the same shape at
+ * wordmark scale and at hero scale. The wordmark carries the name; the
+ * note carries the gold.
  *
- * These tests pin the shape of that restraint — one circle and nothing
- * else (no svg, no path, no rect, no second glyph) and one warm colour
- * (`--gold`, the accent's own token, so the hue is named for what it is
- * rather than for one of its jobs) — plus the width contract: one rule by
- * default, five only when a caller asks for the full staff.
+ * These tests pin the shape of that restraint, plus the width contract:
+ * one rule by default, five only when a caller asks for the full staff.
  *
  * Colour lives in styles.css, so the token contract is read the same way
  * CountdownRing's reduced-motion contract is: straight from the stylesheet.
@@ -51,40 +48,28 @@ function block(selector: string): string {
 }
 
 describe("BrandMark", () => {
-  it("renders one staff rule carrying one gold dot — the mark at wordmark scale", () => {
+  it("renders one staff rule carrying one gold note — the mark at wordmark scale", () => {
     const host = mount(() => <BrandMark />);
     const mark = host.querySelector(".brand-mark")!;
 
     expect(mark.querySelectorAll(".brand-mark__rule")).toHaveLength(1);
-    expect(mark.querySelectorAll(".brand-mark__dot")).toHaveLength(1);
+    expect(mark.querySelectorAll(".brand-mark__glyph")).toHaveLength(1);
   });
 
-  it("draws nothing: no svg, no path, no rect, no second shape", () => {
+  it("seats the shared note glyph: one svg, one notehead, one stem, nothing else", () => {
     const host = mount(() => <BrandMark lines={5} />);
     const mark = host.querySelector(".brand-mark")!;
 
-    // The whole geometry budget of the brand is now one circle, and even
-    // that is a declaration in styles.css rather than a drawn glyph. Two
-    // noteheads failed review in a row; nothing here may be drawable again.
-    expect(mark.querySelector("svg")).toBeNull();
-    expect(mark.querySelectorAll("path, rect, circle, ellipse, line, polygon, polyline")).toHaveLength(
-      0,
-    );
-
-    const dot = mark.querySelector(".brand-mark__dot")!;
-    expect(dot.querySelectorAll("*")).toHaveLength(0);
-    expect(dot.textContent).toBe("");
-  });
-
-  it("keeps the legacy slot name the shell and landing suites pin", () => {
-    // AppShell.test.tsx and Home.test.tsx sit outside this change's edit
-    // surface and still query `.brand-mark__notehead`. The dot carries that
-    // class as an alias so those suites keep passing untouched; drop it only
-    // when they are renamed together with it.
-    const host = mount(() => <BrandMark />);
-    const mark = host.querySelector(".brand-mark")!;
-
-    expect(mark.querySelectorAll(".brand-mark__notehead")).toHaveLength(1);
+    // The mark's entire drawn geometry is the NoteGlyph — the same shape
+    // the wordmark seats in its "o" — so the brand says one thing at both
+    // sizes. No second shape family may accrete beside it.
+    const svg = mark.querySelector("svg")!;
+    expect(svg, "the mark carries the glyph").not.toBeNull();
+    expect(mark.querySelectorAll("svg")).toHaveLength(1);
+    expect(svg.querySelectorAll("ellipse")).toHaveLength(1);
+    expect(svg.querySelectorAll("rect")).toHaveLength(1);
+    expect(svg.querySelectorAll("path, circle, line, polygon, polyline, text")).toHaveLength(0);
+    expect(svg.textContent).toBe("");
   });
 
   it("draws the full five-line staff only when a caller asks for lines={5}", () => {
@@ -92,7 +77,7 @@ describe("BrandMark", () => {
     const mark = host.querySelector(".brand-mark")!;
 
     expect(mark.querySelectorAll(".brand-mark__rule")).toHaveLength(5);
-    expect(mark.querySelectorAll(".brand-mark__dot")).toHaveLength(1);
+    expect(mark.querySelectorAll(".brand-mark__glyph")).toHaveLength(1);
   });
 
   it("stays decoration: aria-hidden, no role, no label, no text", () => {
@@ -117,7 +102,7 @@ describe("BrandMark: the colour contract", () => {
   it("declares gold as the one warm accent, and leaves no warning hue in the palette", () => {
     const css = styles();
 
-    // Gold is named for the colour, not for a job: the dot, the "Locked"
+    // Gold is named for the colour, not for a job: the note, the "Locked"
     // stamps, and link hover all draw from this single declaration.
     expect(css).toMatch(/--gold:\s*#[0-9a-f]{6}\s*;/);
     expect(css).toMatch(/--gold-bg:\s*#[0-9a-f]{6}\s*;/);
@@ -133,25 +118,38 @@ describe("BrandMark: the colour contract", () => {
     expect(css).not.toMatch(/--brand:/);
   });
 
-  it("paints the dot with the gold token, never with a status colour", () => {
-    const dot = block("\\.brand-mark__dot");
+  it("paints the note with the gold token, never with a status colour", () => {
+    const head = block("\\.note-glyph__head");
 
-    expect(dot, "the dot has a declaration block").not.toBe("");
-    expect(dot).toContain("background: var(--gold)");
+    expect(head, "the notehead has a declaration block").not.toBe("");
+    expect(head).toContain("fill: var(--gold)");
     // Verdict colours carry a meaning the mark must never assert.
-    expect(dot).not.toMatch(/var\(--(ok|danger|warn)\)/);
+    expect(head).not.toMatch(/var\(--(ok|danger|warn)\)/);
   });
 
-  it("renders the dot as a circle sized by the mark's own em token", () => {
-    // One shape, one length: the diameter is a single em token, so a
-    // context scales the whole mark with font-size alone and the circle
-    // stays a circle — width and height are the same declaration.
-    const dot = block("\\.brand-mark__dot");
+  it("sizes the glyph by one em token, so a context scales the whole mark", () => {
+    // One length, em-driven: the hero changes only font-size, and the
+    // note grows with its rules the way a head does on a real staff.
+    const mark = block("\\.brand-mark");
+    const glyph = block("\\.brand-mark__glyph");
 
-    expect(dot, "the dot has a declaration block").not.toBe("");
-    expect(dot).toContain("border-radius: 50%");
-    expect(dot).toContain("width: var(--brand-mark-dot)");
-    expect(dot).toContain("height: var(--brand-mark-dot)");
+    expect(mark, "the mark has a declaration block").not.toBe("");
+    expect(mark).toContain("--brand-mark-glyph:");
+    expect(glyph, "the glyph has a declaration block").not.toBe("");
+    expect(glyph).toContain("height: var(--brand-mark-glyph)");
+    // The notehead centre is the viewBox centre, so this lands it on the
+    // middle rule — the same maths the retired CSS dot used.
+    expect(glyph).toContain("top: 50%");
+    expect(glyph).toContain("translateY(-50%)");
+  });
+
+  it("retires the CSS dot entirely — no token, no class, no reference", () => {
+    // The circle that briefly replaced the drawn heads is gone: the glyph
+    // is the mark's only form, so nothing may keep the old geometry alive.
+    const css = styles();
+
+    expect(css).not.toMatch(/--brand-mark-dot/);
+    expect(block("\\.brand-mark__dot")).toBe("");
   });
 
   it("draws the rules in the app's structural ink", () => {

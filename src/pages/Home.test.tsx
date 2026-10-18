@@ -98,7 +98,7 @@ describe("Home: the landing page", () => {
     expect(staff, "the hero's rule is the staff").not.toBeNull();
     expect(staff!.classList.contains("brand-mark")).toBe(true);
     expect(staff!.querySelectorAll(".brand-mark__rule")).toHaveLength(5);
-    expect(staff!.querySelectorAll(".brand-mark__notehead")).toHaveLength(1);
+    expect(staff!.querySelectorAll(".brand-mark__glyph")).toHaveLength(1);
 
     // Decoration only: no role, no label — the mark can never name a pitch,
     // a duration, or an answer, and it contributes no text to be read.
