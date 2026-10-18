@@ -110,3 +110,48 @@ describe("App shell: navbar and footer frame every route", () => {
     });
   }
 });
+
+/**
+ * T2's retheme of T1's plain frame: the navbar wordmark is the name on a
+ * staff rule, and the footer carries the same brand block plus one line of
+ * what the product is. The anchor counts and the two-destination contract
+ * above are untouched — the brand is added inside them, not instead of them.
+ */
+describe("App shell: the brand frames every route", () => {
+  for (const { path, page } of shellRoutes) {
+    it(`sets the navbar wordmark in the brand at ${path}`, async () => {
+      const host = await mountRoute(path, page);
+      const wordmark = host.querySelector('nav a[href="/"]')!;
+
+      expect(wordmark.querySelector(".brand-wordmark__name")?.textContent?.trim()).toBe(
+        "Harmonic",
+      );
+
+      // The companion is the single-rule mark: one rule, one notehead —
+      // never the full staff, which belongs to the hero alone.
+      const mark = wordmark.querySelector(".brand-mark");
+      expect(mark, path).not.toBeNull();
+      expect(mark!.querySelectorAll(".brand-mark__rule"), path).toHaveLength(1);
+      expect(mark!.querySelectorAll(".brand-mark__notehead"), path).toHaveLength(1);
+      expect(mark!.getAttribute("aria-hidden"), path).toBe("true");
+    });
+
+    it(`gives the footer the brand, one line, and the two links at ${path}`, async () => {
+      const host = await mountRoute(path, page);
+      const footer = host.querySelector("footer")!;
+
+      expect(footer.querySelector(".brand-wordmark__name")?.textContent?.trim()).toBe(
+        "Harmonic",
+      );
+      expect(footer.querySelector(".brand-mark__rule"), path).not.toBeNull();
+      expect(footer.querySelector(".brand-mark__notehead"), path).not.toBeNull();
+
+      const line = footer.querySelector(".app-shell__footer-line");
+      expect(line, path).not.toBeNull();
+      expect(line!.textContent!.trim().length, path).toBeGreaterThan(0);
+
+      // The brand block adds no destinations: still exactly two links.
+      expect(footer.querySelectorAll("a"), path).toHaveLength(2);
+    });
+  }
+});

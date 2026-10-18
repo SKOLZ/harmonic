@@ -1,12 +1,18 @@
 import { A } from "@solidjs/router";
 import type { ParentProps } from "solid-js";
+import Wordmark from "../brand/Wordmark";
 
 /**
- * T1's global shell: the navbar and footer every route sits between.
+ * The global shell: navbar and footer framing every routed page, with the
+ * brand now carrying both ends. The navbar's home link is the wordmark —
+ * the name on its staff rule — and the footer repeats the wordmark, one line
+ * of what the product is, and the same two destinations.
  *
- * Deliberately plain — a black hairline under the nav, a quiet footer,
- * existing tokens only. The brand work owns the identity; this frame must
- * not spend the boldness before it lands. The routed page renders through
+ * The destinations themselves are unchanged from T1's plain frame: exactly
+ * three anchors in the navbar (wordmark, Lessons, Practice) and exactly two
+ * in the footer. The wordmark in the footer is deliberately not a link — it
+ * is identity, not a third way out, so the footer's link surface stays the
+ * two routes and nothing more. The routed page renders through
  * `props.children` and keeps its own `main` landmark, so the page-level
  * structure — and the tests that target it — stays intact.
  */
@@ -16,7 +22,7 @@ export default function AppShell(props: ParentProps) {
       <header class="app-shell__header">
         <nav class="app-shell__nav">
           <A class="app-shell__wordmark" href="/">
-            Harmonic
+            <Wordmark />
           </A>
           <ul class="app-shell__menu">
             <li>
@@ -30,8 +36,20 @@ export default function AppShell(props: ParentProps) {
       </header>
       {props.children}
       <footer class="app-shell__footer">
-        <A href="/lessons">Lessons</A>
-        <A href="/practice">Practice</A>
+        <div class="app-shell__footer-brand">
+          <Wordmark class="app-shell__footer-wordmark" />
+          <p class="app-shell__footer-line">
+            Music theory lessons and note-reading practice.
+          </p>
+        </div>
+        <ul class="app-shell__footer-links">
+          <li>
+            <A href="/lessons">Lessons</A>
+          </li>
+          <li>
+            <A href="/practice">Practice</A>
+          </li>
+        </ul>
       </footer>
     </div>
   );

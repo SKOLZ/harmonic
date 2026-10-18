@@ -74,8 +74,45 @@ describe("Home: the landing page", () => {
   it("renders the masthead with the product name", async () => {
     const host = await mountHome();
 
-    expect(host.querySelector("h1")?.textContent?.trim()).toBe("Music Theory Practice");
+    expect(host.querySelector("h1")?.textContent?.trim()).toBe("Harmonic");
     expect(host.querySelector(".home__lede")).not.toBeNull();
+  });
+
+  it("explains the product in plain prose, with the lesson count used exactly once", async () => {
+    const host = await mountHome();
+
+    const lede = host.querySelector(".home__lede");
+    expect(lede, "the landing explains itself").not.toBeNull();
+    expect(lede!.textContent).toContain("39 lessons");
+
+    // 39 is a fact in a sentence, not a stat: one occurrence on the whole
+    // landing, and it lives in the explanation rather than in a number block.
+    expect(host.textContent?.match(/39/g), "the count appears once").toHaveLength(1);
+    expect(lede!.textContent?.match(/39/g), "…and it is the lede's").toHaveLength(1);
+  });
+
+  it("carries the full five-line staff once, as the rule under the explanation", async () => {
+    const host = await mountHome();
+
+    const staff = host.querySelector(".home__staff");
+    expect(staff, "the hero's rule is the staff").not.toBeNull();
+    expect(staff!.classList.contains("brand-mark")).toBe(true);
+    expect(staff!.querySelectorAll(".brand-mark__rule")).toHaveLength(5);
+    expect(staff!.querySelectorAll(".brand-mark__notehead")).toHaveLength(1);
+
+    // Decoration only: no role, no label — the mark can never name a pitch,
+    // a duration, or an answer, and it contributes no text to be read.
+    expect(staff!.getAttribute("aria-hidden")).toBe("true");
+    expect(staff!.getAttribute("role")).toBeNull();
+    expect(staff!.getAttribute("aria-label")).toBeNull();
+    expect(staff!.textContent).toBe("");
+
+    // Name, explanation, mark — then the doors, in that order.
+    const doorsBlock = host.querySelector(".home__doors");
+    expect(doorsBlock).not.toBeNull();
+    expect(
+      staff!.compareDocumentPosition(doorsBlock!) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it("offers exactly two options: Lessons and Practice", async () => {
@@ -136,6 +173,33 @@ describe("Home: neither landing option is gated by lesson progress", () => {
       expect(door.getAttribute("aria-disabled"), href).toBeNull();
     }
   });
+
+  it("renders the identical hero and doors to a brand-new and a finished learner", async () => {
+    // The whole landing, not just the doors: name, explanation, and staff
+    // included, byte for byte. Nothing on `/` may differ once progress
+    // exists — if a count, a lock, or a "continue" ever creeps in, the two
+    // documents stop matching here.
+    const renderLanding = async (): Promise<string> => {
+      window.history.pushState(null, "", "/");
+      const host = mount(() => <App />);
+      await waitFor(() => host.querySelector(".home") !== null, "landing at /");
+      return host.querySelector(".home")!.outerHTML;
+    };
+
+    window.localStorage.clear();
+    const brandNew = await renderLanding();
+    // Sanity: we are comparing the real hero, not two empty strings.
+    expect(brandNew).toContain("Harmonic");
+    expect(brandNew).toContain("home__staff");
+
+    window.localStorage.setItem(
+      PROGRESS_STORAGE_KEY,
+      JSON.stringify({ [catalog[0]!.id]: UNLOCK_THRESHOLD }),
+    );
+    const finished = await renderLanding();
+
+    expect(finished).toBe(brandNew);
+  });
 });
 
 describe("Home: App route resolution", () => {
@@ -147,5 +211,23 @@ describe("Home: App route resolution", () => {
 
     expect(doors(host)).toHaveLength(2);
     expect(host.querySelector(".lessons")).toBeNull();
+  });
+
+  it("draws the full staff exactly once in the whole page, at hero scale", async () => {
+    window.history.pushState(null, "", "/");
+
+    const host = mount(() => <App />);
+    await waitFor(() => host.querySelector(".home") !== null, "landing at /");
+
+    const marks = [...host.querySelectorAll(".brand-mark")];
+    const ruleCount = (mark: Element) => mark.querySelectorAll(".brand-mark__rule").length;
+    const fullStaffs = marks.filter((mark) => ruleCount(mark) === 5);
+
+    expect(fullStaffs, "a second staff would turn the signature into wallpaper").toHaveLength(1);
+    expect(fullStaffs[0]!.closest(".home"), "the staff is the hero's rule").not.toBeNull();
+
+    // The shell keeps the single-rule companion: navbar wordmark and footer
+    // wordmark, both one rule carrying one notehead.
+    expect(marks.filter((mark) => ruleCount(mark) === 1)).toHaveLength(2);
   });
 });
