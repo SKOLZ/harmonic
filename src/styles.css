@@ -130,10 +130,10 @@ main {
      With stretch cancelled, `width: auto` resolves to fit-content, so the
      surface is only ever as wide as its content demands — which is why the
      short-text hubs on /lessons and /practice read narrow. An explicit width
-     defeats that. `max-width` still centers it, and below 42rem the 100%
+     defeats that. `max-width` still centers it, and below 58.75rem the 100%
      still fills the viewport, so nothing here forces a minimum width. */
   width: 100%;
-  max-width: 42rem;
+  max-width: 58.75rem;
   margin: 0 auto;
   padding: 2rem 1.25rem 4rem;
 }
@@ -171,7 +171,7 @@ a {
    The shell's measure is the viewport: navbar, footer, and the two hubs all
    reach the same edges, and the 1.25rem horizontal padding they share is the
    line nav, page, and footer still hold together. The landing and the game
-   surfaces keep `main`'s 42rem page measure — a gameplay field wants a
+   surfaces keep `main`'s 58.75rem page measure — a gameplay field wants a
    stable, narrow width, and the homepage's measure was confirmed as right —
    so the hubs opt out of it below rather than the page measure being
    redefined for everyone. */
@@ -196,7 +196,7 @@ a {
    centre, so the row never read as aligned. Centred, the wordmark and the
    two controls share one midline.
 
-   The 42rem cap stays on purpose. The user praised that the landing's
+   The 58.75rem cap stays on purpose. The user praised that the landing's
    content lines up with the navbar, and that alignment exists only while
    both share this measure. What was asked to stretch is the two hubs, not
    the bar above them. */
@@ -207,7 +207,7 @@ a {
   gap: 1rem;
   /* Same fit-content trap as `main` — see the note there. */
   width: 100%;
-  max-width: 42rem;
+  max-width: 58.75rem;
   margin: 0 auto;
   padding: 0.75rem 1.25rem;
 }
@@ -277,7 +277,7 @@ a {
 }
 
 /* The column inside the bar: what the footer was before it stretched. It
-   carries the shell's 42rem measure — the same cap as the navbar's column
+   carries the shell's 58.75rem measure — the same cap as the navbar's column
    and as `main`, so their edges still line up top to bottom — plus the
    padding and the row that puts the brand block on one side and the two
    destinations on the other. The brand's 16rem basis is what stacks them on
@@ -291,7 +291,7 @@ a {
   gap: 1rem 1.5rem;
   /* Same fit-content trap as `main` — see the note there. */
   width: 100%;
-  max-width: 42rem;
+  max-width: 58.75rem;
   margin: 0 auto;
   padding: 1.5rem 1.25rem 2rem;
 }
@@ -371,10 +371,10 @@ a {
   width: auto;
 }
 
-/* The hubs carry no width rule of their own: `main`'s 42rem measure already
+/* The hubs carry no width rule of their own: `main`'s 58.75rem measure already
    covers them, and every surface — navbar, page, footer — shares that one
    column so their edges line up top to bottom. A cap never forces a minimum
-   width, so below 42rem each surface simply fills the viewport. */
+   width, so below 58.75rem each surface simply fills the viewport. */
 
 /* ---------- Brand (T2) ---------- */
 
@@ -482,7 +482,13 @@ a {
    contributes no line-box leading to the row it sits in. */
 .brand-wordmark svg {
   display: block;
-  height: 1.2em;
+  /* A fixed integer pixel height, not an em-derived one. At the navbar's
+     18px context a `1.2em` mark landed on 21.6px, and a fractional pixel
+     height rasterises the scaled paths soft — that is the blur. 30px is
+     also the size asked for, and against the asset's 12-unit tall viewBox
+     it scales by exactly 2.5x, which is what lets the framing rules land
+     on whole device pixels rather than 1.25px ones. */
+  height: 30px;
   width: auto;
 }
 

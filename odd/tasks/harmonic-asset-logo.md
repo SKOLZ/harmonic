@@ -115,3 +115,25 @@ writer at a time. Each spans several files and needs structural judgement.
 | T2 | RED 20 failed / 17 passed — every failure the new contract (missing credit anchor, `--bar`/`--bar-line`, footer column, header ground, measure re-scope) → GREEN 37/37. `npm test`: **1448 passed (93 files)**, up 9. `npm run typecheck`: exit 0. `npm run build`: passed. Footer anchor count re-scoped 2 → 3, destinations still pinned by href and text. `--bar-line` reuses `--surface-sunken`'s hex so only one new hex entered the sheet. | RDD off (global) — no review; ordinary checks green | 377e262 |
 
 ## Status: COMPLETE
+
+## Tuning follow-up
+
+Visual review found the mark blurry and too small, and the page measure too
+narrow. All three were value-level faults:
+
+- **Blur.** `.brand-wordmark svg` sized itself with `height: 1.2em`, which at
+  the navbar's 18px context landed on **21.6px** — a fractional pixel height,
+  which rasterises scaled paths soft. It is now a fixed `30px`, the size asked
+  for, and integer.
+- **The framing rules were 1.25px.** The asset draws them with
+  `stroke-width=".5"` in a 12-unit tall viewBox, so at 30px they scaled to
+  1.25 device pixels. `stroke-width=".4"` lands on exactly **1.0px**, and the
+  mark's width comes out to a clean 145px. The scale is a flat 2.5x at the new
+  height, which is what makes that arithmetic exact.
+- **Measure.** `42rem` → `58.75rem` on `main`, `.app-shell__nav`, and
+  `.app-shell__footer-column`, with every comment and test pin updated to
+  match so the number cannot drift between the sheet and the assertions.
+
+Note: `--text-lg` on `.app-shell__wordmark` no longer sizes anything visible —
+the mark is pixel-sized now. It is left in place as harmless inherited context
+rather than removed as churn.

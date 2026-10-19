@@ -236,7 +236,7 @@ describe("App shell: T3 layout contract", () => {
     expect(nav, ".app-shell__nav has a declaration block").not.toBe("");
     // The reported defect: baseline alignment pushed the links off the
     // wordmark's centre line. The row now centres on its cross axis. The
-    // navbar's measure is asserted separately — it keeps the 42rem cap so
+    // navbar's measure is asserted separately — it keeps the 58.75rem cap so
     // the landing still lines up with it.
     expect(nav).toContain("align-items: center");
 
@@ -263,11 +263,11 @@ describe("App shell: T3 layout contract", () => {
     // item's `width: auto` resolves to fit-content — so a surface only ever
     // becomes as wide as its content demands, which is why the short-text
     // hubs read narrow. An explicit width defeats that resolution; the cap
-    // still centers it, and below 42rem it still fills the viewport.
+    // still centers it, and below 58.75rem it still fills the viewport.
     const nav = block("\\.app-shell__nav");
     expect(nav, ".app-shell__nav has a declaration block").not.toBe("");
     expect(nav).toContain("width: 100%");
-    expect(nav).toContain("max-width: 42rem");
+    expect(nav).toContain("max-width: 58.75rem");
     expect(nav).toContain("margin: 0 auto");
 
     const footer = block("\\.app-shell__footer");
@@ -278,18 +278,18 @@ describe("App shell: T3 layout contract", () => {
     // but the top auto is still the push that pins it to the shell's bottom.
     expect(footer).toContain("margin: auto auto 0");
 
-    // The measure itself lives on the column the bar wraps: same 42rem, same
+    // The measure itself lives on the column the bar wraps: same 58.75rem, same
     // fit-content defeat, same centering — re-scoped, not dropped.
     const footerColumn = block("\\.app-shell__footer-column");
     expect(footerColumn, ".app-shell__footer-column has a declaration block").not.toBe("");
     expect(footerColumn).toContain("width: 100%");
-    expect(footerColumn).toContain("max-width: 42rem");
+    expect(footerColumn).toContain("max-width: 58.75rem");
     expect(footerColumn).toContain("margin: 0 auto");
 
     const pageMeasure = block("main");
     expect(pageMeasure, "main keeps its declaration block").not.toBe("");
     expect(pageMeasure).toContain("width: 100%");
-    expect(pageMeasure).toContain("max-width: 42rem");
+    expect(pageMeasure).toContain("max-width: 58.75rem");
     expect(pageMeasure).toContain("margin: 0 auto");
 
     // The hubs carry no override of their own — they inherit main's measure.
@@ -358,7 +358,7 @@ describe("App shell: the two bars and their hairline", () => {
     expect(column, ".app-shell__footer-column has a declaration block").not.toBe("");
     expect(column).toContain("display: flex");
     expect(column).toContain("padding: 1.5rem 1.25rem 2rem");
-    expect(column).toContain("max-width: 42rem");
+    expect(column).toContain("max-width: 58.75rem");
   });
 
   it("seats the credit in the bar's corner without restating the footer's link ink", () => {

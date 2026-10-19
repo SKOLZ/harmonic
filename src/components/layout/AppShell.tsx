@@ -19,7 +19,7 @@ import skzDsgn from "../../assets/SKZ-DSGN.svg?raw";
  *
  * The footer is the bar: full width, on the same whisper-grey ground as the
  * navbar, closed at the top by the same hairline. Its inner column — the
- * flex row of brand block and links — keeps the shell's 42rem measure, so
+ * flex row of brand block and links — keeps the shell's 58.75rem measure, so
  * the column still lines up with the navbar's and `main`'s. The credit is
  * the bar's own child rather than the column's: it floats in the bar's
  * bottom-right corner, out past the measure, and rides the footer's link

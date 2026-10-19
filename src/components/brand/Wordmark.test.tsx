@@ -114,7 +114,13 @@ describe("Wordmark", () => {
     // its width and height attributes; CSS owns the height and lets the
     // viewBox's aspect ratio follow.
     expect(svg, "the inlined svg has a declaration block").not.toBe("");
-    expect(svg).toContain("height: 1.2em");
+    // A fixed integer pixel height, not an em-derived one: at the navbar's
+    // 18px context a `1.2em` mark landed on 21.6px, and a fractional pixel
+    // height rasterises the scaled paths soft. 30px is also the size the
+    // user asked for, and at the asset's 12-unit tall viewBox it scales by
+    // exactly 2.5x — which is what lets the framing rules land on whole
+    // device pixels.
+    expect(svg).toContain("height: 30px");
     expect(svg).toContain("width: auto");
     expect(svg).toContain("display: block");
   });
