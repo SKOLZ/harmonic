@@ -7,13 +7,14 @@ import BrandMark from "./BrandMark";
 
 /**
  * The mark is the brand's staff at hero scale: ink rules carrying the
- * shared NoteGlyph — a tilted notehead, no stem, no ledger — resting on
+ * shared NoteGlyph — a round notehead, no stem, no ledger — resting on
  * the middle rule. Three forms were rejected in visual review (a symmetric
  * ellipse, an asymmetric two-arc path, a CSS circle) before the glyph
- * earned its place, so the geometry budget stays fixed: one svg, one
- * tilted notehead, one viewBox — the same shape the wordmark seats in its
- * ledger-crossed "o". The wordmark carries the name; the note carries the
- * gold.
+ * earned its place, and the tilted ellipse that followed was retired when
+ * the user asked for a plain round head — the same circle the supplied
+ * wordmark asset draws, so both seats carry one drawing. The geometry
+ * budget stays fixed: one svg, one circle, one viewBox. The wordmark
+ * carries the name; the note carries the gold.
  *
  * These tests pin the shape of that restraint, plus the width contract:
  * one rule by default, five only when a caller asks for the full staff.
@@ -57,23 +58,23 @@ describe("BrandMark", () => {
     expect(mark.querySelectorAll(".brand-mark__glyph")).toHaveLength(1);
   });
 
-  it("seats the shared note glyph: one svg, one notehead, no stem, no ledger", () => {
+  it("seats the shared note glyph: one svg, one round notehead, no stem, no ledger", () => {
     const host = mount(() => <BrandMark lines={5} />);
     const mark = host.querySelector(".brand-mark")!;
 
-    // The mark's entire drawn geometry is the NoteGlyph — the same shape
-    // the wordmark seats in its "o" — so the brand says one thing at both
-    // sizes. No second shape family may accrete beside it.
+    // The mark's entire drawn geometry is the NoteGlyph — the same round
+    // head the supplied wordmark asset draws — so the brand says one thing
+    // at both seats. No second shape family may accrete beside it.
     const svg = mark.querySelector("svg")!;
     expect(svg, "the mark carries the glyph").not.toBeNull();
     expect(mark.querySelectorAll("svg")).toHaveLength(1);
-    expect(svg.querySelectorAll("ellipse")).toHaveLength(1);
+    expect(svg.querySelectorAll("circle")).toHaveLength(1);
     // The hero's note sits ON its staff, so it wears no ledger line — the
-    // ledger is the wordmark-o's escape mark — and the stem is gone from
+    // ledger is the outside-the-staff mark — and the stem is gone from
     // the shared form for good.
     expect(svg.querySelectorAll("line")).toHaveLength(0);
     expect(svg.querySelectorAll("rect")).toHaveLength(0);
-    expect(svg.querySelectorAll("path, circle, polygon, polyline, text")).toHaveLength(0);
+    expect(svg.querySelectorAll("ellipse, path, polygon, polyline, text")).toHaveLength(0);
     expect(svg.textContent).toBe("");
   });
 

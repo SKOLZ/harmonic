@@ -85,7 +85,11 @@ describe("App shell: navbar and footer frame every route", () => {
 
       const wordmark = nav.querySelector<HTMLAnchorElement>('a[href="/"]');
       expect(wordmark, path).not.toBeNull();
-      expect(wordmark!.textContent?.trim(), path).toBe("Harmonic");
+      // The wordmark is the supplied asset inlined, so the name it carries
+      // is its own image label rather than the link's text.
+      const mark = wordmark!.querySelector('svg[role="img"]');
+      expect(mark, path).not.toBeNull();
+      expect(mark!.getAttribute("aria-label"), path).toBe("Harmonic");
 
       const lessons = nav.querySelector<HTMLAnchorElement>('a[href="/lessons"]');
       expect(lessons?.textContent?.trim(), path).toBe("Lessons");
@@ -114,11 +118,13 @@ describe("App shell: navbar and footer frame every route", () => {
 });
 
 /**
- * T2's retheme of T1's plain frame: the navbar wordmark is the name framed
- * between two hairline staff rules, and the footer carries the same brand
- * block plus one line of what the product is. The anchor counts and the
- * two-destination contract above are untouched — the brand is added inside
- * them, not instead of them.
+ * The brand frames every route: the navbar wordmark and the footer's brand
+ * block are both the supplied `harmonic_logo.svg` asset, inlined so the
+ * stylesheet can decide the ink it wears. The asset's root carries the
+ * accessible name the old text run used to supply, so both seats still
+ * read "Harmonic". The anchor counts and the two-destination contract
+ * above are untouched — the brand is added inside them, not instead of
+ * them.
  */
 describe("App shell: the brand frames every route", () => {
   for (const { path, page } of shellRoutes) {
@@ -126,32 +132,29 @@ describe("App shell: the brand frames every route", () => {
       const host = await mountRoute(path, page);
       const wordmark = host.querySelector('nav a[href="/"]')!;
 
-      expect(wordmark.querySelector(".brand-wordmark__name")?.textContent?.trim()).toBe(
-        "Harmonic",
-      );
+      const mark = wordmark.querySelector(".brand-wordmark svg");
+      expect(mark, path).not.toBeNull();
+      expect(mark!.getAttribute("role"), path).toBe("img");
+      expect(mark!.getAttribute("aria-label"), path).toBe("Harmonic");
 
-      // The wordmark is its own mark: no companion BrandMark rides beneath
-      // the name. Its "o" is the shared stemless glyph, crossed by its
-      // ledger line, and it stays decoration beside the real letter.
+      // The asset is the whole mark: no companion BrandMark rides beneath
+      // the name, and none of the retired text composition is left.
       expect(wordmark.querySelector(".brand-mark"), path).toBeNull();
-      const glyph = wordmark.querySelector(".brand-wordmark__glyph");
-      expect(glyph, path).not.toBeNull();
-      expect(glyph!.querySelectorAll("line"), path).toHaveLength(1);
-      expect(glyph!.querySelectorAll("rect"), path).toHaveLength(0);
-      expect(glyph!.getAttribute("aria-hidden"), path).toBe("true");
+      expect(wordmark.querySelector(".brand-wordmark__name"), path).toBeNull();
+      expect(wordmark.querySelector(".brand-wordmark__glyph"), path).toBeNull();
+      expect(wordmark.textContent!.trim(), path).toBe("");
     });
 
     it(`gives the footer the brand, one line, and the two links at ${path}`, async () => {
       const host = await mountRoute(path, page);
       const footer = host.querySelector("footer")!;
 
-      expect(footer.querySelector(".brand-wordmark__name")?.textContent?.trim()).toBe(
-        "Harmonic",
-      );
-      // No companion mark beneath the footer's name either — the framed
-      // name, with its ledger-crossed "o", is the whole brand block.
+      // The footer's brand block is the same asset: one mark, one name.
+      const mark = footer.querySelector(".brand-wordmark svg");
+      expect(mark, path).not.toBeNull();
+      expect(mark!.getAttribute("role"), path).toBe("img");
+      expect(mark!.getAttribute("aria-label"), path).toBe("Harmonic");
       expect(footer.querySelector(".brand-mark"), path).toBeNull();
-      expect(footer.querySelector(".brand-wordmark__glyph"), path).not.toBeNull();
 
       const line = footer.querySelector(".app-shell__footer-line");
       expect(line, path).not.toBeNull();

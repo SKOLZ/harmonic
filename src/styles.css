@@ -237,11 +237,11 @@ a {
   background: var(--action-hover);
 }
 
-/* The wordmark, restyled for the brand: the name leads the bar in the
-   display face, framed between its two hairline rules. The link's own
-   underline is dropped so the framing is the only line-work around the
-   name — and it stays a text link, never a button: identity is not a
-   control. */
+/* The wordmark, restyled for the brand: the supplied asset leads the bar,
+   and the link's own underline is dropped so the mark's own rules are the
+   only line-work around the name — and it stays a text link, never a
+   button: identity is not a control. The link is also the mark's ink: the
+   asset paints itself `currentColor`, so this colour is the wordmark. */
 .app-shell__wordmark {
   color: var(--ink);
   font-size: var(--text-lg);
@@ -324,13 +324,15 @@ a {
 
 /* ---------- Brand (T2) ---------- */
 
-/* The note glyph — the brand's one drawn form. A tilted notehead, crossed
+/* The note glyph — the brand's one drawn form. A round notehead, crossed
    by an optional ledger line — the notation mark for a note outside the
    staff — in a fixed viewBox widened only as far as that line's stroke
-   needs: one drawing, two seats (the wordmark's ledger-crossed "o", the
-   hero staff's bare middle rule), scaled by a single length. The viewBox
-   supplies the aspect ratio, so a context only sets the height —
-   directly, or by inheritance through `em` — and the shape follows. */
+   needs: one drawing, every seat the brand gives it, scaled by a single
+   length. The head is a plain circle because the supplied wordmark asset
+   already draws its note that way — the two must agree, and a tilt is a
+   detail nobody reads at brand sizes. The viewBox supplies the aspect
+   ratio, so a context only sets the height — directly, or by inheritance
+   through `em` — and the shape follows. */
 .note-glyph {
   --note-glyph-size: 1em;
 
@@ -403,59 +405,31 @@ a {
   transform: translateY(-50%);
 }
 
-/* The wordmark: the name framed between two hairline staff rules — the two
-   lines its note has escaped, which is what makes the wordmark its own
-   mark; nothing sits beneath the name. `max-content` keeps the rules the
-   name's own width in every context — inside a stretched grid or flex
-   cell the wordmark would otherwise take the cell's width, and the rules
-   would run on far past the name they are supposed to be framing. */
+/* The wordmark: the supplied asset, inlined, is the whole mark — the
+   letters, the gold note in the "o", and the two hairline rules the name
+   sits between, all in one fixed coordinate system. Nothing here
+   positions a part of it: the composition arrives finished, which is what
+   retires the framing rules, the transparent "o", and the floated glyph
+   that used to seat geometry against font metrics the layout cannot read.
+
+   What a surface still owns is colour and one length. The asset paints
+   its letters and its rules `currentColor`, so this ink is what the mark
+   wears; the gold circle keeps its own fill and is never recoloured. */
 .brand-wordmark {
-  display: inline-grid;
-  width: max-content;
+  display: inline-block;
+  color: var(--ink);
 }
 
-.brand-wordmark__name {
-  font-family: var(--font-display);
-  font-optical-sizing: auto;
-  font-weight: 600;
-  /* Positive tracking, not the usual display tightening: the notehead
-     replacing the "o" is wider than the letter's advance was, so the
-     word needs room or the note presses into the "m" and the "n". */
-  letter-spacing: 0.04em;
-  line-height: 1.05;
-  /* The two framing rules: 1px ink hairlines — the weight of a staff
-     rule, not the weight of a border. The air is tight on purpose, so
-     the rules read as staff lines the text belongs between rather than
-     a box drawn around it. */
-  border-block: 1px solid var(--ink);
-  padding-block: 0.05em;
-}
-
-/* The "o" slot: a real "o", transparent. It keeps the display face's own
-   advance for the letters either side and keeps the letter in the
-   accessible name — only the eye is told to skip it. Transparent ink,
-   not display/visibility/width games, so the slot never collapses. */
-.brand-wordmark__o {
-  position: relative;
-  color: transparent;
-}
-
-/* The note over its slot: centred on the o, a touch taller than the
-   x-height so the head fills the letter's own measure. Its ledger line
-   runs slightly wider than the head — the escape the two framing rules
-   above and below tell. Absolute, so it adds no width of its own. */
-.brand-wordmark__glyph {
-  position: absolute;
-  left: 50%;
-  /* The "o" occupies only the x-height and sits on the baseline, so its
-     visual centre is well below the centre of the inline span's em box.
-     Centering on the span's own midpoint therefore put the note above the
-     letter it replaces; it seats lower to sit on the letter instead. This
-     is the knob to nudge if the note ever rides high or low again. */
-  top: 58%;
-  height: 1.3em;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
+/* One em length drives the mark, so the surface's own font-size scales
+   it — the navbar's link and the footer's brand each set their size, and
+   the mark follows, the way the brand mark scales. The asset ships its
+   own width and height attributes and its viewBox; CSS takes the height
+   and lets the aspect ratio settle the width. Block, so the inlined svg
+   contributes no line-box leading to the row it sits in. */
+.brand-wordmark svg {
+  display: block;
+  height: 1.2em;
+  width: auto;
 }
 
 /* ---------- Home (landing) ---------- */
