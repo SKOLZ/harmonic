@@ -9,12 +9,20 @@
    already has words behind it. */
 :root {
   /* Surfaces: page ground, card stock, and the greys for hover, gated, and
-     pressed states. */
-  --bg: #f4f4f4;
+     pressed states. The ground is white; the cards read against it on their
+     own ink edge. */
+  --bg: #ffffff;
   --surface: #ffffff;
   --surface-hover: #f2f2f2;
   --surface-sunken: #ececec;
   --surface-pressed: #e4e4e4;
+
+  /* Bars: the navbar and the footer sit on a whisper of grey over the white
+     ground, and the rule that closes the navbar and opens the footer is one
+     shade under that bar — a shade, never a contrast step. Both are the
+     structural greys: no new hue, gold stays the only accent. */
+  --bar: #f7f7f7;
+  --bar-line: #ececec;
 
   /* Ink: black is the structural colour. The scale is only for text that
      steps back from it — meta, secondary, disabled. */
@@ -155,10 +163,10 @@ a {
 
 /* ---------- App shell (T1 frame, T3 layout) ---------- */
 
-/* The global frame: navbar above the routed page, quiet footer below.
-   Plain infrastructure by design — a black hairline under the nav, existing
-   tokens only. The brand task owns the identity; this frame must not spend
-   the boldness before it lands.
+/* The global frame: a bar above the routed page and a bar below it, both on
+   the same whisper-grey ground and both closed by the same hairline — the
+   white page shows between them, and the two ends frame it the same way.
+   Quiet by design: two greys and one rule, no new hue.
 
    The shell's measure is the viewport: navbar, footer, and the two hubs all
    reach the same edges, and the 1.25rem horizontal padding they share is the
@@ -173,10 +181,14 @@ a {
   min-height: 100vh;
 }
 
-/* The hairline spans the full width, and the nav inside it now does too —
-   the rule reads as structure rather than as a text underline. */
+/* The bar is full width and the nav's column sits inside it; the rule under
+   it spans the whole edge, so it reads as structure rather than as a text
+   underline. The ground and the rule are the two whisper greys: the rule is
+   a shade under the bar, never a contrast step. The nav below keeps its own
+   measure untouched — the bar is the only thing that stretches. */
 .app-shell__header {
-  border-bottom: 1px solid var(--line);
+  background: var(--bar);
+  border-bottom: 1px solid var(--bar-line);
 }
 
 /* Cross-axis centring is the reported defect: `baseline` lined the links up
@@ -248,15 +260,30 @@ a {
   text-decoration: none;
 }
 
-/* Footer: the brand block on one side, the two destinations on the other.
-   The brand's 16rem basis is what stacks them on a phone — without it a
-   320px footer squeezes the line into a four-word column beside the links.
-
-   The 42rem cap joins the navbar and main so every surface shares one
-   measure. The margin does double duty: left/right auto centers the column,
-   and the top auto pushes the footer to the bottom of the shell when the
-   page is short. */
+/* Footer: the full-width bar, on the same ground and the same hairline as
+   the navbar — mirrored, so the bottom of the shell frames the page the way
+   the top does. It stays a flex item of the shell column, so its width
+   still defeats the fit-content resolution (see `main`), and the margin
+   keeps its old second job: the top auto is the push that pins the bar to
+   the bottom of a short page. */
 .app-shell__footer {
+  position: relative;
+  /* Same fit-content trap as `main` — see the note there. */
+  width: 100%;
+  margin: auto auto 0;
+  background: var(--bar);
+  border-top: 1px solid var(--bar-line);
+  font-size: var(--text-sm);
+}
+
+/* The column inside the bar: what the footer was before it stretched. It
+   carries the shell's 42rem measure — the same cap as the navbar's column
+   and as `main`, so their edges still line up top to bottom — plus the
+   padding and the row that puts the brand block on one side and the two
+   destinations on the other. The brand's 16rem basis is what stacks them on
+   a phone: without it a 320px footer squeezes the line into a four-word
+   column beside the links. */
+.app-shell__footer-column {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
@@ -265,9 +292,8 @@ a {
   /* Same fit-content trap as `main` — see the note there. */
   width: 100%;
   max-width: 42rem;
-  margin: auto auto 0;
+  margin: 0 auto;
   padding: 1.5rem 1.25rem 2rem;
-  font-size: var(--text-sm);
 }
 
 .app-shell__footer-brand {
@@ -315,6 +341,34 @@ a {
    footer's light ground is ~4.6:1, past the 4.5:1 text floor. */
 .app-shell__footer a:hover {
   color: var(--gold);
+}
+
+/* The credit: the SKZ-DSGN mark, floated in the bar's bottom-right corner
+   rather than laid into the column — it is a signature, not a third
+   destination, so it sits outside the measure and outside the row.
+
+   It is inlined rather than shipped as an `<img>` for the same reason the
+   wordmark is: an image's innards are untouchable by CSS and by the
+   pointer, and this mark has to turn with the footer's links. The asset
+   paints itself `currentColor`, so `.app-shell__footer a` — ink at rest,
+   gold on arrival — is the only thing deciding what the mark wears, and
+   this block deliberately has no opinion of its own about that. */
+.app-shell__credit {
+  position: absolute;
+  right: 0.375rem;
+  bottom: 0.5rem;
+  line-height: 0;
+}
+
+/* Height drives; the viewBox supplies the aspect — the mark is tall and
+   narrow, so a width here would only ever fight the ratio. The corner
+   offset keeps the mark inside the strip the column's own 1.25rem padding
+   leaves empty at the bar's right edge: it never reaches the links, and at
+   the 320px floor it still clears them by several pixels. */
+.app-shell__credit-mark svg {
+  display: block;
+  height: 2.5rem;
+  width: auto;
 }
 
 /* The hubs carry no width rule of their own: `main`'s 42rem measure already

@@ -62,7 +62,7 @@ designer credit in the footer.
 | # | Task | Route | Status |
 | --- | --- | --- | --- |
 | T1 | Supplied logo as the wordmark, round notehead | writer | done |
-| T2 | White ground, gray bars, footer credit | writer | pending |
+| T2 | White ground, gray bars, footer credit | writer | done |
 
 ### Route rationale
 Both touch `styles.css` and `AppShell.test.tsx`, so they run sequentially, one
@@ -111,6 +111,7 @@ writer at a time. Each spans several files and needs structural judgement.
 
 | Task | Evidence | Tier | Commit |
 | --- | --- | --- | --- |
-| T1 | RED 24 failed / 28 passed — every failure a new-contract assertion (asset inlined, `role`/`aria-label`, `currentColor`, circle geometry, dead-rule deletion) → GREEN 62 passed. `npm test`: **1439 passed (93 files)**, same count because tests were rewritten rather than added. `npm run typecheck`: clean. `npm run build`: passed. Invariant suites untouched (203 passed). Gold circle `fill="#8a6a1f"` left alone. | RDD off (global) — no review; ordinary checks green | _backfill at T1_ |
-| T2 | White ground, gray bars, footer credit | writer | pending | _backfill at T2_ |
-| T2 | _backfill at T2_ | | |
+| T1 | RED 24 failed / 28 passed — every failure a new-contract assertion (asset inlined, `role`/`aria-label`, `currentColor`, circle geometry, dead-rule deletion) → GREEN 62 passed. `npm test`: **1439 passed (93 files)**, same count because tests were rewritten rather than added. `npm run typecheck`: clean. `npm run build`: passed. Invariant suites untouched (203 passed). Gold circle `fill="#8a6a1f"` left alone. | RDD off (global) — no review; ordinary checks green | 4545810 |
+| T2 | RED 20 failed / 17 passed — every failure the new contract (missing credit anchor, `--bar`/`--bar-line`, footer column, header ground, measure re-scope) → GREEN 37/37. `npm test`: **1448 passed (93 files)**, up 9. `npm run typecheck`: exit 0. `npm run build`: passed. Footer anchor count re-scoped 2 → 3, destinations still pinned by href and text. `--bar-line` reuses `--surface-sunken`'s hex so only one new hex entered the sheet. | RDD off (global) — no review; ordinary checks green | _backfill at T2_ |
+
+## Status: COMPLETE

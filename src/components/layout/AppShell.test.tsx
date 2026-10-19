@@ -100,11 +100,14 @@ describe("App shell: navbar and footer frame every route", () => {
       expect(nav.querySelectorAll("a"), path).toHaveLength(3);
     });
 
-    it(`repeats the two destinations in the footer at ${path}, and nothing more`, async () => {
+    it(`repeats the two destinations in the footer at ${path}, and the credit`, async () => {
       const host = await mountRoute(path, page);
       const footer = host.querySelector("footer")!;
 
-      expect(footer.querySelectorAll("a"), path).toHaveLength(2);
+      // Exactly three: the two app destinations plus the external credit —
+      // the credit is not a third way out of the product, but it is a third
+      // anchor, and the shell says so rather than hiding it.
+      expect(footer.querySelectorAll("a"), path).toHaveLength(3);
       expect(
         footer.querySelector('a[href="/lessons"]')?.textContent?.trim(),
         path,
@@ -160,8 +163,46 @@ describe("App shell: the brand frames every route", () => {
       expect(line, path).not.toBeNull();
       expect(line!.textContent!.trim().length, path).toBeGreaterThan(0);
 
-      // The brand block adds no destinations: still exactly two links.
-      expect(footer.querySelectorAll("a"), path).toHaveLength(2);
+      // The brand block adds no destinations: the count stays at the two
+      // routes plus the credit, nothing else.
+      expect(footer.querySelectorAll("a"), path).toHaveLength(3);
+    });
+  }
+});
+
+/**
+ * The footer's credit: the SKZ-DSGN mark, inlined whole — an `<img>` cannot
+ * be recoloured, and this mark has to wear the footer link's own ink and
+ * turn gold under the pointer like the two links beside it — seated in an
+ * anchor to the designer's site and floated against the footer bar, so the
+ * anchor is the bar's direct child.
+ */
+describe("App shell: the footer carries the SKZ credit", () => {
+  for (const { path, page } of shellRoutes) {
+    it(`floats the SKZ-DSGN mark over an anchor to skolz.dev.ar at ${path}`, async () => {
+      const host = await mountRoute(path, page);
+      const footer = host.querySelector("footer")!;
+      const credit = host.querySelector<HTMLAnchorElement>(
+        'footer a[href="https://skz.dev.ar"]',
+      );
+
+      expect(credit, path).not.toBeNull();
+      // Sits on the bar itself, not inside the measure column: the corner it
+      // floats in belongs to the full-width bar.
+      expect(credit!.parentElement, path).toBe(footer);
+
+      // Inlined, never an image — the mark's innards have to stay reachable.
+      expect(credit!.querySelector("img"), path).toBeNull();
+      const mark = credit!.querySelector("svg");
+      expect(mark, path).not.toBeNull();
+      expect(mark!.getAttribute("role"), path).toBe("img");
+      expect(mark!.getAttribute("aria-label"), path).toBe("SKZ DSGN");
+
+      // The mark paints itself `currentColor`, so the footer's link rule is
+      // the only thing deciding its ink — and its gold hover.
+      const glyph = mark!.querySelector("path");
+      expect(glyph, path).not.toBeNull();
+      expect(glyph!.getAttribute("fill"), path).toBe("currentColor");
     });
   }
 });
@@ -232,10 +273,18 @@ describe("App shell: T3 layout contract", () => {
     const footer = block("\\.app-shell__footer");
     expect(footer, ".app-shell__footer has a declaration block").not.toBe("");
     expect(footer).toContain("width: 100%");
-    expect(footer).toContain("max-width: 42rem");
-    // The footer centers through left/right auto rather than `0 auto`, and
-    // the top auto doubles as the push that pins it to the shell's bottom.
+    // The margin still does double duty, now on the full-width bar: left and
+    // right auto are no longer needed to center it — the column does that —
+    // but the top auto is still the push that pins it to the shell's bottom.
     expect(footer).toContain("margin: auto auto 0");
+
+    // The measure itself lives on the column the bar wraps: same 42rem, same
+    // fit-content defeat, same centering — re-scoped, not dropped.
+    const footerColumn = block("\\.app-shell__footer-column");
+    expect(footerColumn, ".app-shell__footer-column has a declaration block").not.toBe("");
+    expect(footerColumn).toContain("width: 100%");
+    expect(footerColumn).toContain("max-width: 42rem");
+    expect(footerColumn).toContain("margin: 0 auto");
 
     const pageMeasure = block("main");
     expect(pageMeasure, "main keeps its declaration block").not.toBe("");
@@ -261,5 +310,71 @@ describe("App shell: T3 layout contract", () => {
     const hover = block("\\.app-shell__footer a:hover");
     expect(hover, "the footer link hover has a declaration block").not.toBe("");
     expect(hover).toContain("color: var(--gold)");
+  });
+});
+
+/**
+ * The restyle contract: the page ground is white, the navbar and the footer
+ * are two bars that share one whisper-grey ground and one hairline rule — a
+ * shade under the bar, never a contrast step — and the credit rides the
+ * footer bar's corner without inheriting a second opinion about its ink.
+ *
+ * Tokens are asserted by role, never by hex: a shade change has to stay a
+ * one-line edit in `:root`.
+ */
+describe("App shell: the two bars and their hairline", () => {
+  it("names the bar ground and its hairline by role, and paints the page from the ground token", () => {
+    const root = block(":root");
+    expect(root, ":root has a declaration block").not.toBe("");
+    expect(root).toContain("--bar:");
+    expect(root).toContain("--bar-line:");
+
+    // The page is still painted through the ground token — white is the
+    // token's value, not a literal poured into the rule.
+    const body = block("body");
+    expect(body, "body has a declaration block").not.toBe("");
+    expect(body).toContain("background: var(--bg)");
+  });
+
+  it("gives the navbar's header the bar ground and the hairline rule under it", () => {
+    const header = block("\\.app-shell__header");
+    expect(header, ".app-shell__header has a declaration block").not.toBe("");
+    expect(header).toContain("background: var(--bar)");
+    expect(header).toContain("border-bottom: 1px solid var(--bar-line)");
+  });
+
+  it("makes the footer the full-width bar and seats the measure on its inner column", () => {
+    const footer = block("\\.app-shell__footer");
+    expect(footer, ".app-shell__footer has a declaration block").not.toBe("");
+    expect(footer).toContain("background: var(--bar)");
+    expect(footer).toContain("border-top: 1px solid var(--bar-line)");
+    // The corner the credit floats in resolves against the bar, so the bar
+    // is the credit's containing block.
+    expect(footer).toContain("position: relative");
+    // The bar is full width now: the measure left it for the column.
+    expect(footer).not.toContain("max-width");
+
+    const column = block("\\.app-shell__footer-column");
+    expect(column, ".app-shell__footer-column has a declaration block").not.toBe("");
+    expect(column).toContain("display: flex");
+    expect(column).toContain("padding: 1.5rem 1.25rem 2rem");
+    expect(column).toContain("max-width: 42rem");
+  });
+
+  it("seats the credit in the bar's corner without restating the footer's link ink", () => {
+    const credit = block("\\.app-shell__credit");
+    expect(credit, ".app-shell__credit has a declaration block").not.toBe("");
+    expect(credit).toContain("position: absolute");
+    expect(credit).toContain("right: 0.375rem");
+    expect(credit).toContain("bottom: 0.5rem");
+    // Colour is inherited, deliberately: `.app-shell__footer a` already
+    // paints every footer anchor and already turns it gold on arrival, so a
+    // second opinion here would fork the link ink into two places.
+    expect(credit).not.toContain("color");
+
+    // The mark is driven from its height; the viewBox supplies the aspect.
+    const mark = block("\\.app-shell__credit-mark svg");
+    expect(mark, ".app-shell__credit-mark svg has a declaration block").not.toBe("");
+    expect(mark).toContain("height: 2.5rem");
   });
 });
