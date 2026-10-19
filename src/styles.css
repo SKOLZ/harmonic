@@ -11,7 +11,7 @@
   /* Surfaces: page ground, card stock, and the greys for hover, gated, and
      pressed states. The ground is white; the cards read against it on their
      own ink edge. */
-  --bg: #ffffff;
+  --bg: #f7f7f7;
   --surface: #ffffff;
   --surface-hover: #f2f2f2;
   --surface-sunken: #ececec;
@@ -21,7 +21,7 @@
      ground, and the rule that closes the navbar and opens the footer is one
      shade under that bar — a shade, never a contrast step. Both are the
      structural greys: no new hue, gold stays the only accent. */
-  --bar: #f7f7f7;
+  --bar: #ffffff;
   --bar-line: #ececec;
 
   /* Ink: black is the structural colour. The scale is only for text that
@@ -255,6 +255,13 @@ a {
    button: identity is not a control. The link is also the mark's ink: the
    asset paints itself `currentColor`, so this colour is the wordmark. */
 .app-shell__wordmark {
+  /* Flex, not inline: a 30px SVG left on a line box is baseline-aligned,
+     which parks descender space underneath it and lifts the mark above the
+     navbar's centreline — visible at this size, and enough to drop the
+     whole raster onto a fractional pixel. Flex centring removes the line
+     box from the calculation, so the mark and the links share one centre. */
+  display: flex;
+  align-items: center;
   color: var(--ink);
   font-size: var(--text-lg);
   text-decoration: none;
@@ -664,8 +671,10 @@ a {
    with its edge. The row stays a link, not a warning, and the hover never
    has to be read as a verdict. */
 a.lessons__lesson-body:hover {
-  border-color: var(--line-strong);
-  background: var(--surface-hover);
+  /* Gold on arrival — the same gold the card's own text turns. The ground
+     does not move: a card that changes surface under the cursor reads as a
+     different surface, not as the same card paying attention. */
+  border-color: var(--gold);
   color: var(--gold);
 }
 
@@ -752,8 +761,8 @@ a.lessons__lesson-body:hover {
 }
 
 a.practice-hub__topic-body:hover {
-  border-color: var(--line-strong);
-  background: var(--surface-hover);
+  /* Same arrival as the lesson card: gold edge, gold text, white ground. */
+  border-color: var(--gold);
   color: var(--gold);
 }
 

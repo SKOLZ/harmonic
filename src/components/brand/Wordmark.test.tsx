@@ -169,4 +169,22 @@ describe("Wordmark", () => {
 
     expect(host.querySelector("svg")!.getAttribute("viewBox")).toBe("0 0 58 12");
   });
+
+  it("sits the framing rules on the pixel grid, so they stay crisp at any devicePixelRatio", () => {
+    // The rules are strokes in a 12-unit tall viewBox, rendered at 30px — a
+    // flat 2.5x. A stroke is only sharp when its *centre* lands where its
+    // own thickness says it should: a 1px stroke needs a half-pixel centre
+    // so both edges fall on whole pixels. Off that, the edges straddle two
+    // device pixels and antialias into soft grey.
+    //
+    // The design placed them at y=.75 and y=11.15, which render to 1.875px
+    // and 27.875px — off the grid at 2.5x, which is why they still looked
+    // soft after the mark itself was sized in whole pixels. .6 and 11 give
+    // 1.5px and 27.5px, edges clean.
+    //
+    // They also hold at 2x: the scale becomes 5, the stroke 2 device pixels,
+    // and an even stroke wants an integer centre — .6 and 11 give 3 and 55.
+    // One pair of coordinates, both common ratios, no retina special case.
+    expect(asset()).toContain('d="M9.75.6h37.5m4.5 0h6M.25 11h57.5"');
+  });
 });

@@ -137,3 +137,29 @@ narrow. All three were value-level faults:
 Note: `--text-lg` on `.app-shell__wordmark` no longer sizes anything visible —
 the mark is pixel-sized now. It is left in place as harmless inherited context
 rather than removed as churn.
+
+### Second pass — ground swap, card arrival, and the real blur
+
+Four things, three of which turned out to be one problem:
+
+- **The rules were off the pixel grid, not merely thin.** A stroke is sharp
+  only when its *centre* lands where its own thickness says: a 1px stroke
+  needs a half-pixel centre so both edges fall on whole pixels. The design
+  put the rules at y=.75 and y=11.15, which render to **1.875px and 27.875px**
+  at the mark's flat 2.5x — edges straddling two pixels, antialiasing into
+  grey. `.6` and `11` give 1.5px and 27.5px. They also hold at 2x (5x scale,
+  2 device px stroke, integer centres), so retina is not a second case.
+- **The mark was off the centreline, which would have re-broken that grid.**
+  A 30px SVG left inline on a line box is baseline-aligned: descender space
+  parks underneath and lifts it above centre. `.app-shell__wordmark` is flex
+  now, which removes the line box from the calculation — and stops the mark
+  landing on a fractional pixel offset.
+- **Ground swap.** `--bg` and `--bar` exchanged values: grey page, white
+  navbar and footer. No test moved, deliberately — the suite asserts tokens
+  *by role, never by hex* (see the note in `AppShell.test.tsx`), so a shade
+  change is meant to stay a one-line edit in `:root`.
+- **Card arrival.** Both hub cards kept their white ground and now take a
+  gold border, matching the gold their own text already turns. The
+  `background` line is gone rather than set to the surface token: the base
+  rule already paints them white, and restating it would say the same thing
+  twice. `--surface-hover` is untouched — the in-game controls still use it.

@@ -378,3 +378,44 @@ describe("App shell: the two bars and their hairline", () => {
     expect(mark).toContain("height: 2.5rem");
   });
 });
+
+/**
+ * The hub cards arrive on hover by taking a gold border — the same gold the
+ * card's own text already turns. The ground does not move: a card that
+ * changes background under the cursor reads as a different surface, not as
+ * the same card paying attention. White stays white.
+ */
+describe("App shell: the hub cards on arrival", () => {
+  it.each([
+    [".lessons__lesson-body", "the lesson card"],
+    [".practice-hub__topic-body", "the topic card"],
+  ])("turns the %s border gold and leaves its ground alone", (selector, label) => {
+    const base = block(selector.replace(".", "\\."));
+    expect(base, `${label} has a declaration block`).not.toBe("");
+    expect(base, `${label} starts on the surface token`).toContain("background: var(--surface)");
+
+    const hover = block(`${selector.replace(".", "\\.")}:hover`);
+    expect(hover, `${label}'s hover has a declaration block`).not.toBe("");
+    expect(hover, `${label} arrives on the brand gold`).toContain("border-color: var(--gold)");
+    // No ground change at all — not a swap to a hover token, not a repeat
+    // of the surface. The base rule already paints it white.
+    expect(hover, `${label} keeps its white ground`).not.toContain("background");
+  });
+});
+
+/**
+ * The wordmark is a 30px SVG inside an anchor on a flex row. Left as an
+ * inline element it sits on a line box, where baseline alignment parks
+ * descender space underneath and lifts the mark above centre — visible at
+ * 30px, and enough to push the whole raster onto a fractional pixel.
+ * Flex centring removes the line box from the calculation entirely, so the
+ * mark and the links share one centreline.
+ */
+describe("App shell: the wordmark on the navbar centreline", () => {
+  it("centres the wordmark by flex, not by the line box it would otherwise sit on", () => {
+    const wordmark = block("\\.app-shell__wordmark");
+    expect(wordmark, ".app-shell__wordmark has a declaration block").not.toBe("");
+    expect(wordmark).toContain("display: flex");
+    expect(wordmark).toContain("align-items: center");
+  });
+});
