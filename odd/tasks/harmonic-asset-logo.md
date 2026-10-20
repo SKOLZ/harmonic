@@ -163,3 +163,22 @@ Four things, three of which turned out to be one problem:
   `background` line is gone rather than set to the surface token: the base
   rule already paints them white, and restating it would say the same thing
   twice. `--surface-hover` is untouched — the in-game controls still use it.
+
+### Third pass — the letterforms
+
+With the rules on the grid, the letters stood out as soft. That is a
+different class of problem: **a curve has no straight edge to align**, so
+the geometric trick that fixed the rules cannot fix the letters.
+
+The one SVG-level lever is `shape-rendering="geometricPrecision"` on the
+root — `auto` lets the engine pick a faster hinted pass, and hinted
+sampling on letterforms made of many small curves reads as soft. It asks
+for full-quality antialiasing instead. It does not claim pixel-perfect.
+
+Honest limits recorded so they are not rediscovered: the cap height is only
+about **12px** inside the 30px mark (the letters run y≈3.3→8.0 of a 12-unit
+box), and at that size a detailed traced wordmark will antialias regardless
+of declaration. The remaining levers are size — 36px would give a 15px cap
+height — and verifying browser zoom is 100%, because a fractional zoom
+rasterises every vector at a fractional scale while text gets re-hinted,
+which reads exactly as "paths blurry, rules fine".

@@ -187,4 +187,18 @@ describe("Wordmark", () => {
     // One pair of coordinates, both common ratios, no retina special case.
     expect(asset()).toContain('d="M9.75.6h37.5m4.5 0h6M.25 11h57.5"');
   });
+
+  it("asks the renderer for geometric precision rather than its default sampling", () => {
+    // `shape-rendering="auto"` lets the engine choose, and at a 2.5x scale
+    // its choice can be a faster, hinted pass — which on letterforms made
+    // entirely of small curves reads as soft. `geometricPrecision` asks for
+    // full-quality antialiasing with no hinting, which is the whole point
+    // of shipping the wordmark as vector instead of a raster at 30px.
+    //
+    // It does not and cannot snap curves to the pixel grid the way the
+    // framing rules do: a curve has no straight edge to align. This is the
+    // right declaration for the letters, not a claim that they will be
+    // pixel-perfect.
+    expect(asset()).toContain('shape-rendering="geometricPrecision"');
+  });
 });
