@@ -1,156 +1,176 @@
-# Home piano hero — a hook, two keys, and one entrance
+# Home hero — full height, one promise, a quiet ripple
 
 ## Objective
 
-Turn the landing page into a simple, distinctive hero for the piano-themed
-theory product: a catching headline and phrase, exactly two calls to action
-(Lessons and Practice), and a piano keyboard as the page's one memorable
-visual. The brand logo stays in the shell, not in the hero.
+Turn `/` into a full-height hero that fills the space between the navbar and
+the footer: one clear promise, one plain explanation, exactly two actions, and
+a subtle animated dot-grid/ripple backdrop. The staff and keyboard drawing is
+removed.
 
 ## Problem
 
-The current landing is a masthead, a staff, and two framed doors. It is
-tasteful but static and reserved: the product name is the headline, the page
-does not read as a piano surface, and nothing on first view says "music".
-The user asked for a hero that is simple, aesthetic, and animated, with the
-two destinations as the only actions.
-
-## Why
-
-This is the first screen a visitor sees. It has one job: explain the product
-in a sentence and route the visitor to either the lesson chain or the
-note-reading drill. The piano keyboard is the product's own material — the
-app already renders one for note input — so it belongs in the hero as a
-drawn illustration rather than as a new decorative language.
+The first iteration put a five-line staff and a drawn two-octave keyboard
+under the CTAs. The user rejected that composition: the instrument competed
+with the hero instead of supporting it, and the clever title ("The staff,
+decoded.") was not the promise they wanted. The page should be the hero
+alone, with motion living in the background as a small detail.
 
 ## User decisions
 
-- Piano theme.
-- Simple, aesthetic, animated.
-- The hero carries a catching title and phrase, not the logo.
-- Exactly two CTAs: Lessons and Practice.
+- Keep the hero only; remove the staff and the piano keyboard.
+- Use a better title than "The staff, decoded."
+- Make the hero fill the whole window height minus the navbar and footer.
+- Add a subtle gray background animation — a dot grid and/or ripples from a
+  wave — that reads as a small detail, not a second focal point.
+- Keep exactly two CTAs: Lessons and Practice.
+
+## Current design
+
+- Title: **Learn to read music.**
+- Lede: unchanged — **39 lessons take you from the first clef to the last
+  cadence. Practice drills note reading against the clock.**
+- Primary CTA: **Start the lessons** → `/lessons`
+- Secondary CTA: **Practice note reading** → `/practice`
+
+```
+Learn to read music.                      [display]
+39 lessons take you ...                   [lede, max 40rem]
+
+[ Start the lessons ] [ Practice note reading ]
+
+              · · · · · · · · · · · ·     [quiet dot grid + ripple]
+```
+
+Left aligned on the shell's 58.75rem measure, vertically centred in the
+space the shell leaves. The backdrop is full-bleed and sits behind the type.
 
 ## Scope
 
 ### In
 
-- A new hero: hook headline, one plain lede, two CTAs.
-- A decorative two-octave keyboard (15 white keys, 10 black keys) built from
-  DOM elements, with the five-line staff mark above it.
-- One orchestrated entrance on the first visit of a session: the staff rules
-  draw in, the gold note settles, then the keys press left to right.
-- Session storage gate so internal navigation back to `/` does not replay it.
-- Contract tests for the new landing.
+- `Home.tsx`: the hero and the backdrop only; no `BrandMark`, no keyboard
+  geometry, no session gate.
+- `src/components/home/HomeBackdrop.tsx`: a canvas that draws a gray dot grid
+  and a slow radial wave, with reduced-motion, visibility, resize, and DPR
+  handling.
+- `styles.css`: full-height hero layout, the inner measure, the backdrop mask;
+  remove the instrument, keyboard, and entrance rules.
+- `Home.test.tsx`: the landing contract for the new hero.
 
 ### Out
 
-- Any change to streaks, unlocking, the catalog, round generation, or
-  practice behavior.
-- The navbar and footer, which keep the wordmark.
-- Audio, interactive keys, or a playable piano on the landing.
-- A new palette, typeface, or animation library.
+- AppShell, navbar, footer, `index.html`, catalog, progress, practice.
+- New dependencies.
+- Scroll-triggered motion, parallax, or any animation outside the backdrop.
+- A session gate: the backdrop is ambient and may run on every visit; reduced
+  motion turns it into a static grid.
 
 ## Constraints
 
-- The landing must never read progress or gate: a brand-new and a finished
-  learner see the same hero.
-- Exactly two anchors inside `.home`, both ungated.
-- The instrument is decorative: `aria-hidden`, no roles, no labels, no text,
-  no pointer interference.
-- Motion is transform-only (plus the note's opacity), runs once, and keeps
-  the existing `prefers-reduced-motion` path.
-- No scroll-triggered animation, parallax, carousel, or ambient loop.
-- Existing suite stays green; `npm run typecheck` and `npm run build` pass.
+- Exactly two anchors inside `.home`, both ungated; no `.brand-wordmark` inside
+  `.home`.
+- The canvas contributes no text, role, or target: `aria-hidden="true"`,
+  `pointer-events: none`, no fallback content.
+- Gray dots only — no gold, no new hue. The backdrop must stay quieter than
+  the type.
+- Reduced motion draws the static grid once and never starts the RAF loop.
+- Pause the loop while the document is hidden.
+- `npm test`, `npm run typecheck`, and `npm run build` pass.
 
-## Copy
+## Acceptance criteria
 
-- Title: **The staff, decoded.**
-- Lede: **39 lessons take you from the first clef to the last cadence.
-  Practice drills note reading against the clock.**
-- Primary CTA: **Start the lessons** → `/lessons`
-- Secondary CTA: **Practice note reading** → `/practice`
-
-## Composition
-
-```
-The staff, decoded.                       [display, one line]
-39 lessons take you ...                   [lede, max 40rem]
-
-[ Start the lessons ] [ Practice note reading ]
-
-────────────────── staff + gold note ──────────────────
-▐▌▐▌▐▌▐▌▐▌▐▌▐▌▐▌▐▌▐▌▐▌▐▌▐▌▐▌ keyboard ───────────────
-```
-
-Left aligned on the shell's 58.75rem measure. The keyboard is the page's
-signature; everything around it stays quiet.
+1. The hero renders "Learn to read music." and the unchanged lede.
+2. The staff, keyboard, and `home--intro` class are gone from the DOM and CSS.
+3. Exactly two anchors inside `.home`: `/lessons` and `/practice`; both
+   ungated; a brand-new and a finished learner receive identical hero markup.
+4. The backdrop is a `canvas.home__backdrop`, `aria-hidden`, with no text and
+   no controls, inside `.home`.
+5. `.home` is a flex child of the shell with `flex: 1`, so it fills the space
+   left by the header and footer; `.home__inner` keeps the 58.75rem measure.
+6. Reduced motion leaves a static dot grid with no animation loop.
+7. `npm test`, `npm run typecheck`, and `npm run build` pass.
 
 ## Task list
 
 | # | Task | Route | Status |
 | --- | --- | --- | --- |
-| T1 | Rebuild the hero, CTAs, and static keyboard scene; update contract tests | parent (inline) | done |
-| T2 | Add the session-gated entrance and reduced-motion handling; test the gate | parent (inline) | done |
+| T3 | Rebuild `/` as the full-height hero; remove the instrument and entrance | delegated writer | done |
+| T4 | Add the canvas dot-grid ripple with reduced-motion and visibility handling | delegated writer | done |
+| T5 | Rewrite the landing tests and run verification | delegated writer | done |
 
 ### Route rationale
 
-Both tasks are one page's markup, one CSS section, and its tests. The visual
-decisions are resolved in this document; no research or unresolved design
-choice remains. The change is a single cohesive surface, so it stays inline
-instead of adding a writer round-trip.
+Three files plus a new component. The visual decisions are resolved here, so
+the implementation is bounded and goes to one writer; the parent keeps the
+screenshots and the final visual judgment.
 
 ## Task details
 
-### T1 — Hero, CTAs, keyboard
+### T3 — Full-height hero
 
-- `Home.tsx`: `<main class="home">`, a `<header class="home__hero">` with
-  `h1.home__title`, `p.home__lede`, and `.home__actions` holding the two
-  `A.home__cta` links; then `.home__instrument[aria-hidden]` with the
-  existing `BrandMark lines={5}` and a `.home__keyboard`.
-- The keyboard renders 15 white keys in a flex row and 10 black keys
-  absolutely positioned after white indices 0, 1, 3, 4, 5 in each octave.
-  Keys are spans, never buttons.
-- CTAs: primary ink fill for Lessons, white key for Practice. Hover uses the
-  existing 120ms surface/gold language; active nudges down 1px.
-- Styles: replace the current Home block. Use the existing tokens only.
+- `Home.tsx`: `<main class="home">`, `<HomeBackdrop />`, then
+  `<div class="home__inner">` holding `header.home__hero` with
+  `h1.home__title`, `p.home__lede`, and the two `A.home__cta` links.
+- Remove `HOME_INTRO_KEY`, `playIntroOnce`, the key constants, `blackKeyLeft`,
+  the `BrandMark` import, and the instrument markup.
+- CSS: `.home` is `position: relative; display: flex; flex: 1; align-items:
+  center; width: 100%; max-width: none; margin: 0; padding: 0; overflow:
+  hidden`. `.home__inner` is the 58.75rem column with the old `main` padding.
+  The shell already has `min-height: 100vh` and a column flex; the footer
+  keeps its `margin-top: auto`. No AppShell change.
+- Delete `.home__instrument`, `.home__staff`, `.home__keyboard`,
+  `.home__white-keys`, `.home__key*`, the `.home--intro` rules, and the
+  `home-rule-in`, `home-note-in`, `home-key-press` keyframes.
 
-### T2 — The entrance
+### T4 — The backdrop
 
-- `Home.tsx`: read a `harmonic:home-intro` session flag before first paint.
-  First visit adds `home--intro` and sets the flag; later visits do not.
-- CSS: staff rules scale in from the left (staggered 45ms), the note fades
-  and drops 0.35em, then keys press down 4px (3px black) in left-to-right
-  order, 30ms apart. One pass, no loop.
-- The existing reduced-motion rule also zeroes animation and transition
-  delays so the entrance cannot ripple.
+- `HomeBackdrop.tsx`: default export; a single `<canvas ref={...}
+  class="home__backdrop" aria-hidden="true" />`.
+- `onMount`: get the 2D context in a `try/catch`; if unavailable, return. A
+  missing context must not break the page (happy-dom).
+- Grid: spacing 26px (32px above 1200px, 40px above 1800px), dot radius
+  ~1.1px, base alpha ~0.09. The origin is ~68% width, ~45% height.
+- Wave: `sin(distance * 0.018 - time * 0.0007)`, `lift = max(0, wave) ** 2`;
+  alpha `0.09 + lift * 0.09`, radius `1.1 + lift * 0.8`. Slow, concentric,
+  no loop reset.
+- DPR capped at 2; resize resets the transform and rebuilds the dot list.
+- `prefers-reduced-motion: reduce`: draw the static grid once, no RAF. React
+  to a change in the preference. Pause on `document.hidden`; resume on
+  visible. Disconnect the `ResizeObserver` and remove every listener on
+  cleanup. Guard `ResizeObserver` and `matchMedia` availability.
+- CSS: `.home__backdrop` absolute, inset 0, block, full size,
+  `pointer-events: none`, masked by a soft ellipse centred at 70% / 46%
+  (58% × 78% radii) so the detail stays on the right and out of the type.
 
-## Acceptance criteria
+### T5 — Tests
 
-1. The hero shows the hook title and lede, with no `.brand-wordmark` inside
-   `.home`.
-2. Exactly two anchors inside `.home`: `/lessons` and `/practice`, both
-   ungated for every progress state.
-3. The five-line staff appears once, inside the instrument, with one gold
-   note and no text.
-4. The keyboard has 15 white and 10 black spans, contributes no text or
-   interactive elements, and is inside an `aria-hidden` container.
-5. The entrance plays on the first mount of a session and not on the second.
-6. Reduced motion collapses the entrance without a stagger.
-7. `npm test`, `npm run typecheck`, and `npm run build` pass.
-8. Both a brand-new and a finished learner receive identical landing markup.
+- Rewrite `Home.test.tsx`: new title, 39 used once, backdrop canvas
+  (`aria-hidden`, no text, no controls), exactly two CTAs, no lesson rows,
+  both ungated, identical hero markup for new and finished learners, App
+  route at `/`.
+- Remove the staff/keyboard/entrance tests and the `HOME_INTRO_KEY` import.
+- Compare `.home__inner` rather than the whole `.home` for the progress
+  contract, so the canvas's environment-dependent size attributes cannot make
+  the test flaky.
 
 ## Delivery
 
 - Branch `feat/music-theory-minigames`; no remote or PR requested.
-- One work-unit commit for the landing: T1 and T2 share the same markup, CSS
-  section, and test file, so splitting them would require an artificial
-  intermediate state. Conventional Commit, no AI attribution.
+- One work-unit commit for the revision, plus a docs commit for the evidence.
 
 ## Progress
 
 | Task | Evidence | Tier | Commit |
 | --- | --- | --- | --- |
-| T1 | `npm test` → **1455 passed (93 files)**, `npm run typecheck` clean, `npm run build` succeeds (only the existing chunk-size warning). `/` is now a hook, a lede, and two actions over the staff and a drawn 15-white/10-black keyboard. **Exactly two anchors inside `.home`**: `/lessons` (ink primary) and `/practice` (white key), both ungated; the page imports neither the catalog nor the progress store, and a test asserts identical markup for a new and a finished learner. The instrument is one `aria-hidden` container with `pointer-events: none`, one full staff, and spans — no buttons, labels, or text. Tests also pin the 15/10 key counts, the single staff, and the absence of lesson rows. **Visual check:** Playwright at 1440×900 and 390×844; the mobile title breaks cleanly as "The staff," / "decoded.", the lede stays under a comfortable measure, and the two CTAs go full width below 28rem. The navbar and footer keep the wordmark; the hero does not show it. `index.html` gained a real title, a description, and the `#f7f7f7` theme color. | RDD off (global) | 1c9145f |
-| T2 | The entrance is one gesture: five staff rules draw left to right at 45ms intervals, the gold note fades in and drops 0.35em, then the keys press in playing order (black keys sit half a step later) at 30ms intervals. `playIntroOnce()` reads `harmonic:home-intro` in the component body, not `onMount`, so the class is on the first paint and a returning visitor never sees the instrument rewind; storage failure falls back to the settled page. A test pins first-mount yes / second-mount no. **The visual check caught a physical lie:** a pressed black key translated down over the white key behind it, so the top of the press showed a white gap. A `::before` ink slot, riding with the key and clipped at rest, now fills that gap; verified at 2× zoom at 650, 700, and 1000ms. Reduced motion already zeroes animation and transition delays, so the entrance cannot ripple; hover is a 120ms surface/gold answer and active is a 1px press. The primary CTA keeps white text on ink — gold on ink is below the 3:1 floor. | RDD off (global) | 1c9145f |
+| T3 | Worker reported `npm test` → **1453 passed (93 files)**, `npm run typecheck` clean, `npm run build` succeeds (only the existing chunk-size warning); the parent re-ran the focused landing file (10/10) and typecheck. `/` is the hero alone: **Learn to read music.**, the unchanged lede, and the same two CTAs. The staff, keyboard, `BrandMark` import, `HOME_INTRO_KEY`, `playIntroOnce`, and the entrance keyframes are gone. `.home` is a `flex: 1` child of the shell's 100vh column, so the hero fills exactly what the header and footer leave; `.home__inner` keeps the 58.75rem measure and the old `main` padding. **Visual check:** Playwright at 1440×900 and 390×844; the desktop page is exactly one viewport (70px header / 718px hero / 112px footer), the mobile page likewise (76 / 637 / 131); the title stays on one line at both widths, the lede holds its measure, and the two CTAs go full width below 28rem. No horizontal scroll. | RDD off (global) | aa999b1 |
+| T4 | The backdrop is a new `HomeBackdrop` canvas: a gray dot grid (26/32/40px steps by width, 1.1px dots, 0.09 base alpha) with a slow radial sine wave from 68%/45% — `sin(distance * 0.018 - time * 0.0007)`, the crest adding 0.09 alpha and 0.8px radius. It is `aria-hidden`, pointer-transparent, and masked by an ellipse at 70%/46% (58% × 78%) so the left column stays clean. DPR is capped at 2; resize rebuilds the grid; reduced motion draws the static grid once and never starts RAF; the loop pauses on `document.hidden`; `getContext`, `ResizeObserver`, `matchMedia`, and RAF are guarded, and cleanup removes every listener. **Visual check:** the right side shows the dots while the left is clean; two screenshots 3s apart differ across the backdrop region, confirming the wave moves. happy-dom returns a null 2D context, so the animation itself is browser-verified, not unit-tested. | RDD off (global) | aa999b1 |
+| T5 | Test-first: the rewritten `Home.test.tsx` failed 5 of 10 against the old component (old title, missing backdrop, old intro class, missing inner, old App-route title), then passed 10 of 10 after implementation. The file pins the new title, the lede with 39 used once, the silent canvas (aria-hidden, no role/label/text/tabindex/controls), the two ungated anchors, no lesson rows, identical `.home__inner` for new and finished learners, and the App route at `/`. The old staff/keyboard/entrance tests are removed. Parent spot check: focused 10/10, typecheck clean. | RDD off (global) | aa999b1 |
+
+## History
+
+- `1c9145f` / `aa1d8e2`: first iteration — hook, five-line staff, drawn
+  two-octave keyboard, and a session-gated key entrance. The user rejected
+  the instrument composition and the title. T3–T5 replace it. The old
+  document remains in git history and in Engram's version history.
 
 ## Status: DONE
