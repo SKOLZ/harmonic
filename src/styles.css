@@ -104,10 +104,10 @@
   --text-xl: 1.375rem;
   --text-2xl: 1.75rem;
   --text-3xl: 2.25rem;
-  /* The landing's name — the one place type goes bigger than the scale.
-     A viewport step with a floor that fits "Harmonic" on the narrowest
-     phone and a ceiling that keeps it inside the page measure. */
-  --text-hero: clamp(2.5rem, 8vw, 4rem);
+  /* The landing's hook — the one place type goes bigger than the scale.
+     A viewport step with a floor that keeps the two-word title legible on
+     the narrowest phone and a ceiling that keeps it inside the measure. */
+  --text-hero: clamp(2.75rem, 8.5vw, 5rem);
 }
 
 * {
@@ -501,120 +501,244 @@ a {
 
 /* ---------- Home (landing) ---------- */
 
-/* Masthead: name + explanation. The closing rule is the staff below — the
-   hero's one full five-line staff — so the 2px border this masthead used to
-   carry is gone: two rules stacked a few pixels apart would read as a
-   mistake rather than as a score. */
-.home__header {
-  padding-bottom: 1.75rem;
+/* The landing is type first. One hook, one explanation, two actions, then
+   the instrument: the staff the product teaches and the keyboard it is read
+   from. The type sits on the shell's 58.75rem measure so it keeps lining up
+   with the navbar and footer; only the vertical air is the landing's own. */
+.home {
+  padding-top: clamp(2.5rem, 6vw, 4.5rem);
 }
 
-/* The landing's name: the display face at its largest optical size, where
-   Fraunces is drawn for seeing rather than reading — high contrast, fine
-   hairlines, the engraved title-page end of the family. wght is repeated
-   here because font-variation-settings states every axis it overrides. */
-.home__header h1 {
+/* The hook, not the wordmark: the navbar and footer already carry the name,
+   so the largest type on the page is spent on the promise instead. Fraunces
+   at its display optical size, with a line box tight enough to read as one
+   engraved line. wght is repeated because font-variation-settings states
+   every axis it overrides. */
+.home__title {
+  margin: 0 0 1.25rem;
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
   font-size: var(--text-hero);
-  font-weight: 700;
   font-variation-settings: "opsz" 144, "wght" 700;
-  letter-spacing: -0.02em;
-  line-height: 1.05;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.02;
+  text-wrap: balance;
 }
 
+/* One measure of prose, a step above body size: this is the sentence that
+   has to carry the whole product for someone who has never seen it. */
 .home__lede {
   margin: 0;
-  max-width: 38rem;
+  max-width: 40rem;
   color: var(--ink-600);
+  font-size: var(--text-lg);
+  line-height: 1.55;
 }
 
-/* The single memorable element: the full staff, carrying the gold dot,
-   closing the hero above the doors. Scaled from the mark's defaults by
-   font-size alone — everything the mark measures, it measures in em. */
+/* The two actions share one row while there is room and wrap on a phone.
+   The gap is the only space between them; neither is separated by a rule
+   the other does not have. */
+.home__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
+
+/* On a phone the two keycaps take the row one after the other. Two naturally
+   sized buttons would leave a ragged second line; two full-width keys read as
+   the two unmissable ways in. */
+@media (max-width: 28rem) {
+  .home__cta {
+    flex: 1 1 100%;
+  }
+}
+
+/* The actions are piano keys in miniature: the primary is the ink key the
+   product already uses for its main control, the secondary is the white key.
+   Both are the same size and share the 2px radius and the 120ms edge, so the
+   difference is material, not hierarchy by size. */
+.home__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3rem;
+  padding: 0.7rem 1.45rem;
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--text-md);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 120ms ease, color 120ms ease, transform 120ms ease;
+}
+
+/* The white key answers in the interactive accent, the same gold arrival the
+   footer links give. Gold on `--surface-hover` sits at the 4.5:1 text floor,
+   so the accent stays legible. */
+.home__cta:hover {
+  background: var(--surface-hover);
+  color: var(--gold);
+}
+
+/* The press is the key's own gesture: one pixel down, no scale. */
+.home__cta:active {
+  transform: translateY(1px);
+}
+
+.home__cta--primary {
+  background: var(--ink);
+  color: var(--on-action);
+}
+
+/* Gold on an ink fill is ~2.7:1, under the 3:1 floor even for large text, so
+   the primary keeps the on-action white and only lifts the fill. */
+.home__cta--primary:hover {
+  background: var(--action-hover);
+  color: var(--on-action);
+}
+
+/* The global ink ring would vanish on the ink key. */
+.home__cta--primary:focus-visible {
+  outline-color: var(--on-action);
+}
+
+/* The instrument: a drawn illustration, not content. It adds no name, no
+   text, and no target; hiding it from assistive tech and letting the pointer
+   pass through keeps the two actions the only interactive things here. */
+.home__instrument {
+  margin-top: clamp(2.75rem, 7vw, 4.5rem);
+  user-select: none;
+  pointer-events: none;
+}
+
+/* The one full staff in the product, at hero scale. Its gold note is the
+   page's only chromatic mark; the keyboard below stays black and white. */
 .home__staff {
   width: 100%;
   font-size: 1.75rem;
   --brand-mark-rule: 2px;
 }
 
-/* The two doors share one frame, split by a 1px ink gap the way two piano
-   keys sit in one keyboard: a white key (Lessons) and a black key (Practice,
-   filled with the same ink as the app's primary controls). Each door is a
-   single link — the whole key is the target, never a card with a nested
-   button. The gap color is the frame's ink showing through. */
-.home__doors {
-  display: grid;
-  gap: 1px;
-  margin-top: 2rem;
+/* The keyboard is drawn, not photographed: white keys separated by the ink
+   ground showing through 1px gaps, black keys laid over the boundaries after
+   C, D, F, G, and A. The frame's ink is the same structural black as the
+   staff rules above it. */
+.home__keyboard {
+  position: relative;
+  height: clamp(7rem, 17vw, 11rem);
+  margin-top: 1.5rem;
   border: 1px solid var(--ink);
   border-radius: 2px;
   background: var(--ink);
   overflow: hidden;
 }
 
-/* Side by side only when there is room for two keys; stacked full-width is
-   the default so a phone gets two unmissable targets. */
-@media (min-width: 40rem) {
-  .home__doors {
-    grid-template-columns: 1fr 1fr;
+.home__white-keys {
+  display: flex;
+  gap: 1px;
+  height: 100%;
+}
+
+.home__key {
+  --key-travel: 4px;
+  display: block;
+}
+
+.home__key--white {
+  flex: 1 1 0;
+  background: var(--surface);
+}
+
+.home__key--black {
+  --key-travel: 3px;
+  position: absolute;
+  top: 0;
+  width: calc(100% / 15 * 0.62);
+  height: 62%;
+  border-radius: 0 0 2px 2px;
+  background: var(--ink);
+}
+
+/* The slot the black key is set into. It rides with the key and is clipped
+   above the keyboard at rest, so pressing the key reveals ink rather than
+   the white key behind it. */
+.home__key--black::before {
+  content: "";
+  position: absolute;
+  top: calc(-1 * var(--key-travel));
+  right: 0;
+  left: 0;
+  height: var(--key-travel);
+  background: var(--ink);
+}
+
+/* One entrance, once per session. The staff is drawn from the left, the note
+   settles onto it, then the keys press in playing order — a single gesture
+   rather than a set of unrelated fades. Only transform and opacity move, and
+   nothing loops. */
+.home--intro .home__staff .brand-mark__rule {
+  transform-origin: left center;
+  animation: home-rule-in 420ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.home--intro .home__staff .brand-mark__rule:nth-child(2) {
+  animation-delay: 45ms;
+}
+
+.home--intro .home__staff .brand-mark__rule:nth-child(3) {
+  animation-delay: 90ms;
+}
+
+.home--intro .home__staff .brand-mark__rule:nth-child(4) {
+  animation-delay: 135ms;
+}
+
+.home--intro .home__staff .brand-mark__rule:nth-child(5) {
+  animation-delay: 180ms;
+}
+
+/* The note is already seated by the mark's own `transform`. The independent
+   `translate` property adds the drop without fighting that centring. */
+.home--intro .home__staff .brand-mark__glyph {
+  animation: home-note-in 320ms cubic-bezier(0.32, 0.72, 0, 1) 280ms both;
+}
+
+.home--intro .home__key {
+  animation: home-key-press 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(560ms + var(--key-order, 0) * 30ms);
+}
+
+@keyframes home-rule-in {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
   }
 }
 
-.home__door {
-  display: grid;
-  gap: 0.3rem;
-  padding: 1.1rem 1.2rem;
-  background: var(--surface);
-  color: var(--ink);
-  text-decoration: none;
-  transition: background-color 120ms ease, color 120ms ease;
+@keyframes home-note-in {
+  from {
+    opacity: 0;
+    translate: 0 -0.35em;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
 }
 
-/* Hover answers in gold — the interactive accent. The white key's whole
-   surface is the target, so the tint lands on its text as well as its
-   ground, and rides the same 120ms the background already takes. */
-.home__door:hover {
-  background: var(--surface-hover);
-  color: var(--gold);
-}
-
-.home__door-title {
-  font-family: var(--font-display);
-  font-optical-sizing: auto;
-  font-size: var(--text-xl);
-  font-weight: 700;
-  letter-spacing: -0.015em;
-  line-height: 1.2;
-}
-
-.home__door-lede {
-  color: var(--ink-600);
-  font-size: var(--text-md);
-}
-
-/* The black key: ink fill, white title, muted white lede — the same material
-   the app already uses for the control it most wants pressed. */
-.home__door--ink {
-  background: var(--ink);
-  color: var(--on-action);
-}
-
-/* The black key is the one exception to the gold hover, and it is a
-   contrast decision, not a stylistic one: `--gold` on `--ink-700` is about
-   2.7:1, under the 3:1 floor even for large text. The accent gives way to
-   legibility and the key stays white on hover. */
-.home__door--ink:hover {
-  background: var(--ink-700);
-  color: var(--on-action);
-}
-
-.home__door--ink .home__door-lede {
-  color: var(--on-action-muted);
-}
-
-/* The global ink focus ring would vanish on the ink door, so it flips to
-   the on-action white to stay visible on both keys. */
-.home__door--ink:focus-visible {
-  outline-color: var(--on-action);
+@keyframes home-key-press {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  45% {
+    transform: translateY(var(--key-travel));
+  }
 }
 
 /* ---------- Lessons ---------- */
@@ -1460,13 +1584,17 @@ a.practice-hub__topic-body:hover {
 }
 
 /* Transitions are feedback, not decoration: under a reduced-motion preference
-    they collapse rather than disappear, so the state change still lands. */
+    they collapse rather than disappear, so the state change still lands. The
+    delays are zeroed too, otherwise the landing's staggered entrance would
+    still ripple across the keyboard one instant at a time. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     transition-duration: 1ms !important;
+    transition-delay: 0s !important;
     animation-duration: 1ms !important;
+    animation-delay: 0s !important;
   }
 
   /* The countdown ring's shrinking arc is motion: hide it and leave the

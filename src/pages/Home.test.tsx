@@ -5,16 +5,17 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import App from "../App";
 import { catalog } from "../games/catalog";
 import { PROGRESS_STORAGE_KEY, UNLOCK_THRESHOLD } from "../lib/progress";
-import Home from "./Home";
+import Home, { HOME_INTRO_KEY } from "./Home";
 
 /**
- * Home is the landing page: a masthead plus exactly two doors, Lessons and
- * Practice. The lesson list lives on /lessons (LessonsPage.test.tsx); these
- * tests protect the landing's own contract — two ungated choices, and no
- * lesson rows or lesson hrefs leaking onto `/`.
+ * Home is the landing page: a hook, one explanation, and exactly two calls to
+ * action — Lessons and Practice. The lesson list lives on /lessons
+ * (LessonsPage.test.tsx); these tests protect the landing's own contract —
+ * two ungated choices, a decorative piano keyboard, and no lesson rows or
+ * lesson hrefs leaking onto `/`.
  *
- * `Home` builds its doors from `@solidjs/router`'s `A`, so it mounts inside a
- * router the same way `App` mounts it (memory history, no window hash to
+ * `Home` builds its actions from `@solidjs/router`'s `A`, so it mounts inside
+ * a router the same way `App` mounts it (memory history, no window hash to
  * mutate). Mount pattern follows GameShell.test.tsx.
  */
 const cleanups: Array<() => void> = [];
@@ -49,20 +50,21 @@ async function mountHome(): Promise<HTMLElement> {
   return host;
 }
 
-function doors(host: HTMLElement): HTMLElement[] {
-  return [...host.querySelectorAll<HTMLElement>(".home__door")];
+function ctas(host: HTMLElement): HTMLElement[] {
+  return [...host.querySelectorAll<HTMLElement>(".home__cta")];
 }
 
-function doorByHref(host: HTMLElement, href: string): HTMLAnchorElement {
-  const found = host.querySelector<HTMLAnchorElement>(`.home__door[href="${href}"]`);
+function ctaByHref(host: HTMLElement, href: string): HTMLAnchorElement {
+  const found = host.querySelector<HTMLAnchorElement>(`.home__cta[href="${href}"]`);
   if (!found) {
-    throw new Error(`no landing door linking to ${JSON.stringify(href)}`);
+    throw new Error(`no landing action linking to ${JSON.stringify(href)}`);
   }
   return found;
 }
 
 beforeEach(() => {
   window.localStorage.clear();
+  window.sessionStorage.clear();
 });
 
 afterEach(() => {
@@ -71,11 +73,12 @@ afterEach(() => {
 });
 
 describe("Home: the landing page", () => {
-  it("renders the masthead with the product name", async () => {
+  it("renders the hero with a hook, not the wordmark", async () => {
     const host = await mountHome();
 
-    expect(host.querySelector("h1")?.textContent?.trim()).toBe("Harmonic");
+    expect(host.querySelector("h1")?.textContent?.trim()).toBe("The staff, decoded.");
     expect(host.querySelector(".home__lede")).not.toBeNull();
+    expect(host.querySelector(".home .brand-wordmark")).toBeNull();
   });
 
   it("explains the product in plain prose, with the lesson count used exactly once", async () => {
@@ -91,8 +94,12 @@ describe("Home: the landing page", () => {
     expect(lede!.textContent?.match(/39/g), "…and it is the lede's").toHaveLength(1);
   });
 
-  it("carries the full five-line staff once, as the rule under the explanation", async () => {
+  it("carries the full five-line staff once, above the keyboard", async () => {
     const host = await mountHome();
+
+    const instrument = host.querySelector(".home__instrument");
+    expect(instrument, "the instrument holds the drawing").not.toBeNull();
+    expect(instrument!.getAttribute("aria-hidden")).toBe("true");
 
     const staff = host.querySelector(".home__staff");
     expect(staff, "the hero's rule is the staff").not.toBeNull();
@@ -107,31 +114,43 @@ describe("Home: the landing page", () => {
     expect(staff!.getAttribute("aria-label")).toBeNull();
     expect(staff!.textContent).toBe("");
 
-    // Name, explanation, mark — then the doors, in that order.
-    const doorsBlock = host.querySelector(".home__doors");
-    expect(doorsBlock).not.toBeNull();
+    const keyboard = host.querySelector(".home__keyboard");
+    expect(keyboard, "the keyboard closes the instrument").not.toBeNull();
     expect(
-      staff!.compareDocumentPosition(doorsBlock!) & Node.DOCUMENT_POSITION_FOLLOWING,
+      staff!.compareDocumentPosition(keyboard!) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+  });
+
+  it("draws a decorative keyboard with no controls and no text", async () => {
+    const host = await mountHome();
+
+    const keyboard = host.querySelector(".home__keyboard");
+    expect(keyboard, "the keyboard is drawn").not.toBeNull();
+    expect(keyboard!.querySelectorAll(".home__key--white")).toHaveLength(15);
+    expect(keyboard!.querySelectorAll(".home__key--black")).toHaveLength(10);
+    expect(keyboard!.querySelectorAll("button, a, [role]")).toHaveLength(0);
+    expect(keyboard!.textContent).toBe("");
+
+    // The whole instrument is illustration: it must never intercept a click
+    // or a selection meant for the page around it.
+    expect(host.querySelector(".home__instrument")!.getAttribute("aria-hidden")).toBe(
+      "true",
+    );
   });
 
   it("offers exactly two options: Lessons and Practice", async () => {
     const host = await mountHome();
 
-    expect(doors(host)).toHaveLength(2);
-    expect(doorByHref(host, "/lessons").querySelector(".home__door-title")?.textContent?.trim()).toBe(
-      "Lessons",
-    );
-    expect(doorByHref(host, "/practice").querySelector(".home__door-title")?.textContent?.trim()).toBe(
-      "Practice",
-    );
+    expect(ctas(host)).toHaveLength(2);
+    expect(ctaByHref(host, "/lessons").textContent?.trim()).toBe("Start the lessons");
+    expect(ctaByHref(host, "/practice").textContent?.trim()).toBe("Practice note reading");
   });
 
   it("shows no lesson rows and no lesson hrefs on the landing", async () => {
     const host = await mountHome();
 
     // The catalog's rows live on /lessons now: `/` carries no per-lesson
-    // links at all, so the two doors are the page's only anchors. Scoped to
+    // links at all, so the two actions are the page's only anchors. Scoped to
     // `.home` — the page's own container — because the global navbar frames
     // every route and contributes its own anchors outside the page.
     const home = host.querySelector(".home");
@@ -139,25 +158,34 @@ describe("Home: the landing page", () => {
     expect(home!.querySelectorAll('a[href^="/lesson/"]')).toHaveLength(0);
     expect(home!.querySelectorAll(".lessons__lesson")).toHaveLength(0);
     expect(home!.querySelectorAll("a")).toHaveLength(2);
-    expect(doors(host).some((door) => door.closest(".lessons__lesson") !== null)).toBe(false);
+    expect(ctas(host).some((cta) => cta.closest(".lessons__lesson") !== null)).toBe(false);
+  });
+
+  it("plays the entrance on the first visit of a session, then not again", async () => {
+    const first = await mountHome();
+    expect(first.querySelector(".home")!.classList.contains("home--intro")).toBe(true);
+    expect(window.sessionStorage.getItem(HOME_INTRO_KEY)).toBe("1");
+
+    const second = await mountHome();
+    expect(second.querySelector(".home")!.classList.contains("home--intro")).toBe(false);
   });
 });
 
 describe("Home: neither landing option is gated by lesson progress", () => {
-  it("shows both doors to a brand-new learner with every lesson locked", async () => {
+  it("shows both actions to a brand-new learner with every lesson locked", async () => {
     // Empty progress store: on the lesson list every row but the first is
-    // locked; on the landing both doors must still be plain links.
+    // locked; on the landing both actions must still be plain links.
     const host = await mountHome();
 
     for (const href of ["/lessons", "/practice"]) {
-      const door = doorByHref(host, href);
-      expect(door.tagName, href).toBe("A");
-      expect(door.closest(".lessons__lesson--locked"), href).toBeNull();
-      expect(door.getAttribute("aria-disabled"), href).toBeNull();
+      const cta = ctaByHref(host, href);
+      expect(cta.tagName, href).toBe("A");
+      expect(cta.closest(".lessons__lesson--locked"), href).toBeNull();
+      expect(cta.getAttribute("aria-disabled"), href).toBeNull();
     }
   });
 
-  it("keeps both doors open regardless of recorded progress", async () => {
+  it("keeps both actions open regardless of recorded progress", async () => {
     // Triangulation: the landing must not read the progress store into its
     // link state, so a satisfied streak changes nothing on `/`.
     window.localStorage.setItem(
@@ -168,17 +196,24 @@ describe("Home: neither landing option is gated by lesson progress", () => {
     const host = await mountHome();
 
     for (const href of ["/lessons", "/practice"]) {
-      const door = doorByHref(host, href);
-      expect(door.tagName, href).toBe("A");
-      expect(door.getAttribute("aria-disabled"), href).toBeNull();
+      const cta = ctaByHref(host, href);
+      expect(cta.tagName, href).toBe("A");
+      expect(cta.getAttribute("aria-disabled"), href).toBeNull();
     }
   });
 
-  it("renders the identical hero and doors to a brand-new and a finished learner", async () => {
-    // The whole landing, not just the doors: name, explanation, and staff
-    // included, byte for byte. Nothing on `/` may differ once progress
-    // exists — if a count, a lock, or a "continue" ever creeps in, the two
-    // documents stop matching here.
+  it("renders the identical hero and actions to a brand-new and a finished learner", async () => {
+    // The whole landing, not just the actions: hook, explanation, staff, and
+    // keyboard included, byte for byte. Nothing on `/` may differ once
+    // progress exists — if a count, a lock, or a "continue" ever creeps in,
+    // the two documents stop matching here.
+    //
+    // The entrance flag is pre-set so both renders skip the one-shot class;
+    // otherwise the first mount would carry `home--intro` and the second
+    // would not, and this test would compare the animation instead of the
+    // progress contract.
+    window.sessionStorage.setItem(HOME_INTRO_KEY, "1");
+
     const renderLanding = async (): Promise<string> => {
       window.history.pushState(null, "", "/");
       const host = mount(() => <App />);
@@ -189,8 +224,9 @@ describe("Home: neither landing option is gated by lesson progress", () => {
     window.localStorage.clear();
     const brandNew = await renderLanding();
     // Sanity: we are comparing the real hero, not two empty strings.
-    expect(brandNew).toContain("Harmonic");
+    expect(brandNew).toContain("The staff, decoded.");
     expect(brandNew).toContain("home__staff");
+    expect(brandNew).toContain("home__keyboard");
 
     window.localStorage.setItem(
       PROGRESS_STORAGE_KEY,
@@ -209,7 +245,7 @@ describe("Home: App route resolution", () => {
     const host = mount(() => <App />);
     await waitFor(() => host.querySelector(".home") !== null, "landing at /");
 
-    expect(doors(host)).toHaveLength(2);
+    expect(ctas(host)).toHaveLength(2);
     expect(host.querySelector(".lessons")).toBeNull();
   });
 
