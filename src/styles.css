@@ -422,8 +422,8 @@ a {
    rules and the note's height grow together so the note keeps fitting
    its space, the way a head does on a real staff.
 
-   The defaults are declared before the landing's styles below, which is
-   what lets `.home__staff` re-scale them by being the later rule. */
+   The defaults are declared here so a context can re-scale them with one
+   later rule. */
 .brand-mark {
   --brand-mark-rule: 1.5px;
   --brand-mark-space: 0.45em;
@@ -501,12 +501,56 @@ a {
 
 /* ---------- Home (landing) ---------- */
 
-/* The landing is type first. One hook, one explanation, two actions, then
-   the instrument: the staff the product teaches and the keyboard it is read
-   from. The type sits on the shell's 58.75rem measure so it keeps lining up
-   with the navbar and footer; only the vertical air is the landing's own. */
+/* The landing is the hero alone: one promise between the navbar and the
+   footer. The shell is already a column flex at 100vh, so the page grows to
+   fill what the two bars leave and centres its type in that space. The
+   backdrop belongs to the page, not to the measure, and bleeds to every
+   edge. */
 .home {
-  padding-top: clamp(2.5rem, 6vw, 4.5rem);
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* The hero's text column keeps the shell's 58.75rem measure so it still
+   lines up with the navbar and footer; only the vertical air is the
+   landing's own. It sits above the absolutely positioned canvas rather than
+   sharing its layer, so the type always wins the space it occupies. */
+.home__inner {
+  position: relative;
+  width: 100%;
+  max-width: 58.75rem;
+  margin: 0 auto;
+  padding: clamp(3rem, 9vh, 6.5rem) 1.25rem;
+}
+
+/* The backdrop is a full-bleed dot field, not content: it adds no name, no
+   text, and no target, and the pointer passes through it. A soft ellipse
+   centred on the right keeps the detail away from the type — the dots fade
+   out before they reach the measured column's left edge. */
+.home__backdrop {
+  --home-backdrop-mask: radial-gradient(
+    ellipse 58% 78% at 70% 46%,
+    #000 0%,
+    rgba(0, 0, 0, 0.85) 38%,
+    rgba(0, 0, 0, 0.45) 68%,
+    transparent 100%
+  );
+
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  mask-image: var(--home-backdrop-mask);
+  -webkit-mask-image: var(--home-backdrop-mask);
 }
 
 /* The hook, not the wordmark: the navbar and footer already carry the name,
@@ -603,142 +647,6 @@ a {
 /* The global ink ring would vanish on the ink key. */
 .home__cta--primary:focus-visible {
   outline-color: var(--on-action);
-}
-
-/* The instrument: a drawn illustration, not content. It adds no name, no
-   text, and no target; hiding it from assistive tech and letting the pointer
-   pass through keeps the two actions the only interactive things here. */
-.home__instrument {
-  margin-top: clamp(2.75rem, 7vw, 4.5rem);
-  user-select: none;
-  pointer-events: none;
-}
-
-/* The one full staff in the product, at hero scale. Its gold note is the
-   page's only chromatic mark; the keyboard below stays black and white. */
-.home__staff {
-  width: 100%;
-  font-size: 1.75rem;
-  --brand-mark-rule: 2px;
-}
-
-/* The keyboard is drawn, not photographed: white keys separated by the ink
-   ground showing through 1px gaps, black keys laid over the boundaries after
-   C, D, F, G, and A. The frame's ink is the same structural black as the
-   staff rules above it. */
-.home__keyboard {
-  position: relative;
-  height: clamp(7rem, 17vw, 11rem);
-  margin-top: 1.5rem;
-  border: 1px solid var(--ink);
-  border-radius: 2px;
-  background: var(--ink);
-  overflow: hidden;
-}
-
-.home__white-keys {
-  display: flex;
-  gap: 1px;
-  height: 100%;
-}
-
-.home__key {
-  --key-travel: 4px;
-  display: block;
-}
-
-.home__key--white {
-  flex: 1 1 0;
-  background: var(--surface);
-}
-
-.home__key--black {
-  --key-travel: 3px;
-  position: absolute;
-  top: 0;
-  width: calc(100% / 15 * 0.62);
-  height: 62%;
-  border-radius: 0 0 2px 2px;
-  background: var(--ink);
-}
-
-/* The slot the black key is set into. It rides with the key and is clipped
-   above the keyboard at rest, so pressing the key reveals ink rather than
-   the white key behind it. */
-.home__key--black::before {
-  content: "";
-  position: absolute;
-  top: calc(-1 * var(--key-travel));
-  right: 0;
-  left: 0;
-  height: var(--key-travel);
-  background: var(--ink);
-}
-
-/* One entrance, once per session. The staff is drawn from the left, the note
-   settles onto it, then the keys press in playing order — a single gesture
-   rather than a set of unrelated fades. Only transform and opacity move, and
-   nothing loops. */
-.home--intro .home__staff .brand-mark__rule {
-  transform-origin: left center;
-  animation: home-rule-in 420ms cubic-bezier(0.32, 0.72, 0, 1) both;
-}
-
-.home--intro .home__staff .brand-mark__rule:nth-child(2) {
-  animation-delay: 45ms;
-}
-
-.home--intro .home__staff .brand-mark__rule:nth-child(3) {
-  animation-delay: 90ms;
-}
-
-.home--intro .home__staff .brand-mark__rule:nth-child(4) {
-  animation-delay: 135ms;
-}
-
-.home--intro .home__staff .brand-mark__rule:nth-child(5) {
-  animation-delay: 180ms;
-}
-
-/* The note is already seated by the mark's own `transform`. The independent
-   `translate` property adds the drop without fighting that centring. */
-.home--intro .home__staff .brand-mark__glyph {
-  animation: home-note-in 320ms cubic-bezier(0.32, 0.72, 0, 1) 280ms both;
-}
-
-.home--intro .home__key {
-  animation: home-key-press 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: calc(560ms + var(--key-order, 0) * 30ms);
-}
-
-@keyframes home-rule-in {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
-}
-
-@keyframes home-note-in {
-  from {
-    opacity: 0;
-    translate: 0 -0.35em;
-  }
-  to {
-    opacity: 1;
-    translate: 0 0;
-  }
-}
-
-@keyframes home-key-press {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  45% {
-    transform: translateY(var(--key-travel));
-  }
 }
 
 /* ---------- Lessons ---------- */
