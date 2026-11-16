@@ -145,6 +145,11 @@ describe("Home: the landing page", () => {
     expect(ctas(host)).toHaveLength(2);
     expect(ctaByHref(host, "/lessons").textContent?.trim()).toBe("Start the lessons");
     expect(ctaByHref(host, "/practice").textContent?.trim()).toBe("Practice note reading");
+
+    // The two keys: Lessons is the ink primary, Practice the white ground
+    // with the gold edge. These classes are the hooks styles.css targets.
+    expect(ctaByHref(host, "/lessons").classList.contains("home__cta--primary")).toBe(true);
+    expect(ctaByHref(host, "/practice").classList.contains("home__cta--secondary")).toBe(true);
   });
 
   it("shows no lesson rows and no lesson hrefs on the landing", async () => {

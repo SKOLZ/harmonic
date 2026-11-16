@@ -1,17 +1,18 @@
 import { A } from "@solidjs/router";
 import type { ParentProps } from "solid-js";
+import FooterMark from "../brand/FooterMark";
 import Wordmark from "../brand/Wordmark";
 import skzDsgn from "../../assets/SKZ-DSGN.svg?raw";
 
 /**
  * The global shell: navbar and footer framing every routed page, with the
  * brand now carrying both ends. The navbar's home link is the wordmark —
- * the name on its staff rule — and the footer repeats the wordmark, one line
- * of what the product is, and the same two destinations.
+ * the name on its staff rule — and the footer carries the compact mark, one
+ * line of what the product is, and the same two destinations.
  *
  * The destinations themselves are unchanged from T1's plain frame: exactly
  * three anchors in the navbar (wordmark, Lessons, Practice) and exactly two
- * destinations in the footer. The wordmark in the footer is deliberately not
+ * destinations in the footer. The footer's compact mark is deliberately not
  * a link — it is identity, not a third way out, so the footer's link surface
  * stays the two routes and the one credit below. The routed page renders
  * through `props.children` and keeps its own `main` landmark, so the
@@ -38,7 +39,9 @@ export default function AppShell(props: ParentProps) {
               <A href="/lessons">Lessons</A>
             </li>
             <li>
-              <A href="/practice">Practice</A>
+              <A class="app-shell__menu-secondary" href="/practice">
+                Practice
+              </A>
             </li>
           </ul>
         </nav>
@@ -47,7 +50,7 @@ export default function AppShell(props: ParentProps) {
       <footer class="app-shell__footer">
         <div class="app-shell__footer-column">
           <div class="app-shell__footer-brand">
-            <Wordmark class="app-shell__footer-wordmark" />
+            <FooterMark />
             <p class="app-shell__footer-line">
               Music theory lessons and note-reading practice.
             </p>

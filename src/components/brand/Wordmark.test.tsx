@@ -18,8 +18,8 @@ import Wordmark from "./Wordmark";
  * still exactly "Harmonic", now carried by the asset's own root element
  * (`role="img"` + `aria-label`) instead of by textContent. And the letters
  * are not a fixed white: they are `currentColor`, so the surface's CSS
- * ink decides what the mark wears, while the gold circle keeps its own
- * fill and is never recoloured.
+ * ink decides what the letters wear, while the gold circle and the two
+ * hairline rules keep the asset's own gold and are never recoloured.
  */
 const cleanups: Array<() => void> = [];
 
@@ -66,8 +66,9 @@ describe("Wordmark", () => {
     expect(host.querySelector(".brand-wordmark__glyph")).toBeNull();
     // No companion staff beneath the name either: the asset is the mark.
     expect(host.querySelector(".brand-mark")).toBeNull();
-    // Nothing in the asset is text, so the wordmark contributes none.
-    expect(host.textContent).toBe("");
+    // Nothing in the asset is text, so the wordmark contributes none. The
+    // asset's own formatting whitespace is not text.
+    expect(host.textContent?.trim()).toBe("");
   });
 
   it("keeps the accessible name Harmonic on the asset's own root", () => {
@@ -82,16 +83,17 @@ describe("Wordmark", () => {
     expect(host.textContent?.trim()).toBe("");
   });
 
-  it("hands the letters and the framing rules to CSS, and leaves the gold circle alone", () => {
+  it("hands the letters to CSS and keeps the gold note and rules in the asset", () => {
     // White was the asset's ground-facing colour, drawn for a dark
     // background. `currentColor` is what lets the surface's ink decide, so
-    // the mark recolours with the product instead of punching a white hole
-    // in it. The gold note keeps its own fill: it is the one hue the brand
-    // owns, and a retheme of any status colour may not retheme the logo.
+    // the letters recolour with the product instead of punching a white hole
+    // in it. The gold note and the two framing rules keep the asset's own
+    // gold: that is the one hue the brand owns, and a retheme of any status
+    // colour may not retheme the logo.
     const source = asset();
 
     expect(source).toContain('fill="currentColor"');
-    expect(source).toContain('stroke="currentColor"');
+    expect(source).toContain('stroke="#8A6A1F"');
     expect(source).not.toMatch(/#fff/i);
     expect(source).toContain('fill="#8a6a1f"');
   });
@@ -101,7 +103,8 @@ describe("Wordmark", () => {
     const svg = block("\\.brand-wordmark svg");
 
     expect(wordmark, "the wordmark has a declaration block").not.toBe("");
-    // The letters and rules are currentColor: this is the ink they land in.
+    // The letters are currentColor: this is the ink they land in. The rules
+    // are gold in the asset, so this colour never reaches them.
     expect(wordmark).toContain("color: var(--ink)");
     // The block was a text run once; it is a box around one replaced
     // element now, so no rule may depend on tracking or vertical rhythm.
@@ -138,11 +141,9 @@ describe("Wordmark", () => {
   });
 
   it("takes an extra class for the surface it lands on", () => {
-    const host = mount(() => <Wordmark class="app-shell__footer-wordmark" />);
+    const host = mount(() => <Wordmark class="custom-class" />);
 
-    expect(host.querySelector(".brand-wordmark")?.classList.contains("app-shell__footer-wordmark")).toBe(
-      true,
-    );
+    expect(host.querySelector(".brand-wordmark")?.classList.contains("custom-class")).toBe(true);
   });
 
   it("keeps the gold note the asset ships, and draws it the way the shared glyph does", () => {

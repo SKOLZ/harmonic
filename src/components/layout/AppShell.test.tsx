@@ -96,6 +96,12 @@ describe("App shell: navbar and footer frame every route", () => {
       const practice = nav.querySelector<HTMLAnchorElement>('a[href="/practice"]');
       expect(practice?.textContent?.trim(), path).toBe("Practice");
 
+      // Lessons keeps the primary dress; Practice is the outlined secondary,
+      // so the two routes read as different weights without changing the
+      // navbar's link count.
+      expect(lessons?.classList.contains("app-shell__menu-secondary"), path).toBe(false);
+      expect(practice?.classList.contains("app-shell__menu-secondary"), path).toBe(true);
+
       // Exactly these three — the navbar is the whole global link surface.
       expect(nav.querySelectorAll("a"), path).toHaveLength(3);
     });
@@ -121,13 +127,13 @@ describe("App shell: navbar and footer frame every route", () => {
 });
 
 /**
- * The brand frames every route: the navbar wordmark and the footer's brand
- * block are both the supplied `harmonic_logo.svg` asset, inlined so the
- * stylesheet can decide the ink it wears. The asset's root carries the
- * accessible name the old text run used to supply, so both seats still
- * read "Harmonic". The anchor counts and the two-destination contract
- * above are untouched — the brand is added inside them, not instead of
- * them.
+ * The brand frames every route: the navbar carries the supplied
+ * `harmonic_logo.svg` wordmark, and the footer's brand block carries the
+ * compact `harmonic_logo_sm.svg` monogram. Both are inlined so the stylesheet
+ * can size them, and each asset's root carries the accessible name the old
+ * text run used to supply, so both seats still read "Harmonic". The anchor
+ * counts and the two-destination contract above are untouched — the brand is
+ * added inside them, not instead of them.
  */
 describe("App shell: the brand frames every route", () => {
   for (const { path, page } of shellRoutes) {
@@ -148,15 +154,17 @@ describe("App shell: the brand frames every route", () => {
       expect(wordmark.textContent!.trim(), path).toBe("");
     });
 
-    it(`gives the footer the brand, one line, and the two links at ${path}`, async () => {
+    it(`gives the footer the compact mark, one line, and the two links at ${path}`, async () => {
       const host = await mountRoute(path, page);
       const footer = host.querySelector("footer")!;
 
-      // The footer's brand block is the same asset: one mark, one name.
-      const mark = footer.querySelector(".brand-wordmark svg");
+      // The navbar already carries the full wordmark; the footer signs with
+      // the compact gold monogram, still under the same accessible name.
+      const mark = footer.querySelector(".app-shell__footer-mark svg");
       expect(mark, path).not.toBeNull();
       expect(mark!.getAttribute("role"), path).toBe("img");
       expect(mark!.getAttribute("aria-label"), path).toBe("Harmonic");
+      expect(footer.querySelector(".brand-wordmark"), path).toBeNull();
       expect(footer.querySelector(".brand-mark"), path).toBeNull();
 
       const line = footer.querySelector(".app-shell__footer-line");
@@ -208,9 +216,10 @@ describe("App shell: the footer carries the SKZ credit", () => {
 });
 
 /**
- * T3's layout contract: the navbar centres its row and dresses its two menu
- * links as primary controls, the two hubs fill the shell's measure while the
- * landing and the game pages keep `main`'s page measure, and the footer
+ * T3's layout contract: the navbar centres its row, keeps the primary-control
+ * dress as the menu's base, and gives the Practice link the white key's
+ * outlined secondary treatment. The two hubs fill the shell's measure while
+ * the landing and the game pages keep `main`'s page measure, and the footer
  * stacks its two links without an underline and turns them gold on hover.
  *
  * Layout lives in styles.css, so it is pinned the way BrandMark pins its
@@ -231,7 +240,7 @@ function block(selector: string): string {
 }
 
 describe("App shell: T3 layout contract", () => {
-  it("centres the navbar row and dresses the two menu links as primary controls", () => {
+  it("centres the navbar row, keeps the primary menu dress, and outlines Practice in gold", () => {
     const nav = block("\\.app-shell__nav");
     expect(nav, ".app-shell__nav has a declaration block").not.toBe("");
     // The reported defect: baseline alignment pushed the links off the
@@ -248,6 +257,23 @@ describe("App shell: T3 layout contract", () => {
     expect(menuLink).toContain("color: var(--on-action)");
     expect(menuLink).toContain("border-radius: 2px");
     expect(menuLink).toContain("padding: 0.5rem 1.1rem");
+
+    // Practice is the white key on the bar: paper ground, gold edge, ink
+    // label. Its hover keeps the paper and the edge, and lets the label take
+    // the accent — gold on white clears 4.5:1.
+    const secondary = block("\\.app-shell__menu a\\.app-shell__menu-secondary");
+    expect(secondary, "the Practice modifier has a declaration block").not.toBe("");
+    expect(secondary).toContain("background: var(--surface)");
+    expect(secondary).toContain("border-color: var(--gold)");
+    expect(secondary).toContain("color: var(--ink)");
+
+    const secondaryHover = block(
+      "\\.app-shell__menu a\\.app-shell__menu-secondary:hover",
+    );
+    expect(secondaryHover, "the Practice hover has a declaration block").not.toBe("");
+    expect(secondaryHover).toContain("background: var(--surface)");
+    expect(secondaryHover).toContain("border-color: var(--gold)");
+    expect(secondaryHover).toContain("color: var(--gold)");
 
     // The wordmark stays a text link: no fill, no border, no control box.
     const wordmark = block("\\.app-shell__wordmark");

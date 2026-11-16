@@ -26,7 +26,7 @@ export default function Home() {
             <A class="home__cta home__cta--primary" href="/lessons">
               Start the lessons
             </A>
-            <A class="home__cta" href="/practice">
+            <A class="home__cta home__cta--secondary" href="/practice">
               Practice note reading
             </A>
           </div>

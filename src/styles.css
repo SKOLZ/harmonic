@@ -237,7 +237,7 @@ a {
   color: var(--on-action);
   font-weight: 600;
   text-decoration: none;
-  transition: background-color 120ms ease, border-color 120ms ease;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 
 /* Hover lifts to the controls' own hover — the 120ms edge every primary
@@ -247,6 +247,22 @@ a {
 .app-shell__menu a:hover {
   border-color: var(--action-hover);
   background: var(--action-hover);
+}
+
+/* Practice is the secondary control: the white key the landing offers, now
+   on the bar. It keeps the paper ground and takes the accent on its edge;
+   the label stays ink at rest, then turns gold on hover. Gold on white is
+   ~5:1, so the accent stays legible without the primary's ink fill. */
+.app-shell__menu a.app-shell__menu-secondary {
+  border-color: var(--gold);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.app-shell__menu a.app-shell__menu-secondary:hover {
+  border-color: var(--gold);
+  background: var(--surface);
+  color: var(--gold);
 }
 
 /* The wordmark, restyled for the brand: the supplied asset leads the bar,
@@ -309,10 +325,17 @@ a {
   gap: 0.4rem;
 }
 
-/* The footer wordmark sits at the body's own size: it is the brand, not a
-   second headline competing with the page's. */
-.app-shell__footer-wordmark {
-  font-size: var(--text-md);
+/* The footer carries the compact mark, not the navbar's full wordmark: the
+   small gold monogram signs the bar without repeating the name at headline
+   size. Its own 60×60 viewBox supplies the width from one height. */
+.app-shell__footer-mark {
+  display: inline-block;
+}
+
+.app-shell__footer-mark svg {
+  display: block;
+  height: 30px;
+  width: auto;
 }
 
 /* One line of what the product is, in the same quiet ink the links use.
@@ -474,8 +497,9 @@ a {
    that used to seat geometry against font metrics the layout cannot read.
 
    What a surface still owns is colour and one length. The asset paints
-   its letters and its rules `currentColor`, so this ink is what the mark
-   wears; the gold circle keeps its own fill and is never recoloured. */
+   its letters `currentColor`, so this ink is what the letters wear; the
+   gold circle and the two rules keep the asset's own gold and are never
+   recoloured. */
 .brand-wordmark {
   display: inline-block;
   color: var(--ink);
@@ -600,9 +624,9 @@ a {
 }
 
 /* The actions are piano keys in miniature: the primary is the ink key the
-   product already uses for its main control, the secondary is the white key.
-   Both are the same size and share the 2px radius and the 120ms edge, so the
-   difference is material, not hierarchy by size. */
+   product already uses for its main control, the secondary is the white key
+   with the gold edge. Both are the same size and share the 2px radius and the
+   120ms edge, so the difference is material and edge, not hierarchy by size. */
 .home__cta {
   display: inline-flex;
   align-items: center;
@@ -616,14 +640,27 @@ a {
   font-size: var(--text-md);
   font-weight: 600;
   text-decoration: none;
-  transition: background-color 120ms ease, color 120ms ease, transform 120ms ease;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease,
+    transform 120ms ease;
 }
 
-/* The white key answers in the interactive accent, the same gold arrival the
-   footer links give. Gold on `--surface-hover` sits at the 4.5:1 text floor,
-   so the accent stays legible. */
+/* The pointer turns the label gold on either key; the white key overrides
+   the grey wash below and keeps its paper. */
 .home__cta:hover {
   background: var(--surface-hover);
+  color: var(--gold);
+}
+
+/* The white key keeps its paper and wears the accent on its edge: the same
+   gold the footer and the navbar's secondary arrival use. Gold on white is
+   ~5:1, so the label can stay gold on hover. */
+.home__cta--secondary {
+  border-color: var(--gold);
+}
+
+.home__cta--secondary:hover {
+  background: var(--surface);
+  border-color: var(--gold);
   color: var(--gold);
 }
 
